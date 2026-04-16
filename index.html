@@ -3,23 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic CV Test</title>
+    <title>My Digital Playground</title>
     <style>
-        /* A tiny bit of CSS just so it isn't completely raw */
-        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
-        .project-card { border: 1px solid #ddd; padding: 15px; margin-top: 15px; border-radius: 8px; }
-        h4 { margin-top: 0; }
+        :root {
+            --bg-color: #fcfcfc;
+            --text-color: #333;
+            --accent-color: #0070f3; /* Vercel-ish blue */
+            --card-bg: #fff;
+            --border: #eaeaea;
+        }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6; 
+        }
+        /* Navigation Styles */
+        nav { 
+            display: flex; 
+            gap: 15px; 
+            margin-bottom: 40px; 
+            padding-bottom: 20px; 
+            border-bottom: 1px solid var(--border); 
+            flex-wrap: wrap;
+        }
+        nav a { 
+            text-decoration: none; 
+            color: var(--text-color); 
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        nav a:hover { background: var(--border); }
+        nav a.active { 
+            background: var(--accent-color); 
+            color: white; 
+        }
+        /* Card Layout */
+        .card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .card h3 { margin-top: 0; margin-bottom: 10px; }
+        .card small { color: #666; font-weight: normal; }
     </style>
 </head>
 <body>
-    <h1 id="name">Loading...</h1>
-    <h3 id="title"></h3>
-    <p><strong>Stack:</strong> <span id="skills"></span></p>
-    
-    <hr>
-    
-    <h2>Projects</h2>
-    <div id="projects"></div>
+
+    <nav>
+        <a href="#home" class="active">Home</a>
+        <a href="#experience">Experience</a>
+        <a href="#projects">Projects</a>
+        <a href="#academy">Academy</a>
+        <a href="#art">Art</a>
+        <a href="#games">Games</a>
+    </nav>
+
+    <main id="app-content">
+        <h2>Loading...</h2>
+    </main>
 
     <script src="app.js"></script>
 </body>

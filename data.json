@@ -1,11 +1,36 @@
 {
-  "name": "Your Name",
-  "title": "Software Engineer",
-  "skills": ["React / Next.js", "Golang", "C / C++", "Salesforce"],
+  "experience": [
+    {
+      "role": "Salesforce Developer",
+      "company": "Your Company",
+      "description": "Brief description of your impact and technical work."
+    }
+  ],
   "projects": [
     {
-      "name": "Project Alpha",
-      "description": "A lightweight tool built to test GitHub pages."
+      "name": "Mimir",
+      "category": "Hardware / Automation",
+      "description": "Hydroponic automation platform.",
+      "tech_stack": ["C++", "Sensors", "IoT"]
+    },
+    {
+      "name": "Pelambres",
+      "category": "3D Printing",
+      "description": "Custom 3D printing projects and designs."
+    }
+  ],
+  "games": [
+    {
+      "title": "Game Title",
+      "engine": "Godot/Unity/Custom",
+      "link": "link-to-play-or-repo"
+    }
+  ],
+  "art": [
+    {
+      "title": "Cyberpunk City",
+      "type": "Pixel Art",
+      "image_url": "./assets/art/city.png"
     }
   ]
 }
