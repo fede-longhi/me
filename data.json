@@ -1,0 +1,11 @@
+{
+  "name": "Your Name",
+  "title": "Software Engineer",
+  "skills": ["React / Next.js", "Golang", "C / C++", "Salesforce"],
+  "projects": [
+    {
+      "name": "Project Alpha",
+      "description": "A lightweight tool built to test GitHub pages."
+    }
+  ]
+}

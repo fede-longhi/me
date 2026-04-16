@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic CV Test</title>
+    <style>
+        /* A tiny bit of CSS just so it isn't completely raw */
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        .project-card { border: 1px solid #ddd; padding: 15px; margin-top: 15px; border-radius: 8px; }
+        h4 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1 id="name">Loading...</h1>
+    <h3 id="title"></h3>
+    <p><strong>Stack:</strong> <span id="skills"></span></p>
+    
+    <hr>
+    
+    <h2>Projects</h2>
+    <div id="projects"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
