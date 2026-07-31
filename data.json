@@ -1,36 +1,386 @@
 {
-  "experience": [
-    {
-      "role": "Salesforce Developer",
-      "company": "Your Company",
-      "description": "Brief description of your impact and technical work."
-    }
-  ],
-  "projects": [
-    {
-      "name": "Mimir",
-      "category": "Hardware / Automation",
-      "description": "Hydroponic automation platform.",
-      "tech_stack": ["C++", "Sensors", "IoT"]
+  "en": {
+    "ui": {
+      "navAria": "Primary",
+      "langAria": "Language",
+      "nav": [
+        { "href": "#experience", "label": "Experience" },
+        { "href": "#projects", "label": "Projects" }
+      ],
+      "sections": {
+        "experience": {
+          "eyebrow": "Experience",
+          "title": "Where I’ve been building",
+          "lead": "Salesforce engineering across consulting and product teams — shipping systems people actually use."
+        },
+        "projects": {
+          "eyebrow": "Projects",
+          "title": "A central place for the work",
+          "lead": "Hardware, automation, fabrication — the side quests that keep the curiosity sharp."
+        },
+        "tools": {
+          "eyebrow": "Tools",
+          "title": "Utilities I keep handy",
+          "lead": "Small browser tools and helpers — open them anytime from here."
+        },
+        "academy": {
+          "eyebrow": "Academy",
+          "title": "Notes worth keeping",
+          "lead": "Short write-ups and learning trails from real projects."
+        },
+        "art": {
+          "eyebrow": "Art",
+          "title": "Pixels and atmospheres",
+          "lead": "Visual experiments outside the IDE."
+        },
+        "games": {
+          "eyebrow": "Games",
+          "title": "Playable experiments",
+          "lead": "Small worlds, mechanics, and prototypes."
+        }
+      },
+      "heroVisual": "code · hardware · play",
+      "playLink": "Play / repo",
+      "downloadCv": "Download CV",
+      "openTool": "Open tool",
+      "visitSite": "Visit site",
+      "certificationsTitle": "Certifications",
+      "educationTitle": "Education",
+      "highlightsLabel": "Highlights",
+      "builtWithLabel": "How it’s built"
     },
-    {
-      "name": "Pelambres",
-      "category": "3D Printing",
-      "description": "Custom 3D printing projects and designs."
+    "home": {
+      "name": "Fede Longhi",
+      "headline": "Senior Software Engineer · Salesforce specialist.",
+      "tagline": "Building Salesforce solutions by day. Hydroponics, 3D printing, games, and pixel art in the margins — all in one place.",
+      "ctaPrimary": { "label": "See projects", "href": "#projects" },
+      "ctaSecondary": { "label": "Experience", "href": "#experience" },
+      "cvHref": "/cv/fede-longhi.pdf"
+    },
+    "experience": [
+      {
+        "role": "Senior Software Engineer",
+        "company": "Santex",
+        "period": "Present",
+        "description": "Senior engineering on Salesforce-driven solutions — architecture, Apex/Lightning delivery, and mentoring focused on clean, maintainable systems."
+      },
+      {
+        "role": "Salesforce Developer",
+        "company": "Launchpad Technologies",
+        "period": "Previous",
+        "description": "Salesforce development for platform and integration work — automations, custom solutions, and delivery alongside cross-functional teams."
+      },
+      {
+        "role": "Developer",
+        "company": "Cloudgaia",
+        "period": "Previous",
+        "description": "Salesforce consulting and implementation at a Summit partner — end-to-end delivery across orgs, integrations, and client-facing features."
+      }
+    ],
+    "education": [
+      {
+        "school": "University of Buenos Aires",
+        "period": "2010 — 2024",
+        "note": "Studies in Argentina, alongside continuous Salesforce practice and certifications."
+      }
+    ],
+    "certifications": [
+      {
+        "name": "Salesforce Certified Platform App Builder",
+        "issuer": "Salesforce",
+        "date": "Apr 2021"
+      },
+      {
+        "name": "Salesforce Certified Platform Developer II",
+        "issuer": "Salesforce",
+        "date": "Oct 2020"
+      },
+      {
+        "name": "Salesforce Certified Administrator",
+        "issuer": "Salesforce",
+        "date": "Aug 2020"
+      },
+      {
+        "name": "Salesforce Certified Platform Developer I",
+        "issuer": "Salesforce",
+        "date": "Sep 2019"
+      },
+      {
+        "name": "Scrum Foundation Professional Certificate",
+        "issuer": "CertiProf",
+        "date": "Jun 2020"
+      }
+    ],
+    "projects": [
+      {
+        "name": "Mimir",
+        "slug": "mimir",
+        "featured": true,
+        "category": "Hardware / Automation",
+        "status": "Academic · Engineering",
+        "description": "Hydroponic automation platform developed as the professional practice project for Computer Engineering (Ingeniería Informática).",
+        "details": "The system is built around a central engine written in Go, a React frontend for operating and visualizing the platform, and ESP32 devices programmed in C++ to drive sensors and run hardware tests in the growing setup.",
+        "highlights": [
+          "Developed within the Computer Engineering professional practice framework",
+          "Go engine as the core of the system",
+          "React frontend for the platform UI",
+          "ESP32 + C++ for sensor control and hardware testing"
+        ],
+        "tech_stack": ["Go", "React", "C++", "ESP32", "Sensors", "IoT"],
+        "link": "https://github.com/MimirFIUBA/Mimir",
+        "link_label": "View repo"
+      },
+      {
+        "name": "Pelambres 3D",
+        "slug": "pelambres",
+        "featured": true,
+        "category": "3D Printing / Platform",
+        "status": "Live",
+        "description": "Professional 3D printing platform for rapid prototyping, custom parts, and on-demand fabrication — based in Martínez, Buenos Aires.",
+        "details": "The site is a Next.js app (App Router) deployed on Vercel, with a React UI and Tailwind CSS. It covers the full client journey: portfolio and services, quote requests with 3D file uploads (STL, OBJ, 3MF…), order tracking, a print guide, FAQ, courses, and maker tools like a cost calculator and quote generator.",
+        "highlights": [
+          "Public site + quote flow with multi-file uploads",
+          "Client tools: cost calculator and quote generator",
+          "Order follow-up, courses, print guide, and FAQ"
+        ],
+        "tech_stack": ["Next.js", "React", "Tailwind CSS", "Vercel"],
+        "link": "https://www.pelambres.com.ar/",
+        "preview_image": "/projects/pelambres-preview.png",
+        "preview_alt": "Preview of the Pelambres 3D homepage"
+      }
+    ],
+    "tools": [
+      {
+        "name": "Screen Wake Lock",
+        "category": "Browser utility",
+        "description": "Keeps the screen awake from the browser — handy for long reads, demos, or monitoring sessions.",
+        "href": "/tools/mousemover.html"
+      }
+    ],
+    "academy": [
+      {
+        "title": "Getting started with Salesforce development",
+        "date": "2025",
+        "summary": "Notes and patterns from shipping real Salesforce work — org structure, Apex habits, and integration gotchas."
+      }
+    ],
+    "art": [
+      {
+        "title": "Cyberpunk City",
+        "type": "Pixel Art",
+        "description": "Neon skyline study in limited color — dense buildings, wet streets, late-night glow.",
+        "image_url": null
+      }
+    ],
+    "games": [
+      {
+        "title": "Game Title",
+        "engine": "Godot",
+        "description": "Prototype playground for mechanics, feel, and small playable experiments.",
+        "link": null
+      }
+    ],
+    "contact": {
+      "note": "Want to collaborate or talk shop?",
+      "email": null,
+      "links": [
+        {
+          "label": "LinkedIn",
+          "href": "https://www.linkedin.com/in/federico-longhi-66805a187"
+        }
+      ]
     }
-  ],
-  "games": [
-    {
-      "title": "Game Title",
-      "engine": "Godot/Unity/Custom",
-      "link": "link-to-play-or-repo"
+  },
+  "es": {
+    "ui": {
+      "navAria": "Principal",
+      "langAria": "Idioma",
+      "nav": [
+        { "href": "#experience", "label": "Experiencia" },
+        { "href": "#projects", "label": "Proyectos" }
+      ],
+      "sections": {
+        "experience": {
+          "eyebrow": "Experiencia",
+          "title": "Dónde he estado construyendo",
+          "lead": "Ingeniería Salesforce en equipos de consulting y producto — sistemas que la gente realmente usa."
+        },
+        "projects": {
+          "eyebrow": "Proyectos",
+          "title": "Un lugar central para el trabajo",
+          "lead": "Hardware, automatización, fabricación — las aventuras paralelas que mantienen viva la curiosidad."
+        },
+        "tools": {
+          "eyebrow": "Herramientas",
+          "title": "Utilidades siempre a mano",
+          "lead": "Pequeñas tools de browser y helpers — abrilas cuando las necesites desde acá."
+        },
+        "academy": {
+          "eyebrow": "Academia",
+          "title": "Notas que vale la pena guardar",
+          "lead": "Apuntes cortos y caminos de aprendizaje desde proyectos reales."
+        },
+        "art": {
+          "eyebrow": "Arte",
+          "title": "Píxeles y atmósferas",
+          "lead": "Experimentos visuales fuera del IDE."
+        },
+        "games": {
+          "eyebrow": "Juegos",
+          "title": "Experimentos jugables",
+          "lead": "Mundos pequeños, mecánicas y prototipos."
+        }
+      },
+      "heroVisual": "código · hardware · juego",
+      "playLink": "Jugar / repo",
+      "downloadCv": "Descargar CV",
+      "openTool": "Abrir herramienta",
+      "visitSite": "Visitar sitio",
+      "certificationsTitle": "Certificaciones",
+      "educationTitle": "Educación",
+      "highlightsLabel": "Highlights",
+      "builtWithLabel": "Cómo está hecha"
+    },
+    "home": {
+      "name": "Fede Longhi",
+      "headline": "Senior Software Engineer · especialista Salesforce.",
+      "tagline": "Construyo soluciones Salesforce de día. Hidroponía, impresión 3D, juegos y pixel art en los márgenes — todo en un solo lugar.",
+      "ctaPrimary": { "label": "Ver proyectos", "href": "#projects" },
+      "ctaSecondary": { "label": "Experiencia", "href": "#experience" },
+      "cvHref": "/cv/fede-longhi.pdf"
+    },
+    "experience": [
+      {
+        "role": "Senior Software Engineer",
+        "company": "Santex",
+        "period": "Actualidad",
+        "description": "Ingeniería senior en soluciones sobre Salesforce — arquitectura, entrega Apex/Lightning y mentoring con foco en sistemas limpios y mantenibles."
+      },
+      {
+        "role": "Salesforce Developer",
+        "company": "Launchpad Technologies",
+        "period": "Anterior",
+        "description": "Desarrollo Salesforce orientado a plataforma e integraciones — automatizaciones, soluciones custom y delivery con equipos multidisciplinarios."
+      },
+      {
+        "role": "Developer",
+        "company": "Cloudgaia",
+        "period": "Anterior",
+        "description": "Consulting e implementación Salesforce en un partner Summit — delivery end-to-end en orgs, integraciones y features para clientes."
+      }
+    ],
+    "education": [
+      {
+        "school": "Universidad de Buenos Aires",
+        "period": "2010 — 2024",
+        "note": "Formación en Argentina, en paralelo a la práctica continua en Salesforce y certificaciones."
+      }
+    ],
+    "certifications": [
+      {
+        "name": "Salesforce Certified Platform App Builder",
+        "issuer": "Salesforce",
+        "date": "Abr 2021"
+      },
+      {
+        "name": "Salesforce Certified Platform Developer II",
+        "issuer": "Salesforce",
+        "date": "Oct 2020"
+      },
+      {
+        "name": "Salesforce Certified Administrator",
+        "issuer": "Salesforce",
+        "date": "Ago 2020"
+      },
+      {
+        "name": "Salesforce Certified Platform Developer I",
+        "issuer": "Salesforce",
+        "date": "Sep 2019"
+      },
+      {
+        "name": "Scrum Foundation Professional Certificate",
+        "issuer": "CertiProf",
+        "date": "Jun 2020"
+      }
+    ],
+    "projects": [
+      {
+        "name": "Mimir",
+        "slug": "mimir",
+        "featured": true,
+        "category": "Hardware / Automatización",
+        "status": "Académico · Ingeniería",
+        "description": "Plataforma de automatización hidropónica desarrollada en el marco del trabajo profesional de Ingeniería Informática.",
+        "details": "El sistema se organiza alrededor de un engine central escrito en Go, una plataforma frontend en React para operar y visualizar el sistema, y dispositivos ESP32 programados en C++ para manejar los sensores y realizar pruebas con el hardware de cultivo.",
+        "highlights": [
+          "Hecho en el marco del trabajo profesional de Ingeniería Informática",
+          "Engine central en Go",
+          "Frontend de la plataforma en React",
+          "ESP32 + C++ para sensores y pruebas de hardware"
+        ],
+        "tech_stack": ["Go", "React", "C++", "ESP32", "Sensores", "IoT"],
+        "link": "https://github.com/MimirFIUBA/Mimir",
+        "link_label": "Ver repo"
+      },
+      {
+        "name": "Pelambres 3D",
+        "slug": "pelambres",
+        "featured": true,
+        "category": "Impresión 3D / Plataforma",
+        "status": "En vivo",
+        "description": "Plataforma de impresión 3D profesional para prototipado rápido, piezas a medida y fabricación on-demand — en Martínez, Buenos Aires.",
+        "details": "La plataforma está hecha con Next.js (App Router) y desplegada en Vercel, con UI en React y estilos en Tailwind CSS. Cubre el recorrido del cliente: portfolio y servicios, solicitud de presupuesto con carga de archivos 3D (STL, OBJ, 3MF…), seguimiento de pedidos, guía de impresión, FAQ, cursos, y herramientas maker como calculadora de costos y generador de presupuestos.",
+        "highlights": [
+          "Sitio público + flujo de cotización con carga de archivos",
+          "Herramientas: calculadora de costos y generador de presupuestos",
+          "Seguimiento de pedidos, cursos, guía de impresión y FAQ"
+        ],
+        "tech_stack": ["Next.js", "React", "Tailwind CSS", "Vercel"],
+        "link": "https://www.pelambres.com.ar/",
+        "preview_image": "/projects/pelambres-preview.png",
+        "preview_alt": "Vista previa del sitio de Pelambres 3D"
+      }
+    ],
+    "tools": [
+      {
+        "name": "Screen Wake Lock",
+        "category": "Utilidad de browser",
+        "description": "Mantiene la pantalla despierta desde el navegador — útil para lecturas largas, demos o sesiones de monitoreo.",
+        "href": "/tools/mousemover.html"
+      }
+    ],
+    "academy": [
+      {
+        "title": "Primeros pasos en desarrollo Salesforce",
+        "date": "2025",
+        "summary": "Notas y patrones de trabajo real en Salesforce — estructura de orgs, hábitos en Apex y trampas de integración."
+      }
+    ],
+    "art": [
+      {
+        "title": "Cyberpunk City",
+        "type": "Pixel Art",
+        "description": "Estudio de skyline neón con paleta limitada — edificios densos, calles mojadas, brillo de madrugada.",
+        "image_url": null
+      }
+    ],
+    "games": [
+      {
+        "title": "Game Title",
+        "engine": "Godot",
+        "description": "Patio de prototipos para mecánicas, feel y pequeños experimentos jugables.",
+        "link": null
+      }
+    ],
+    "contact": {
+      "note": "¿Querés colaborar o charlar de tech?",
+      "email": null,
+      "links": [
+        {
+          "label": "LinkedIn",
+          "href": "https://www.linkedin.com/in/federico-longhi-66805a187"
+        }
+      ]
     }
-  ],
-  "art": [
-    {
-      "title": "Cyberpunk City",
-      "type": "Pixel Art",
-      "image_url": "./assets/art/city.png"
-    }
-  ]
+  }
 }

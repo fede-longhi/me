@@ -1,1 +1,151 @@
 @import "tailwindcss";
+
+:root {
+  --bg: #eef6f4;
+  --bg-deep: #d9ebe6;
+  --ink: #0b1f2a;
+  --ink-muted: #3d5a68;
+  --line: color-mix(in oklab, #0b1f2a 12%, transparent);
+  --blue: #1565a8;
+  --blue-deep: #0c3d6e;
+  --green: #1f8f6a;
+  --green-soft: #6bc4a3;
+  --surface: color-mix(in oklab, white 72%, #cfe8e0);
+  --glow-blue: color-mix(in oklab, #3b9be0 35%, transparent);
+  --glow-green: color-mix(in oklab, #3db892 30%, transparent);
+  --font-display: var(--font-chakra-petch), ui-sans-serif, sans-serif;
+  --font-body: var(--font-figtree), ui-sans-serif, sans-serif;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-deep: var(--bg-deep);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-blue: var(--blue);
+  --color-blue-deep: var(--blue-deep);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-surface: var(--surface);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(1200px 700px at 85% -10%, var(--glow-blue), transparent 55%),
+    radial-gradient(900px 600px at -10% 20%, var(--glow-green), transparent 50%),
+    linear-gradient(165deg, #f4fbf8 0%, var(--bg) 42%, #e7f1f8 100%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--green) 35%, white);
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+}
+
+.site-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.site-shell::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 50% 30%, black 20%, transparent 75%);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(12px, -10px, 0) scale(1.04);
+  }
+}
+
+@keyframes draw-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-rise-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.animate-rise-delay-2 {
+  animation-delay: 0.24s;
+}
+
+.animate-rise-delay-3 {
+  animation-delay: 0.36s;
+}
+
+.hero-orb {
+  animation: drift 14s ease-in-out infinite;
+}
+
+.hero-underline {
+  transform-origin: left;
+  animation: draw-line 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-rise,
+  .animate-rise-delay-1,
+  .animate-rise-delay-2,
+  .animate-rise-delay-3,
+  .hero-orb,
+  .hero-underline {
+    animation: none !important;
+  }
+}
