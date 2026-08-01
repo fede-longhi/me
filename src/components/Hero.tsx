@@ -35,20 +35,20 @@ export function Hero({ home, visualLabel, downloadCvLabel }: HeroProps) {
           <div className="animate-rise animate-rise-delay-3 mt-9 flex flex-wrap gap-3">
             <a
               href={home.ctaPrimary.href}
-              className="inline-flex cursor-pointer items-center justify-center bg-blue-deep px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue"
+              className="inline-flex cursor-pointer items-center justify-center bg-blue-deep px-5 py-3 text-sm font-bold tracking-wide text-white transition hover:bg-blue"
             >
               {home.ctaPrimary.label}
             </a>
             <a
               href={home.ctaSecondary.href}
-              className="inline-flex cursor-pointer items-center justify-center border border-ink/20 bg-surface/60 px-5 py-3 text-sm font-semibold text-ink transition hover:border-green hover:text-green"
+              className="inline-flex cursor-pointer items-center justify-center border border-ink/35 bg-surface/80 px-5 py-3 text-sm font-bold tracking-wide text-ink transition hover:border-green hover:text-green"
             >
               {home.ctaSecondary.label}
             </a>
             <a
               href={home.cvHref}
               download
-              className="inline-flex cursor-pointer items-center justify-center border border-blue/30 bg-transparent px-5 py-3 text-sm font-semibold text-blue transition hover:border-blue hover:bg-blue/5"
+              className="inline-flex cursor-pointer items-center justify-center border border-blue/50 bg-transparent px-5 py-3 text-sm font-bold tracking-wide text-blue-deep transition hover:border-blue-deep hover:bg-blue/5"
             >
               {downloadCvLabel}
             </a>

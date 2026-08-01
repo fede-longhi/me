@@ -9,7 +9,18 @@ export type ExperienceItem = {
   role: string;
   company: string;
   period: string;
-  description: string;
+  description?: string;
+  bullets: string[];
+};
+
+export type SkillGroup = {
+  group: string;
+  items: string[];
+};
+
+export type LanguageItem = {
+  name: string;
+  level: string;
 };
 
 export type ProjectItem = {
@@ -33,6 +44,8 @@ export type ToolItem = {
   description: string;
   href: string;
   category: string;
+  /** When true, shown in the home Tools section. All tools appear on /tools. */
+  featured?: boolean;
 };
 
 export type AcademyItem = {
@@ -64,6 +77,7 @@ export type CertificationItem = {
 export type EducationItem = {
   school: string;
   period: string;
+  degree?: string;
   note?: string;
 };
 
@@ -79,8 +93,10 @@ export type SiteUi = {
   nav: SiteLink[];
   sections: {
     experience: SectionCopy;
+    skills: SectionCopy;
     projects: SectionCopy;
     tools: SectionCopy;
+    toolsPage: SectionCopy;
     academy: SectionCopy;
     art: SectionCopy;
     games: SectionCopy;
@@ -89,9 +105,13 @@ export type SiteUi = {
   playLink: string;
   downloadCv: string;
   openTool: string;
+  viewAllTools: string;
+  toolsEmpty: string;
+  backToTools: string;
   visitSite: string;
   certificationsTitle: string;
   educationTitle: string;
+  languagesTitle: string;
   highlightsLabel: string;
   builtWithLabel: string;
 };
@@ -107,6 +127,8 @@ export type SiteData = {
     cvHref: string;
   };
   experience: ExperienceItem[];
+  skills: SkillGroup[];
+  languages: LanguageItem[];
   education: EducationItem[];
   certifications: CertificationItem[];
   projects: ProjectItem[];
@@ -117,6 +139,7 @@ export type SiteData = {
   contact: {
     note: string;
     email?: string | null;
+    location?: string | null;
     links: SiteLink[];
   };
 };

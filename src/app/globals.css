@@ -40,6 +40,12 @@ html {
   scroll-behavior: smooth;
 }
 
+@layer base {
+  a {
+    color: inherit;
+  }
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -55,10 +61,6 @@ body {
 ::selection {
   background: color-mix(in oklab, var(--green) 35%, white);
   color: var(--ink);
-}
-
-a {
-  color: inherit;
 }
 
 .site-shell {

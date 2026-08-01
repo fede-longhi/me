@@ -10,7 +10,7 @@ export function SiteNav() {
     <header className="sticky top-0 z-40 border-b border-line/80 bg-[color-mix(in_oklab,var(--bg)_82%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
         <a
-          href="#home"
+          href="/"
           className="font-[family-name:var(--font-display)] text-sm font-bold tracking-tight text-ink transition-colors hover:text-blue"
         >
           {data.home.name}

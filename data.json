@@ -4,24 +4,36 @@
       "navAria": "Primary",
       "langAria": "Language",
       "nav": [
-        { "href": "#experience", "label": "Experience" },
-        { "href": "#projects", "label": "Projects" }
+        { "href": "/#experience", "label": "Experience" },
+        { "href": "/#skills", "label": "Skills" },
+        { "href": "/#projects", "label": "Projects" },
+        { "href": "/tools", "label": "Tools" }
       ],
       "sections": {
         "experience": {
           "eyebrow": "Experience",
-          "title": "Where I’ve been building",
-          "lead": "Salesforce engineering across consulting and product teams — shipping systems people actually use."
+          "title": "Experience",
+          "lead": "Salesforce delivery across product and consulting teams — architecture, automation, and mentoring."
+        },
+        "skills": {
+          "eyebrow": "Skills",
+          "title": "What I work with",
+          "lead": "Platform depth first, with a broad engineering toolkit around it."
         },
         "projects": {
           "eyebrow": "Projects",
-          "title": "A central place for the work",
-          "lead": "Hardware, automation, fabrication — the side quests that keep the curiosity sharp."
+          "title": "My projects",
+          "lead": "Product and engineering work beyond day-to-day consulting."
         },
         "tools": {
           "eyebrow": "Tools",
-          "title": "Utilities I keep handy",
-          "lead": "Small browser tools and helpers — open them anytime from here."
+          "title": "Tools",
+          "lead": "A few utilities I keep handy — see the full list on the tools page."
+        },
+        "toolsPage": {
+          "eyebrow": "Tools",
+          "title": "Tools",
+          "lead": "All the utilities I keep in one place — open any of them from here."
         },
         "academy": {
           "eyebrow": "Academy",
@@ -39,22 +51,26 @@
           "lead": "Small worlds, mechanics, and prototypes."
         }
       },
-      "heroVisual": "code · hardware · play",
+      "heroVisual": "salesforce · systems · build",
       "playLink": "Play / repo",
       "downloadCv": "Download CV",
       "openTool": "Open tool",
+      "viewAllTools": "View all tools",
+      "toolsEmpty": "No tools published yet. Check back soon.",
+      "backToTools": "Back to tools",
       "visitSite": "Visit site",
       "certificationsTitle": "Certifications",
       "educationTitle": "Education",
+      "languagesTitle": "Languages",
       "highlightsLabel": "Highlights",
       "builtWithLabel": "How it’s built"
     },
     "home": {
       "name": "Fede Longhi",
-      "headline": "Senior Software Engineer · Salesforce specialist.",
-      "tagline": "Building Salesforce solutions by day. Hydroponics, 3D printing, games, and pixel art in the margins — all in one place.",
-      "ctaPrimary": { "label": "See projects", "href": "#projects" },
-      "ctaSecondary": { "label": "Experience", "href": "#experience" },
+      "headline": "Senior Salesforce engineer.",
+      "tagline": "5+ years designing and shipping Salesforce solutions across industries. Strong in Apex/LWC, integrations, and architecture — plus mentoring and hiring. Side projects in hardware/IoT (Mimir) and product (Pelambres 3D).",
+      "ctaPrimary": { "label": "See experience", "href": "#experience" },
+      "ctaSecondary": { "label": "Projects", "href": "#projects" },
       "cvHref": "/cv/fede-longhi.pdf"
     },
     "experience": [
@@ -62,53 +78,109 @@
         "role": "Senior Software Engineer",
         "company": "Santex",
         "period": "Present",
-        "description": "Senior engineering on Salesforce-driven solutions — architecture, Apex/Lightning delivery, and mentoring focused on clean, maintainable systems."
+        "description": "Senior engineering on Salesforce-driven delivery for global clients.",
+        "bullets": [
+          "Design and ship Salesforce platform features with a focus on clean architecture and maintainable Apex/Lightning code.",
+          "Partner with product and delivery teams to turn business requirements into scalable technical solutions.",
+          "Mentor teammates on Salesforce best practices and support high-quality engineering standards."
+        ]
       },
       {
-        "role": "Salesforce Developer",
+        "role": "Senior Salesforce Developer",
         "company": "Launchpad Technologies",
-        "period": "Previous",
-        "description": "Salesforce development for platform and integration work — automations, custom solutions, and delivery alongside cross-functional teams."
+        "period": "2021 — 2024",
+        "description": "Full-stack Salesforce development for a US-based software company.",
+        "bullets": [
+          "Built features to automate fulfillment processes end-to-end on Salesforce.",
+          "Delivered technical improvements across Sales Cloud to raise reliability and developer velocity.",
+          "Ran technical interviews and helped grow the engineering hiring pipeline."
+        ]
       },
       {
-        "role": "Developer",
+        "role": "Technical Lead & Salesforce Developer",
         "company": "Cloudgaia",
-        "period": "Previous",
-        "description": "Salesforce consulting and implementation at a Summit partner — end-to-end delivery across orgs, integrations, and client-facing features."
+        "period": "2017 — 2021",
+        "description": "Technical leadership and hands-on delivery at a Salesforce Summit consulting partner.",
+        "bullets": [
+          "Led multiple projects as technical lead — guiding best practices, reviewing designs, and unblocking the team.",
+          "Drove architectural improvements and new features across Sales and Service Cloud implementations.",
+          "Implemented Einstein Bot with Knowledge Base, CRM Analytics event monitoring (incl. Azure integration), and custom LWC insights feeds.",
+          "Built and improved integrations using REST, SOAP, and Bulk API; delivered frontend with LWC, Aura, and Visualforce.",
+          "Developed processes for a custom CPQ application within Salesforce for a health insurance client; worked with Vlocity on multi-cloud rollouts."
+        ]
       }
+    ],
+    "skills": [
+      {
+        "group": "Salesforce",
+        "items": [
+          "Apex",
+          "LWC",
+          "Aura",
+          "Visualforce",
+          "Sales Cloud",
+          "Service Cloud",
+          "CPQ",
+          "Einstein Bots",
+          "CRM Analytics",
+          "Knowledge",
+          "Heroku"
+        ]
+      },
+      {
+        "group": "Integrations",
+        "items": ["REST", "SOAP", "Bulk API", "Azure", "Integration architecture"]
+      },
+      {
+        "group": "Languages",
+        "items": ["Apex", "JavaScript", "TypeScript", "Go", "Python", "Java", "C++", "C#", "Rust"]
+      },
+      {
+        "group": "Frontend & apps",
+        "items": ["React", "HTML", "CSS", "Node.js"]
+      },
+      {
+        "group": "Tooling",
+        "items": ["Git", "GitHub", "Bitbucket", "Docker", "PostgreSQL"]
+      }
+    ],
+    "languages": [
+      { "name": "Spanish", "level": "Native" },
+      { "name": "English", "level": "Advanced" }
     ],
     "education": [
       {
-        "school": "University of Buenos Aires",
-        "period": "2010 — 2024",
-        "note": "Studies in Argentina, alongside continuous Salesforce practice and certifications."
+        "school": "University of Buenos Aires (UBA)",
+        "degree": "Software Engineering / Ingeniería Informática",
+        "period": "2010 — Present",
+        "note": "Includes professional practice work such as Mimir (hydroponic automation)."
       }
     ],
     "certifications": [
       {
+        "name": "Salesforce Certified Sharing and Visibility Architect",
+        "issuer": "Salesforce",
+        "date": "2021"
+      },
+      {
         "name": "Salesforce Certified Platform App Builder",
         "issuer": "Salesforce",
-        "date": "Apr 2021"
+        "date": "2021"
       },
       {
         "name": "Salesforce Certified Platform Developer II",
         "issuer": "Salesforce",
-        "date": "Oct 2020"
+        "date": "2020"
       },
       {
         "name": "Salesforce Certified Administrator",
         "issuer": "Salesforce",
-        "date": "Aug 2020"
+        "date": "2020"
       },
       {
         "name": "Salesforce Certified Platform Developer I",
         "issuer": "Salesforce",
-        "date": "Sep 2019"
-      },
-      {
-        "name": "Scrum Foundation Professional Certificate",
-        "issuer": "CertiProf",
-        "date": "Jun 2020"
+        "date": "2019"
       }
     ],
     "projects": [
@@ -151,10 +223,11 @@
     ],
     "tools": [
       {
-        "name": "Screen Wake Lock",
-        "category": "Browser utility",
-        "description": "Keeps the screen awake from the browser — handy for long reads, demos, or monitoring sessions.",
-        "href": "/tools/mousemover.html"
+        "name": "Image Grid",
+        "category": "Image",
+        "description": "Upload a photo, define rows × columns, and export a fine-grid overlay plus a thick blank grid — same size as the original.",
+        "href": "/tools/image-grid",
+        "featured": true
       }
     ],
     "academy": [
@@ -181,12 +254,17 @@
       }
     ],
     "contact": {
-      "note": "Want to collaborate or talk shop?",
-      "email": null,
+      "note": "Open to Salesforce roles and interesting engineering collaborations.",
+      "email": "federico.rlonghi@gmail.com",
+      "location": "Martínez, Buenos Aires, Argentina",
       "links": [
         {
           "label": "LinkedIn",
           "href": "https://www.linkedin.com/in/federico-longhi-66805a187"
+        },
+        {
+          "label": "GitHub",
+          "href": "https://github.com/MimirFIUBA/Mimir"
         }
       ]
     }
@@ -196,24 +274,36 @@
       "navAria": "Principal",
       "langAria": "Idioma",
       "nav": [
-        { "href": "#experience", "label": "Experiencia" },
-        { "href": "#projects", "label": "Proyectos" }
+        { "href": "/#experience", "label": "Experiencia" },
+        { "href": "/#skills", "label": "Skills" },
+        { "href": "/#projects", "label": "Proyectos" },
+        { "href": "/tools", "label": "Herramientas" }
       ],
       "sections": {
         "experience": {
           "eyebrow": "Experiencia",
-          "title": "Dónde he estado construyendo",
-          "lead": "Ingeniería Salesforce en equipos de consulting y producto — sistemas que la gente realmente usa."
+          "title": "Experiencia",
+          "lead": "Entrega Salesforce en equipos de producto y consulting — arquitectura, automatización y mentoring."
+        },
+        "skills": {
+          "eyebrow": "Skills",
+          "title": "Con qué trabajo",
+          "lead": "Profundidad en la plataforma, con un toolkit de ingeniería amplio alrededor."
         },
         "projects": {
           "eyebrow": "Proyectos",
-          "title": "Un lugar central para el trabajo",
-          "lead": "Hardware, automatización, fabricación — las aventuras paralelas que mantienen viva la curiosidad."
+          "title": "Mis proyectos",
+          "lead": "Producto e ingeniería más allá del día a día de consulting."
         },
         "tools": {
           "eyebrow": "Herramientas",
-          "title": "Utilidades siempre a mano",
-          "lead": "Pequeñas tools de browser y helpers — abrilas cuando las necesites desde acá."
+          "title": "Herramientas",
+          "lead": "Algunas utilidades que tengo a mano — el listado completo está en la página de herramientas."
+        },
+        "toolsPage": {
+          "eyebrow": "Herramientas",
+          "title": "Herramientas",
+          "lead": "Todas las utilidades en un solo lugar — abrilas desde acá cuando las necesites."
         },
         "academy": {
           "eyebrow": "Academia",
@@ -231,22 +321,26 @@
           "lead": "Mundos pequeños, mecánicas y prototipos."
         }
       },
-      "heroVisual": "código · hardware · juego",
+      "heroVisual": "salesforce · sistemas · build",
       "playLink": "Jugar / repo",
       "downloadCv": "Descargar CV",
       "openTool": "Abrir herramienta",
+      "viewAllTools": "Ver todas las herramientas",
+      "toolsEmpty": "Todavía no hay herramientas publicadas. Volvé pronto.",
+      "backToTools": "Volver a herramientas",
       "visitSite": "Visitar sitio",
       "certificationsTitle": "Certificaciones",
       "educationTitle": "Educación",
+      "languagesTitle": "Idiomas",
       "highlightsLabel": "Highlights",
       "builtWithLabel": "Cómo está hecha"
     },
     "home": {
       "name": "Fede Longhi",
-      "headline": "Senior Software Engineer · especialista Salesforce.",
-      "tagline": "Construyo soluciones Salesforce de día. Hidroponía, impresión 3D, juegos y pixel art en los márgenes — todo en un solo lugar.",
-      "ctaPrimary": { "label": "Ver proyectos", "href": "#projects" },
-      "ctaSecondary": { "label": "Experiencia", "href": "#experience" },
+      "headline": "Ingeniero Salesforce senior.",
+      "tagline": "Más de 5 años diseñando y entregando soluciones Salesforce en distintas industrias. Fuerte en Apex/LWC, integraciones y arquitectura — además de mentoring y hiring. Proyectos propios en hardware/IoT (Mimir) y producto (Pelambres 3D).",
+      "ctaPrimary": { "label": "Ver experiencia", "href": "#experience" },
+      "ctaSecondary": { "label": "Proyectos", "href": "#projects" },
       "cvHref": "/cv/fede-longhi.pdf"
     },
     "experience": [
@@ -254,53 +348,109 @@
         "role": "Senior Software Engineer",
         "company": "Santex",
         "period": "Actualidad",
-        "description": "Ingeniería senior en soluciones sobre Salesforce — arquitectura, entrega Apex/Lightning y mentoring con foco en sistemas limpios y mantenibles."
+        "description": "Ingeniería senior en delivery sobre Salesforce para clientes globales.",
+        "bullets": [
+          "Diseño y entrega de features en la plataforma Salesforce con foco en arquitectura limpia y código Apex/Lightning mantenible.",
+          "Trabajo junto a producto y delivery para convertir requerimientos de negocio en soluciones técnicas escalables.",
+          "Mentoring al equipo en best practices de Salesforce y estándares de calidad de ingeniería."
+        ]
       },
       {
-        "role": "Salesforce Developer",
+        "role": "Senior Salesforce Developer",
         "company": "Launchpad Technologies",
-        "period": "Anterior",
-        "description": "Desarrollo Salesforce orientado a plataforma e integraciones — automatizaciones, soluciones custom y delivery con equipos multidisciplinarios."
+        "period": "2021 — 2024",
+        "description": "Desarrollo Salesforce full-stack para una software company con base en EE.UU.",
+        "bullets": [
+          "Construí features para automatizar procesos de fulfillment de punta a punta en Salesforce.",
+          "Entregué mejoras técnicas en Sales Cloud para subir confiabilidad y velocidad del equipo.",
+          "Conduje entrevistas técnicas y apoyé el pipeline de hiring de ingeniería."
+        ]
       },
       {
-        "role": "Developer",
+        "role": "Technical Lead & Salesforce Developer",
         "company": "Cloudgaia",
-        "period": "Anterior",
-        "description": "Consulting e implementación Salesforce en un partner Summit — delivery end-to-end en orgs, integraciones y features para clientes."
+        "period": "2017 — 2021",
+        "description": "Liderazgo técnico y delivery hands-on en un partner Summit de Salesforce.",
+        "bullets": [
+          "Lideré múltiples proyectos como technical lead — best practices, diseño y desbloqueo del equipo.",
+          "Impulsé mejoras de arquitectura y features nuevas en implementaciones de Sales y Service Cloud.",
+          "Implementé Einstein Bot con Knowledge Base, event monitoring con CRM Analytics (incl. integración Azure) y feeds de insights custom en LWC.",
+          "Construí y mejoré integraciones con REST, SOAP y Bulk API; frontend con LWC, Aura y Visualforce.",
+          "Desarrollé procesos para una aplicación CPQ custom en Salesforce para una aseguradora de salud; trabajé con Vlocity en rollouts multi-cloud."
+        ]
       }
+    ],
+    "skills": [
+      {
+        "group": "Salesforce",
+        "items": [
+          "Apex",
+          "LWC",
+          "Aura",
+          "Visualforce",
+          "Sales Cloud",
+          "Service Cloud",
+          "CPQ",
+          "Einstein Bots",
+          "CRM Analytics",
+          "Knowledge",
+          "Heroku"
+        ]
+      },
+      {
+        "group": "Integraciones",
+        "items": ["REST", "SOAP", "Bulk API", "Azure", "Arquitectura de integración"]
+      },
+      {
+        "group": "Lenguajes",
+        "items": ["Apex", "JavaScript", "TypeScript", "Go", "Python", "Java", "C++", "C#", "Rust"]
+      },
+      {
+        "group": "Frontend y apps",
+        "items": ["React", "HTML", "CSS", "Node.js"]
+      },
+      {
+        "group": "Tooling",
+        "items": ["Git", "GitHub", "Bitbucket", "Docker", "PostgreSQL"]
+      }
+    ],
+    "languages": [
+      { "name": "Español", "level": "Nativo" },
+      { "name": "Inglés", "level": "Avanzado" }
     ],
     "education": [
       {
-        "school": "Universidad de Buenos Aires",
-        "period": "2010 — 2024",
-        "note": "Formación en Argentina, en paralelo a la práctica continua en Salesforce y certificaciones."
+        "school": "Universidad de Buenos Aires (UBA)",
+        "degree": "Ingeniería Informática",
+        "period": "2010 — Actualidad",
+        "note": "Incluye trabajo profesional como Mimir (automatización hidropónica)."
       }
     ],
     "certifications": [
       {
+        "name": "Salesforce Certified Sharing and Visibility Architect",
+        "issuer": "Salesforce",
+        "date": "2021"
+      },
+      {
         "name": "Salesforce Certified Platform App Builder",
         "issuer": "Salesforce",
-        "date": "Abr 2021"
+        "date": "2021"
       },
       {
         "name": "Salesforce Certified Platform Developer II",
         "issuer": "Salesforce",
-        "date": "Oct 2020"
+        "date": "2020"
       },
       {
         "name": "Salesforce Certified Administrator",
         "issuer": "Salesforce",
-        "date": "Ago 2020"
+        "date": "2020"
       },
       {
         "name": "Salesforce Certified Platform Developer I",
         "issuer": "Salesforce",
-        "date": "Sep 2019"
-      },
-      {
-        "name": "Scrum Foundation Professional Certificate",
-        "issuer": "CertiProf",
-        "date": "Jun 2020"
+        "date": "2019"
       }
     ],
     "projects": [
@@ -343,10 +493,11 @@
     ],
     "tools": [
       {
-        "name": "Screen Wake Lock",
-        "category": "Utilidad de browser",
-        "description": "Mantiene la pantalla despierta desde el navegador — útil para lecturas largas, demos o sesiones de monitoreo.",
-        "href": "/tools/mousemover.html"
+        "name": "Grilla de imagen",
+        "category": "Imagen",
+        "description": "Subí una foto, definí filas × columnas y exportá una grilla fina sobre la original más una grilla gruesa en blanco — mismo tamaño que la original.",
+        "href": "/tools/image-grid",
+        "featured": true
       }
     ],
     "academy": [
@@ -373,12 +524,17 @@
       }
     ],
     "contact": {
-      "note": "¿Querés colaborar o charlar de tech?",
-      "email": null,
+      "note": "Abierto a roles Salesforce y colaboraciones de ingeniería interesantes.",
+      "email": "federico.rlonghi@gmail.com",
+      "location": "Martínez, Buenos Aires, Argentina",
       "links": [
         {
           "label": "LinkedIn",
           "href": "https://www.linkedin.com/in/federico-longhi-66805a187"
+        },
+        {
+          "label": "GitHub",
+          "href": "https://github.com/MimirFIUBA/Mimir"
         }
       ]
     }

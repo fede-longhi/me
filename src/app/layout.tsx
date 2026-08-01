@@ -16,9 +16,9 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Fede Longhi — Senior Software Engineer · Salesforce",
+  title: "Fede Longhi — Senior Salesforce Engineer",
   description:
-    "Portfolio of Fede Longhi: Senior Software Engineer specializing in Salesforce, plus hardware projects, tools, art, and games. / Portafolio de Fede Longhi: Senior Software Engineer especialista en Salesforce, proyectos de hardware, herramientas, arte y juegos.",
+    "Senior Salesforce engineer with 5+ years designing and shipping platform solutions. Apex, LWC, integrations, architecture, mentoring. Based in Martínez, Buenos Aires.",
 };
 
 export default function RootLayout({

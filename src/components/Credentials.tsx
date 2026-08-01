@@ -21,9 +21,20 @@ export function Credentials({
         </h3>
         <ul className="mt-4 space-y-4">
           {education.map((item) => (
-            <li key={item.school}>
-              <p className="font-semibold text-ink">{item.school}</p>
-              <p className="mt-1 text-sm text-blue">{item.period}</p>
+            <li key={`${item.school}-${item.degree ?? ""}`}>
+              {item.degree ? (
+                <p className="font-semibold text-ink">{item.degree}</p>
+              ) : null}
+              <p
+                className={
+                  item.degree
+                    ? "mt-1 text-sm text-blue"
+                    : "font-semibold text-ink"
+                }
+              >
+                {item.school}
+              </p>
+              <p className="mt-1 text-sm text-ink-muted">{item.period}</p>
               {item.note ? (
                 <p className="mt-2 text-sm leading-relaxed text-ink-muted">
                   {item.note}
@@ -33,6 +44,7 @@ export function Credentials({
           ))}
         </ul>
       </div>
+
       <div>
         <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-ink">
           {certificationsTitle}
