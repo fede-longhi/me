@@ -9,9 +9,16 @@ type ToolChromeProps = {
   title: string;
   lead: string;
   children: React.ReactNode;
+  wide?: boolean;
 };
 
-export function ToolChrome({ eyebrow, title, lead, children }: ToolChromeProps) {
+export function ToolChrome({
+  eyebrow,
+  title,
+  lead,
+  children,
+  wide = false,
+}: ToolChromeProps) {
   const { data } = useLanguage();
 
   return (
@@ -19,7 +26,9 @@ export function ToolChrome({ eyebrow, title, lead, children }: ToolChromeProps) 
       <SiteNav />
       <main>
         <section className="border-b border-line">
-          <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+          <div
+            className={`mx-auto px-5 py-12 sm:px-8 sm:py-16 ${wide ? "max-w-7xl" : "max-w-6xl"}`}
+          >
             <a
               href="/tools"
               className="text-sm font-semibold text-blue-deep transition hover:text-blue"

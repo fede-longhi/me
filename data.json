@@ -228,6 +228,13 @@
         "description": "Upload a photo, define rows × columns, and export a fine-grid overlay plus a thick blank grid — same size as the original.",
         "href": "/tools/image-grid",
         "featured": true
+      },
+      {
+        "name": "Map to STL",
+        "category": "3D / Map",
+        "description": "Select a rectangle, circle or ellipse on a map, set vertical scale, and download a closed terrain STL for 3D printing.",
+        "href": "/tools/map-stl",
+        "featured": true
       }
     ],
     "academy": [
@@ -497,6 +504,13 @@
         "category": "Imagen",
         "description": "Subí una foto, definí filas × columnas y exportá una grilla fina sobre la original más una grilla gruesa en blanco — mismo tamaño que la original.",
         "href": "/tools/image-grid",
+        "featured": true
+      },
+      {
+        "name": "Mapa a STL",
+        "category": "3D / Mapa",
+        "description": "Seleccioná un rectángulo, círculo o elipse en el mapa, definí la escala vertical y descargá un STL cerrado del terreno para impresión 3D.",
+        "href": "/tools/map-stl",
         "featured": true
       }
     ],
