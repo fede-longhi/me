@@ -5,7 +5,7 @@ import { ImageGridTool } from "@/components/tools/ImageGridTool";
 export const metadata: Metadata = {
   title: "Image Grid — Tools — Fede Longhi",
   description:
-    "Generate a fine grid overlay and a thick blank grid from an uploaded image. / Generá una grilla fina sobre una imagen y una grilla gruesa en blanco.",
+    "Generate a grid overlay and a blank grid from an uploaded image, with adjustable line thickness. / Generá una grilla sobre una imagen y una en blanco, con grosor de línea ajustable.",
 };
 
 export default function ImageGridPage() {

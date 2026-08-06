@@ -124,7 +124,7 @@ export function renderScrambledImage(
   image: HTMLImageElement | ImageBitmap,
   rows: number,
   cols: number,
-  options?: { withFineGrid?: boolean },
+  options?: { withFineGrid?: boolean; fineLineWidth?: number },
 ) {
   const width = "naturalWidth" in image ? image.naturalWidth : image.width;
   const height = "naturalHeight" in image ? image.naturalHeight : image.height;
@@ -161,7 +161,7 @@ export function renderScrambledImage(
     drawGrid(ctx, width, height, {
       rows,
       cols,
-      lineWidth: 1,
+      lineWidth: options?.fineLineWidth ?? 1,
       strokeStyle: "rgba(0, 0, 0, 0.75)",
     });
   }

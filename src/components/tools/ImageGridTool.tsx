@@ -21,6 +21,8 @@ const copy: Record<
     upload: string;
     rows: string;
     cols: string;
+    overlayWidth: string;
+    blankWidth: string;
     generate: string;
     scramble: string;
     overlayTitle: string;
@@ -30,6 +32,7 @@ const copy: Record<
     downloadBoth: string;
     hint: string;
     invalidGrid: string;
+    invalidWidth: string;
     noImage: string;
     generateFirst: string;
   }
@@ -37,38 +40,44 @@ const copy: Record<
   en: {
     eyebrow: "Image tool",
     title: "Image Grid",
-    lead: "Upload an image, set rows and columns, then export a fine grid over the original and a thicker blank grid — both at the original size.",
+    lead: "Upload an image, set rows, columns and line thickness, then export a grid over the original and a blank grid — both at the original size.",
     upload: "Choose image",
     rows: "Rows",
     cols: "Columns",
+    overlayWidth: "Overlay line width",
+    blankWidth: "Blank line width",
     generate: "Generate",
     scramble: "Scramble tiles",
-    overlayTitle: "Original + fine grid",
-    blankTitle: "Blank + thick grid",
+    overlayTitle: "Original + grid",
+    blankTitle: "Blank + grid",
     downloadOverlay: "Download overlay",
     downloadBlank: "Download blank grid",
     downloadBoth: "Download both (side by side)",
     hint: "PNG recommended. Processing stays in your browser — nothing is uploaded.",
     invalidGrid: "Rows and columns must be whole numbers of at least 1.",
+    invalidWidth: "Line widths must be whole numbers of at least 1.",
     noImage: "Load an image first.",
     generateFirst: "Generate the images first.",
   },
   es: {
     eyebrow: "Herramienta de imagen",
     title: "Grilla de imagen",
-    lead: "Subí una imagen, definí filas y columnas, y exportá una grilla fina sobre la original y una grilla gruesa en blanco — ambas al tamaño original.",
+    lead: "Subí una imagen, definí filas, columnas y grosor de línea, y exportá una grilla sobre la original y una grilla en blanco — ambas al tamaño original.",
     upload: "Elegir imagen",
     rows: "Filas",
     cols: "Columnas",
+    overlayWidth: "Grosor overlay",
+    blankWidth: "Grosor en blanco",
     generate: "Generar",
     scramble: "Desordenar cuadrados",
-    overlayTitle: "Original + grilla fina",
-    blankTitle: "Blanco + grilla gruesa",
+    overlayTitle: "Original + grilla",
+    blankTitle: "Blanco + grilla",
     downloadOverlay: "Descargar overlay",
     downloadBlank: "Descargar grilla en blanco",
     downloadBoth: "Descargar ambas (lado a lado)",
     hint: "Se recomienda PNG. Todo se procesa en tu navegador — no se sube nada.",
     invalidGrid: "Filas y columnas tienen que ser enteros de al menos 1.",
+    invalidWidth: "Los grosores tienen que ser enteros de al menos 1.",
     noImage: "Cargá una imagen primero.",
     generateFirst: "Generá las imágenes primero.",
   },
@@ -89,6 +98,8 @@ export function ImageGridTool() {
 
   const [rowsInput, setRowsInput] = useState("4");
   const [colsInput, setColsInput] = useState("4");
+  const [overlayWidthInput, setOverlayWidthInput] = useState("1");
+  const [blankWidthInput, setBlankWidthInput] = useState("4");
   const [source, setSource] = useState<HTMLImageElement | null>(null);
   const [fileName, setFileName] = useState("image");
   const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
@@ -100,11 +111,18 @@ export function ImageGridTool() {
 
   const rows = Number.parseInt(rowsInput, 10);
   const cols = Number.parseInt(colsInput, 10);
+  const overlayWidth = Number.parseInt(overlayWidthInput, 10);
+  const blankWidth = Number.parseInt(blankWidthInput, 10);
   const gridValid =
     Number.isInteger(rows) &&
     Number.isInteger(cols) &&
     rows >= 1 &&
     cols >= 1;
+  const widthsValid =
+    Number.isInteger(overlayWidth) &&
+    Number.isInteger(blankWidth) &&
+    overlayWidth >= 1 &&
+    blankWidth >= 1;
 
   const baseName = useMemo(
     () => fileName.replace(/\.[^.]+$/, "") || "image",
@@ -137,6 +155,11 @@ export function ImageGridTool() {
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
+      const suggested = Math.max(
+        3,
+        Math.round(Math.min(img.naturalWidth, img.naturalHeight) / 250),
+      );
+      setBlankWidthInput(String(suggested));
       setSource(img);
     };
     img.onerror = () => {
@@ -156,23 +179,23 @@ export function ImageGridTool() {
       setError(t.invalidGrid);
       return false;
     }
+    if (!widthsValid) {
+      setError(t.invalidWidth);
+      return false;
+    }
     return true;
   }
 
   function generate() {
     if (!ensureReady() || !source) return;
 
-    const thick = Math.max(
-      3,
-      Math.round(Math.min(source.naturalWidth, source.naturalHeight) / 250),
-    );
-    const overlay = renderOverlayGrid(source, rows, cols, 1);
+    const overlay = renderOverlayGrid(source, rows, cols, overlayWidth);
     const blank = renderBlankGrid(
       source.naturalWidth,
       source.naturalHeight,
       rows,
       cols,
-      thick,
+      blankWidth,
     );
 
     setError(null);
@@ -193,6 +216,7 @@ export function ImageGridTool() {
 
     const scrambled = renderScrambledImage(source, rows, cols, {
       withFineGrid: true,
+      fineLineWidth: overlayWidth,
     });
 
     setError(null);
@@ -271,6 +295,32 @@ export function ImageGridTool() {
                 step={1}
                 value={colsInput}
                 onChange={(event) => setColsInput(event.target.value)}
+                className="mt-2 w-full border border-line bg-white/70 px-3 py-2 text-sm text-ink outline-none focus:border-blue"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+                {t.overlayWidth}
+              </span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={overlayWidthInput}
+                onChange={(event) => setOverlayWidthInput(event.target.value)}
+                className="mt-2 w-full border border-line bg-white/70 px-3 py-2 text-sm text-ink outline-none focus:border-blue"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+                {t.blankWidth}
+              </span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={blankWidthInput}
+                onChange={(event) => setBlankWidthInput(event.target.value)}
                 className="mt-2 w-full border border-line bg-white/70 px-3 py-2 text-sm text-ink outline-none focus:border-blue"
               />
             </label>
