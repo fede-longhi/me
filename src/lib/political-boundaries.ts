@@ -589,7 +589,7 @@ export async function searchBoundaries(
     cache.set(queryKey, selection);
     return [
       {
-        label: selection.name,
+        label: AR_COUNTRY.nameEs,
         subtitle: "Argentina",
         kind: "country",
         queryKey,
