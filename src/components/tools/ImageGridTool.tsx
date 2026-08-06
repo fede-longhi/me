@@ -205,9 +205,11 @@ export function ImageGridTool() {
   const blankUrlRef = useRef<string | null>(null);
   const overlayImgRef = useRef<HTMLImageElement | null>(null);
   const dragIndexRef = useRef<number | null>(null);
+  const hoverIndexRef = useRef<number | null>(null);
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
   const grabOffsetRef = useRef({ x: 0, y: 0 });
   const lastPointerRef = useRef({ x: 0, y: 0 });
+  const dragEndingRef = useRef(false);
 
   const rows = Number.parseInt(rowsInput, 10);
   const cols = Number.parseInt(colsInput, 10);
@@ -236,10 +238,6 @@ export function ImageGridTool() {
   useEffect(() => {
     blankUrlRef.current = blankUrl;
   }, [blankUrl]);
-
-  useEffect(() => {
-    dragIndexRef.current = dragIndex;
-  }, [dragIndex]);
 
   useEffect(() => {
     return () => {
@@ -406,6 +404,9 @@ export function ImageGridTool() {
   }
 
   function clearDragState() {
+    dragIndexRef.current = null;
+    hoverIndexRef.current = null;
+    dragEndingRef.current = false;
     setDragIndex(null);
     setHoverIndex(null);
     setDragGhostUrl(null);
@@ -417,6 +418,27 @@ export function ImageGridTool() {
     if (!ghost) return;
     const { x, y } = grabOffsetRef.current;
     ghost.style.transform = `translate3d(${clientX - x}px, ${clientY - y}px, 0)`;
+  }
+
+  function resolveDropCell(
+    img: HTMLImageElement,
+    clientX: number,
+    clientY: number,
+  ) {
+    // Prefer the last cell tracked during move — Android often reports
+    // unreliable coordinates on pointerup / pointercancel.
+    if (hoverIndexRef.current !== null) return hoverIndexRef.current;
+
+    const fromLastPointer = cellAtClientPoint(
+      img,
+      lastPointerRef.current.x,
+      lastPointerRef.current.y,
+      rows,
+      cols,
+    );
+    if (fromLastPointer !== null) return fromLastPointer;
+
+    return cellAtClientPoint(img, clientX, clientY, rows, cols);
   }
 
   useLayoutEffect(() => {
@@ -439,7 +461,8 @@ export function ImageGridTool() {
 
   function onOverlayPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (!ensureReady() || !overlayImgRef.current || !gridValid) return;
-    if (event.button !== 0) return;
+    // Touch pointers report button 0; ignore non-primary mouse/pen buttons.
+    if (event.pointerType !== "touch" && event.button !== 0) return;
 
     const img = overlayImgRef.current;
     const cell = cellAtClientPoint(
@@ -453,6 +476,7 @@ export function ImageGridTool() {
 
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    dragEndingRef.current = false;
 
     const rect = img.getBoundingClientRect();
     const layout = getObjectContainLayout(
@@ -470,6 +494,10 @@ export function ImageGridTool() {
       y: event.clientY - (rect.top + layout.offsetY + row * cellH),
     };
     lastPointerRef.current = { x: event.clientX, y: event.clientY };
+
+    // Sync refs immediately so move/up work before React re-renders (critical on touch).
+    dragIndexRef.current = cell;
+    hoverIndexRef.current = cell;
 
     const canvas = overlayCanvasRef.current;
     if (canvas) {
@@ -497,7 +525,11 @@ export function ImageGridTool() {
       rows,
       cols,
     );
-    setHoverIndex(cell);
+    // Keep the last valid cell so a lift slightly outside the image still swaps.
+    if (cell !== null) {
+      hoverIndexRef.current = cell;
+      setHoverIndex(cell);
+    }
   }
 
   function endOverlayDrag(event: PointerEvent<HTMLDivElement>) {
@@ -506,18 +538,19 @@ export function ImageGridTool() {
       clearDragState();
       return;
     }
+    // pointercancel + pointerup can both fire on Android — only handle once.
+    if (dragEndingRef.current) return;
+    dragEndingRef.current = true;
 
     event.preventDefault();
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    const to = cellAtClientPoint(
+    const to = resolveDropCell(
       overlayImgRef.current,
       event.clientX,
       event.clientY,
-      rows,
-      cols,
     );
 
     if (to !== null && to !== from) {
@@ -701,7 +734,9 @@ export function ImageGridTool() {
                   onPointerMove={onOverlayPointerMove}
                   onPointerUp={endOverlayDrag}
                   onPointerCancel={endOverlayDrag}
+                  onLostPointerCapture={endOverlayDrag}
                   onDragStart={(event) => event.preventDefault()}
+                  style={{ touchAction: "none" }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
