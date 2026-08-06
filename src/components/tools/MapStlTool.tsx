@@ -951,8 +951,7 @@ export function MapStlTool() {
       clearBrushStrokePreview();
       if (centers.length === 0) {
         strokeWorking.current = null;
-        if (toolRef.current === "pan") map.dragging.enable();
-        else map.dragging.disable();
+        map.dragging.disable();
         return;
       }
       const next =
@@ -963,8 +962,7 @@ export function MapStlTool() {
           : paintBrushStrokeToSelection(base, centers, radius);
       strokeWorking.current = null;
       commitMergedEditRef.current(next);
-      if (toolRef.current === "pan") map.dragging.enable();
-      else map.dragging.disable();
+      map.dragging.disable();
     };
 
     const updateBrushPreview = (latlng: L.LatLng) => {
