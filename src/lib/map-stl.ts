@@ -740,11 +740,13 @@ export function estimatePrintDimensions(
   const scaleXY = options.modelSizeMm / maxHoriz;
   const widthMm = widthM * scaleXY;
   const depthMm = depthM * scaleXY;
+  const rawElevRangeM = options.elevRangeM;
   const approximateHeight =
-    options.elevRangeM == null || !Number.isFinite(options.elevRangeM);
-  const elevRangeM = approximateHeight
-    ? DEFAULT_ELEV_RANGE_M
-    : Math.max(0, options.elevRangeM);
+    rawElevRangeM == null || !Number.isFinite(rawElevRangeM);
+  const elevRangeM =
+    rawElevRangeM == null || !Number.isFinite(rawElevRangeM)
+      ? DEFAULT_ELEV_RANGE_M
+      : Math.max(0, rawElevRangeM);
   const reliefMm = elevRangeM * scaleXY * options.verticalScale;
   const resolution = options.resolution ?? 120;
   return {
