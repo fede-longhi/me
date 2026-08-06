@@ -58,6 +58,7 @@ export function renderOverlayGrid(
   rows: number,
   cols: number,
   fineLineWidth = 1,
+  strokeStyle = "#000000",
 ) {
   const width = "naturalWidth" in image ? image.naturalWidth : image.width;
   const height = "naturalHeight" in image ? image.naturalHeight : image.height;
@@ -68,7 +69,7 @@ export function renderOverlayGrid(
     rows,
     cols,
     lineWidth: fineLineWidth,
-    strokeStyle: "rgba(0, 0, 0, 0.75)",
+    strokeStyle,
   });
 
   return canvas;
@@ -80,6 +81,7 @@ export function renderBlankGrid(
   rows: number,
   cols: number,
   thickLineWidth = 4,
+  strokeStyle = "#111111",
 ) {
   const { canvas, ctx } = createCanvas(width, height);
   ctx.fillStyle = "#ffffff";
@@ -88,7 +90,7 @@ export function renderBlankGrid(
     rows,
     cols,
     lineWidth: thickLineWidth,
-    strokeStyle: "#111111",
+    strokeStyle,
   });
   return canvas;
 }
@@ -120,11 +122,45 @@ function shuffleInPlace<T>(items: T[]) {
   return items;
 }
 
-export function renderScrambledImage(
+export function createIdentityOrder(rows: number, cols: number) {
+  return Array.from({ length: rows * cols }, (_, index) => index);
+}
+
+export function shuffleOrder(order: readonly number[]) {
+  return shuffleInPlace([...order]);
+}
+
+export function swapOrderIndices(
+  order: readonly number[],
+  fromIndex: number,
+  toIndex: number,
+) {
+  if (
+    fromIndex === toIndex ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= order.length ||
+    toIndex >= order.length
+  ) {
+    return [...order];
+  }
+  const next = [...order];
+  const tmp = next[fromIndex];
+  next[fromIndex] = next[toIndex];
+  next[toIndex] = tmp;
+  return next;
+}
+
+export function renderTiledImage(
   image: HTMLImageElement | ImageBitmap,
   rows: number,
   cols: number,
-  options?: { withFineGrid?: boolean; fineLineWidth?: number },
+  order: readonly number[],
+  options?: {
+    withFineGrid?: boolean;
+    fineLineWidth?: number;
+    strokeStyle?: string;
+  },
 ) {
   const width = "naturalWidth" in image ? image.naturalWidth : image.width;
   const height = "naturalHeight" in image ? image.naturalHeight : image.height;
@@ -132,12 +168,15 @@ export function renderScrambledImage(
 
   const cellW = width / cols;
   const cellH = height / rows;
-  const positions = shuffleInPlace(
-    Array.from({ length: rows * cols }, (_, index) => index),
-  );
+  const expected = rows * cols;
+  if (order.length !== expected) {
+    throw new Error(
+      `Tile order length ${order.length} does not match grid size ${expected}`,
+    );
+  }
 
-  for (let dest = 0; dest < positions.length; dest += 1) {
-    const src = positions[dest];
+  for (let dest = 0; dest < order.length; dest += 1) {
+    const src = order[dest];
     const srcCol = src % cols;
     const srcRow = Math.floor(src / cols);
     const destCol = dest % cols;
@@ -148,7 +187,6 @@ export function renderScrambledImage(
     const dx = destCol * cellW;
     const dy = destRow * cellH;
 
-    // Use ceil on draw size for last column/row to avoid gaps from float math
     const sw = srcCol === cols - 1 ? width - sx : cellW;
     const sh = srcRow === rows - 1 ? height - sy : cellH;
     const dw = destCol === cols - 1 ? width - dx : cellW;
@@ -162,11 +200,30 @@ export function renderScrambledImage(
       rows,
       cols,
       lineWidth: options?.fineLineWidth ?? 1,
-      strokeStyle: "rgba(0, 0, 0, 0.75)",
+      strokeStyle: options?.strokeStyle ?? "#000000",
     });
   }
 
   return canvas;
+}
+
+export function renderScrambledImage(
+  image: HTMLImageElement | ImageBitmap,
+  rows: number,
+  cols: number,
+  options?: {
+    withFineGrid?: boolean;
+    fineLineWidth?: number;
+    strokeStyle?: string;
+  },
+) {
+  return renderTiledImage(
+    image,
+    rows,
+    cols,
+    shuffleOrder(createIdentityOrder(rows, cols)),
+    options,
+  );
 }
 
 export function downloadCanvas(
