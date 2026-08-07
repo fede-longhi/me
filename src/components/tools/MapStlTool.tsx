@@ -1168,8 +1168,7 @@ export function MapStlTool() {
           commitDrawnRef.current(drawn, selectionDisplayName(drawn));
         }
         shapeDragMoved.current = false;
-        if (toolRef.current === "pan") map.dragging.enable();
-        else map.dragging.disable();
+        map.dragging.disable();
         return;
       }
       dragStart.current = null;
