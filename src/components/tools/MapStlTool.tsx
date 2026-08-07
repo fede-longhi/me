@@ -25,7 +25,6 @@ import {
   stlTriangleCount,
   type HeightGrid,
   type MapSelection,
-  type WaterMode,
 } from "@/lib/map-stl";
 import { clipSelectionToLand } from "@/lib/land-mask";
 import {
@@ -122,7 +121,6 @@ const copy: Record<
     pieces: string;
     pieceSummary: string;
     previewStale: string;
-    shapeAdvanced: string;
     editedSelection: string;
     basemap: string;
     basemapRelief: string;
@@ -130,6 +128,14 @@ const copy: Record<
     exportSettings: string;
     shapeEdit: string;
     shapeEditEmpty: string;
+    shapeEditPick: string;
+    shapeEditUnsupported: string;
+    vertices: string;
+    sides: string;
+    vertexNW: string;
+    vertexNE: string;
+    vertexSW: string;
+    vertexSE: string;
     boundarySearch: string;
     boundarySearchPlaceholder: string;
     boundaryAr: string;
@@ -139,18 +145,10 @@ const copy: Record<
     boundaryEmpty: string;
     boundaryHint: string;
     boundaryError: string;
-    boundaryRestoring: string;
     silhouette: string;
     clipToCoast: string;
     clipToCoastHint: string;
-    waterMode: string;
-    waterKeep: string;
-    waterExclude: string;
-    waterInclude: string;
-    waterHintKeep: string;
-    waterHintExclude: string;
-    waterHintInclude: string;
-    waterHintClipped: string;
+    clipToCoastApply: string;
     north: string;
     south: string;
     east: string;
@@ -222,14 +220,21 @@ const copy: Record<
     pieces: "Selection",
     pieceSummary: "pieces",
     previewStale: "Preview is from the previous selection. Generate again to update it.",
-    shapeAdvanced: "Advanced coordinates",
     editedSelection: "Edited selection",
     basemap: "Basemap",
     basemapRelief: "Relief",
     basemapColor: "Color relief",
     exportSettings: "Export",
     shapeEdit: "Fine-tune",
-    shapeEditEmpty: "Draw a simple shape to edit numeric values.",
+    shapeEditEmpty: "Draw a shape to edit its values.",
+    shapeEditPick: "Select a piece below to edit it.",
+    shapeEditUnsupported: "This piece has no numeric handles (brush / region).",
+    vertices: "Vertices",
+    sides: "Sides",
+    vertexNW: "NW",
+    vertexNE: "NE",
+    vertexSW: "SW",
+    vertexSE: "SE",
     boundarySearch: "Search country / region",
     boundarySearchPlaceholder: "e.g. Chile, Uruguay, Mendoza…",
     boundaryAr: "Argentina provinces",
@@ -238,25 +243,13 @@ const copy: Record<
     boundaryClipping: "Clipping to coastline…",
     boundaryEmpty: "Pick a province or search for a country/region.",
     boundaryHint:
-      "Search OSM regions. Use Clip to coastline under Silhouette to drop bays and sea.",
+      "Search OSM regions. Use Clip to coastline under Silhouette to drop bays and sea from the current selection.",
     boundaryError: "Could not load that region. Try another name.",
-    boundaryRestoring: "Restoring full outline…",
     silhouette: "Silhouette",
     clipToCoast: "Clip to coastline",
     clipToCoastHint:
-      "Keeps only land inside any selection (shapes, freehand, or regions). Off leaves the outline as drawn, including sea.",
-    waterMode: "Sea in the model",
-    waterKeep: "Selection only",
-    waterExclude: "Remove sea",
-    waterInclude: "Sea frame",
-    waterHintKeep:
-      "Print exactly the selected outline. If the shape still contains ocean, that ocean stays in the mesh.",
-    waterHintExclude:
-      "Drops ocean that touches the edge of the model. Inland lakes stay. Useful when the outline includes maritime water.",
-    waterHintInclude:
-      "Adds a ~40 km sea frame around the selection, printed flat at sea level.",
-    waterHintClipped:
-      "Coast clip already removed bays. “Remove sea” will do little; “Sea frame” puts water back outside the land.",
+      "Applies once to the current selection and keeps the result. New brush strokes or shapes are not clipped until you press again.",
+    clipToCoastApply: "Apply coast clip",
     north: "North (°)",
     south: "South (°)",
     east: "East (°)",
@@ -290,13 +283,13 @@ const copy: Record<
     preview: "Preview",
     previewEmpty: "Generate an STL to preview it here.",
     hint: "Elevation comes from SRTM tiles. Middle-drag always pans the map.",
-    toolHintPan: "Drag to move the map. Hold Space or middle-drag to pan anytime.",
+    toolHintPan: "Drag to pan. Click a piece to select it. Space or middle-click also pan.",
     toolHintDraw: "Drag to draw. Esc cancels, Space pans, Delete clears.",
     toolHintBrush:
       "Drag to paint or erase. [ ] or Alt+scroll change radius. Esc cancels the stroke.",
     toolHintFreehand: "Drag a path; release to close start→end. Esc cancels.",
     toolHintBoundary: "Pick a country or province, or search another region.",
-    toolHintDelete: "Click a closed polygon to remove that piece.",
+    toolHintDelete: "Hover a piece to highlight it, then click to remove it.",
     toolHintMobile: "On touch: one finger draws, two fingers pan the map.",
     sampling: "Sampling elevation…",
     cancelled: "Cancelled",
@@ -328,14 +321,21 @@ const copy: Record<
     pieces: "Selección",
     pieceSummary: "piezas",
     previewStale: "La vista es de la selección anterior. Generá de nuevo para actualizarla.",
-    shapeAdvanced: "Coordenadas avanzadas",
     editedSelection: "Selección editada",
     basemap: "Mapa base",
     basemapRelief: "Relieve",
     basemapColor: "Relieve color",
     exportSettings: "Exportar",
     shapeEdit: "Ajustar",
-    shapeEditEmpty: "Dibujá una forma simple para editar valores numéricos.",
+    shapeEditEmpty: "Dibujá una forma para editar sus valores.",
+    shapeEditPick: "Elegí una pieza abajo para ajustarla.",
+    shapeEditUnsupported: "Esta pieza no tiene controles numéricos (pincel / región).",
+    vertices: "Vértices",
+    sides: "Lados",
+    vertexNW: "NO",
+    vertexNE: "NE",
+    vertexSW: "SO",
+    vertexSE: "SE",
     boundarySearch: "Buscar país / región",
     boundarySearchPlaceholder: "ej. Chile, Uruguay, Mendoza…",
     boundaryAr: "Provincias de Argentina",
@@ -344,25 +344,13 @@ const copy: Record<
     boundaryClipping: "Recortando a la costa…",
     boundaryEmpty: "Elegí una provincia o buscá un país/región.",
     boundaryHint:
-      "Buscá regiones OSM. Usá Recortar a la costa en Silueta para sacar bahías y mar.",
+      "Buscá regiones OSM. Usá Recortar a la costa en Silueta para sacar bahías y mar de la selección actual.",
     boundaryError: "No se pudo cargar esa región. Probá con otro nombre.",
-    boundaryRestoring: "Restaurando contorno completo…",
     silhouette: "Silueta",
     clipToCoast: "Recortar a la costa",
     clipToCoastHint:
-      "Deja solo tierra dentro de cualquier selección (formas, mano alzada o regiones). Apagado conserva el contorno tal cual, incluido el mar.",
-    waterMode: "Mar en el modelo",
-    waterKeep: "Solo selección",
-    waterExclude: "Sacar mar",
-    waterInclude: "Marco de mar",
-    waterHintKeep:
-      "Se imprime exactamente el contorno elegido. Si adentro hay océano, queda en la malla.",
-    waterHintExclude:
-      "Saca el océano que toca el borde del modelo. Los lagos interiores quedan. Sirve si el límite incluye agua marítima.",
-    waterHintInclude:
-      "Agrega un marco de ~40 km de mar alrededor, plano a nivel del mar.",
-    waterHintClipped:
-      "El recorte a costa ya sacó bahías. “Sacar mar” casi no hace nada; “Marco de mar” vuelve a poner agua afuera.",
+      "Se aplica una vez a la selección actual y queda el resultado. Trazos o formas nuevas no se recortan hasta que lo pulses de nuevo.",
+    clipToCoastApply: "Aplicar recorte",
     north: "Norte (°)",
     south: "Sur (°)",
     east: "Este (°)",
@@ -396,13 +384,13 @@ const copy: Record<
     preview: "Previsualización",
     previewEmpty: "Generá un STL para previsualizarlo acá.",
     hint: "La elevación viene de tiles SRTM. El arrastre con la rueda siempre mueve el mapa.",
-    toolHintPan: "Arrastrá para mover el mapa. Espacio o clic medio también panean.",
+    toolHintPan: "Arrastrá para mover el mapa. Clic en una pieza para seleccionarla. Espacio o clic medio también panean.",
     toolHintDraw: "Arrastrá para dibujar. Esc cancela, Espacio panea, Supr limpia.",
     toolHintBrush:
       "Arrastrá para pintar o borrar. [ ] o Alt+rueda cambian el radio. Esc cancela el trazo.",
     toolHintFreehand: "Trazá un camino; al soltar se cierra inicio→fin. Esc cancela.",
     toolHintBoundary: "Elegí un país o provincia, o buscá otra región.",
-    toolHintDelete: "Clic en un polígono cerrado para sacar esa pieza.",
+    toolHintDelete: "Pasá el mouse sobre una pieza para resaltarla y hacé clic para borrarla.",
     toolHintMobile: "En táctil: un dedo dibuja, dos dedos mueven el mapa.",
     sampling: "Muestreando elevación…",
     cancelled: "Cancelado",
@@ -412,7 +400,11 @@ const copy: Record<
 };
 
 const inputClass =
-  "mt-2 w-full border border-line bg-white/70 px-3 py-2 text-sm text-ink outline-none focus:border-blue";
+  "mt-1 w-full border border-line bg-white/70 px-2 py-1 text-xs text-ink outline-none focus:border-blue";
+const fieldLabelClass =
+  "text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted";
+const sectionLabelClass =
+  "text-[10px] font-semibold uppercase tracking-[0.14em] text-green";
 
 function newPieceId() {
   return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -436,7 +428,6 @@ function clonePieces(pieces: SelectionPiece[]): SelectionPiece[] {
 
 type HistoryEntry = {
   pieces: SelectionPiece[];
-  clipToCoast: boolean;
 };
 
 export function MapStlTool() {
@@ -454,14 +445,14 @@ export function MapStlTool() {
   const baseLayer = useRef<L.TileLayer | null>(null);
   const reliefOverlay = useRef<L.TileLayer | null>(null);
   const dragStart = useRef<L.LatLng | null>(null);
+  const shapeDragMoved = useRef(false);
+  const hoverPieceId = useRef<string | null>(null);
   const lastBrushPt = useRef<L.LatLng | null>(null);
   const middlePan = useRef<{ x: number; y: number } | null>(null);
   const freehandPts = useRef<L.LatLng[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const cancelFlagRef = useRef(false);
-  const historyRef = useRef<HistoryEntry[]>([
-    { pieces: [], clipToCoast: true },
-  ]);
+  const historyRef = useRef<HistoryEntry[]>([{ pieces: [] }]);
   const historyIndexRef = useRef(0);
   const strokeWorking = useRef<MapSelection | null>(null);
   const clipJobIdRef = useRef(0);
@@ -474,8 +465,6 @@ export function MapStlTool() {
   const [pieces, setPieces] = useState<SelectionPiece[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const [waterMode, setWaterMode] = useState<WaterMode>("keep");
-  const [clipToCoast, setClipToCoast] = useState(true);
   const [clipBusy, setClipBusy] = useState(false);
   const [detail, setDetail] = useState<DetailLevel>("medium");
   const [verticalScale, setVerticalScale] = useState(2);
@@ -495,8 +484,8 @@ export function MapStlTool() {
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [exportOpen, setExportOpen] = useState(true);
-  const [shapeAdvancedOpen, setShapeAdvancedOpen] = useState(false);
   const [mapZoom, setMapZoom] = useState(11);
+  const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const [boundaryQuery, setBoundaryQuery] = useState("");
   const [boundaryHits, setBoundaryHits] = useState<BoundarySearchHit[]>([]);
   const [boundaryLoading, setBoundaryLoading] = useState(false);
@@ -512,6 +501,7 @@ export function MapStlTool() {
   const composeModeRef = useRef(composeMode);
   const brushRadiusRef = useRef(brushRadiusM);
   const piecesRef = useRef(pieces);
+  const selectedPieceIdRef = useRef(selectedPieceId);
   const selectionRef = useRef<MapSelection | null>(null);
   const editedLabelRef = useRef(t.editedSelection);
   const spacePanRef = useRef(false);
@@ -524,7 +514,6 @@ export function MapStlTool() {
   const clearSelectionRef = useRef<() => void>(() => {});
   const fitSelectionRef = useRef<() => void>(() => {});
   const nudgeBrushRef = useRef<(dir: 1 | -1) => void>(() => {});
-  const clipToCoastRef = useRef(clipToCoast);
   const commitDrawnRef = useRef<(drawn: MapSelection, name: string) => void>(
     () => {},
   );
@@ -536,8 +525,8 @@ export function MapStlTool() {
   composeModeRef.current = composeMode;
   brushRadiusRef.current = brushRadiusM;
   piecesRef.current = pieces;
+  selectedPieceIdRef.current = selectedPieceId;
   editedLabelRef.current = t.editedSelection;
-  clipToCoastRef.current = clipToCoast;
 
   const selection = useMemo(() => mergePieces(pieces), [pieces]);
   selectionRef.current = selection;
@@ -551,20 +540,27 @@ export function MapStlTool() {
     next: SelectionPiece[],
     recordHistory: boolean,
     fit = false,
-    clipSnapshot: boolean = clipToCoastRef.current,
+    selectId?: string | null,
   ) => {
     setPieces(next);
     piecesRef.current = next;
     const merged = mergePieces(next);
     selectionRef.current = merged;
+
+    let nextSelected =
+      selectId !== undefined ? selectId : selectedPieceIdRef.current;
+    if (nextSelected && !next.some((p) => p.id === nextSelected)) {
+      nextSelected = next[next.length - 1]?.id ?? null;
+    }
+    if (!nextSelected && next.length === 1) nextSelected = next[0]!.id;
+    selectedPieceIdRef.current = nextSelected;
+    setSelectedPieceId(nextSelected);
+
     if (hasPreviewRef.current) setStlStale(true);
     const map = mapObj.current;
     if (map) {
-      if (merged) drawSelection(map, merged, shapeLayer);
-      else if (shapeLayer.current) {
-        map.removeLayer(shapeLayer.current);
-        shapeLayer.current = null;
-      }
+      drawPieces(map, next, nextSelected, shapeLayer);
+      hoverPieceId.current = null;
       if (fit && merged) {
         const b = selectionBounds(merged);
         map.fitBounds(
@@ -578,10 +574,7 @@ export function MapStlTool() {
     }
     if (recordHistory) {
       const trimmed = historyRef.current.slice(0, historyIndexRef.current + 1);
-      trimmed.push({
-        pieces: clonePieces(next),
-        clipToCoast: clipSnapshot,
-      });
+      trimmed.push({ pieces: clonePieces(next) });
       if (trimmed.length > 60) trimmed.shift();
       historyRef.current = trimmed;
       historyIndexRef.current = trimmed.length - 1;
@@ -590,74 +583,43 @@ export function MapStlTool() {
   };
 
   const restoreHistoryEntry = (entry: HistoryEntry) => {
-    setClipToCoast(entry.clipToCoast);
-    clipToCoastRef.current = entry.clipToCoast;
     applyPieces(clonePieces(entry.pieces), false);
   };
 
   const commitDrawn = (drawn: MapSelection, name: string) => {
-    void (async () => {
-      const piece = await materializePiece(drawn, name);
-      if (!piece) return;
-      const next =
-        composeModeRef.current === "add" && piecesRef.current.length > 0
-          ? [...piecesRef.current, piece]
-          : [piece];
-      applyPieces(next, true);
-    })();
+    const piece = materializePiece(drawn, name);
+    const next =
+      composeModeRef.current === "add" && piecesRef.current.length > 0
+        ? [...piecesRef.current, piece]
+        : [piece];
+    applyPieces(next, true, false, piece.id);
   };
 
   const commitMergedEdit = (merged: MapSelection | null) => {
-    void (async () => {
-      if (!merged) {
-        applyPieces([], true);
-        return;
-      }
-      const name =
-        piecesRef.current.length === 1
-          ? piecesRef.current[0]!.name
-          : editedLabelRef.current;
-      const piece = await materializePiece(merged, name);
-      if (!piece) return;
-      applyPieces([piece], true);
-    })();
+    if (!merged) {
+      applyPieces([], true, false, null);
+      return;
+    }
+    const name =
+      piecesRef.current.length === 1
+        ? piecesRef.current[0]!.name
+        : editedLabelRef.current;
+    const piece = materializePiece(merged, name);
+    applyPieces([piece], true, false, piece.id);
   };
 
   commitDrawnRef.current = commitDrawn;
   commitMergedEditRef.current = commitMergedEdit;
 
-  async function materializePiece(
+  function materializePiece(
     source: MapSelection,
     name: string,
     arId?: string,
-  ): Promise<SelectionPiece | null> {
-    let selection = source;
-    if (clipToCoastRef.current) {
-      setClipBusy(true);
-      setProgress(t.boundaryClipping);
-      setJobProgress({
-        label: t.boundaryClipping,
-        done: 0,
-        total: 1,
-        indeterminate: true,
-      });
-      try {
-        selection = await clipSelectionToLand(source);
-      } catch {
-        setError(t.boundaryError);
-        setProgress(null);
-        setJobProgress(null);
-        setClipBusy(false);
-        return null;
-      }
-      setProgress(null);
-      setJobProgress(null);
-      setClipBusy(false);
-    }
+  ): SelectionPiece {
     return {
       id: newPieceId(),
-      name: selectionDisplayName(selection) || name,
-      selection,
+      name: selectionDisplayName(source) || name,
+      selection: source,
       sourceSelection: source,
       arId,
     };
@@ -857,8 +819,8 @@ export function MapStlTool() {
           { kind: "polygon", name: "Freehand", polygons: [[ring]] },
           "Freehand",
         );
-      } else if (selectionRef.current) {
-        drawSelection(map, selectionRef.current, shapeLayer);
+      } else {
+        drawPieces(map, piecesRef.current, selectedPieceIdRef.current, shapeLayer);
       }
       freehandPts.current = [];
       if (toolRef.current === "pan") map.dragging.enable();
@@ -1004,17 +966,58 @@ export function MapStlTool() {
       freehandPts.current = [];
       clearFreehandDraft();
       clearBrushStrokePreview();
-      if (selectionRef.current) drawSelection(map, selectionRef.current, shapeLayer);
-      else if (shapeLayer.current) {
-        map.removeLayer(shapeLayer.current);
-        shapeLayer.current = null;
-      }
+      drawPieces(map, piecesRef.current, selectedPieceIdRef.current, shapeLayer);
       if (spacePanRef.current || toolRef.current === "pan") map.dragging.enable();
       else map.dragging.disable();
       restoreCursor();
       return hadDraft;
     };
     cancelDraftRef.current = cancelDraft;
+
+    const selectPieceAt = (latlng: L.LatLng) => {
+      const list = piecesRef.current;
+      for (let i = list.length - 1; i >= 0; i -= 1) {
+        const piece = list[i]!;
+        if (pointInSelection(latlng.lat, latlng.lng, piece.selection)) {
+          selectedPieceIdRef.current = piece.id;
+          setSelectedPieceId(piece.id);
+          hoverPieceId.current = null;
+          drawPieces(map, list, piece.id, shapeLayer);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const hitPieceIdAt = (latlng: L.LatLng) => {
+      const list = piecesRef.current;
+      for (let i = list.length - 1; i >= 0; i -= 1) {
+        const piece = list[i]!;
+        if (pointInSelection(latlng.lat, latlng.lng, piece.selection)) {
+          return piece.id;
+        }
+      }
+      return null;
+    };
+
+    const redrawPieces = (draft?: MapSelection | null) => {
+      drawPieces(
+        map,
+        piecesRef.current,
+        selectedPieceIdRef.current,
+        shapeLayer,
+        {
+          hoverId: hoverPieceId.current,
+          draft: draft ?? null,
+        },
+      );
+    };
+
+    const onClickSelect = (e: L.LeafletMouseEvent) => {
+      if (toolRef.current !== "pan") return;
+      if (middlePan.current || spacePanRef.current || touchPanRef.current) return;
+      selectPieceAt(e.latlng);
+    };
 
     const onDown = (e: L.LeafletMouseEvent) => {
       if (e.originalEvent.button !== 0 || middlePan.current || spacePanRef.current || touchPanRef.current) return;
@@ -1057,6 +1060,7 @@ export function MapStlTool() {
             true,
           );
         }
+        hoverPieceId.current = null;
         L.DomEvent.stop(e.originalEvent);
         return;
       }
@@ -1076,6 +1080,7 @@ export function MapStlTool() {
       if (currentTool === "freehand") {
         freehandPts.current = [e.latlng];
         dragStart.current = e.latlng;
+        shapeDragMoved.current = false;
         map.dragging.disable();
         drawFreehandDraft(freehandPts.current);
         L.DomEvent.stop(e.originalEvent);
@@ -1083,6 +1088,7 @@ export function MapStlTool() {
       }
 
       dragStart.current = e.latlng;
+      shapeDragMoved.current = false;
       map.dragging.disable();
       L.DomEvent.stop(e.originalEvent);
     };
@@ -1104,19 +1110,43 @@ export function MapStlTool() {
 
     const onMove = (e: L.LeafletMouseEvent) => {
       if (middlePan.current || spacePanRef.current || touchPanRef.current) return;
+
+      if (toolRef.current === "deletePiece") {
+        const hit = hitPieceIdAt(e.latlng);
+        if (hit !== hoverPieceId.current) {
+          hoverPieceId.current = hit;
+          redrawPieces();
+        }
+        return;
+      }
+
       if (toolRef.current === "brush") {
         updateBrushPreview(e.latlng);
         return;
       }
-      if (!dragStart.current) return;
+      if (!dragStart.current) {
+        if (hoverPieceId.current) {
+          hoverPieceId.current = null;
+          redrawPieces();
+        }
+        return;
+      }
       if (toolRef.current === "freehand") return;
       if (
         toolRef.current === "rectangle" ||
         toolRef.current === "circle" ||
         toolRef.current === "ellipse"
       ) {
-        const next = selectionFromDrag(toolRef.current, dragStart.current, e.latlng);
-        drawSelection(map, next, shapeLayer);
+        const a = map.latLngToContainerPoint(dragStart.current);
+        const b = map.latLngToContainerPoint(e.latlng);
+        if (a.distanceTo(b) >= 5) shapeDragMoved.current = true;
+        if (!shapeDragMoved.current) return;
+        const next = selectionFromDrag(
+          toolRef.current,
+          dragStart.current,
+          e.latlng,
+        );
+        redrawPieces(next);
       }
     };
 
@@ -1128,10 +1158,22 @@ export function MapStlTool() {
         toolRef.current === "circle" ||
         toolRef.current === "ellipse"
       ) {
-        const drawn = selectionFromDrag(toolRef.current, dragStart.current, e.latlng);
-        commitDrawnRef.current(drawn, selectionDisplayName(drawn));
+        const start = dragStart.current;
+        dragStart.current = null;
+        if (!shapeDragMoved.current) {
+          selectPieceAt(e.latlng);
+          redrawPieces();
+        } else {
+          const drawn = selectionFromDrag(toolRef.current, start, e.latlng);
+          commitDrawnRef.current(drawn, selectionDisplayName(drawn));
+        }
+        shapeDragMoved.current = false;
+        if (toolRef.current === "pan") map.dragging.enable();
+        else map.dragging.disable();
+        return;
       }
       dragStart.current = null;
+      shapeDragMoved.current = false;
       if (toolRef.current === "pan") map.dragging.enable();
       else map.dragging.disable();
     };
@@ -1243,6 +1285,13 @@ export function MapStlTool() {
       nudgeBrushRef.current(e.deltaY < 0 ? 1 : -1);
     };
 
+    const onMapMouseLeave = () => {
+      if (toolRef.current !== "deletePiece") return;
+      if (!hoverPieceId.current) return;
+      hoverPieceId.current = null;
+      redrawPieces();
+    };
+
     container.addEventListener("mousedown", onMiddleDown, true);
     window.addEventListener("mousemove", onMiddleMove, { passive: false });
     window.addEventListener("mouseup", onMiddleUp);
@@ -1256,9 +1305,11 @@ export function MapStlTool() {
     container.addEventListener("touchend", onTouchEnd);
     container.addEventListener("touchcancel", onTouchEnd);
     container.addEventListener("wheel", onWheelBrush, { passive: false });
+    container.addEventListener("mouseleave", onMapMouseLeave);
     map.on("mousedown", onDown);
     map.on("mousemove", onMove);
     map.on("mouseup", onUp);
+    map.on("click", onClickSelect);
 
     return () => {
       unlockPageScroll();
@@ -1275,9 +1326,11 @@ export function MapStlTool() {
       container.removeEventListener("touchend", onTouchEnd);
       container.removeEventListener("touchcancel", onTouchEnd);
       container.removeEventListener("wheel", onWheelBrush);
+      container.removeEventListener("mouseleave", onMapMouseLeave);
       map.off("mousedown", onDown);
       map.off("mousemove", onMove);
       map.off("mouseup", onUp);
+      map.off("click", onClickSelect);
       map.off("zoom", onZoom);
       map.off("zoomend", onZoom);
       if (freehandDraftLayer.current) map.removeLayer(freehandDraftLayer.current);
@@ -1319,6 +1372,10 @@ export function MapStlTool() {
       brushStrokeCenters.current = [];
       brushStrokeBase.current = null;
     }
+    if (tool !== "deletePiece" && hoverPieceId.current) {
+      hoverPieceId.current = null;
+      drawPieces(map, piecesRef.current, selectedPieceIdRef.current, shapeLayer);
+    }
   }, [tool]);
 
   useEffect(() => {
@@ -1342,9 +1399,11 @@ export function MapStlTool() {
 
   useEffect(() => {
     const map = mapObj.current;
-    if (!map || !selection) return;
-    drawSelection(map, selection, shapeLayer);
-  }, [selection]);
+    if (!map) return;
+    drawPieces(map, pieces, selectedPieceId, shapeLayer, {
+      hoverId: tool === "deletePiece" ? hoverPieceId.current : null,
+    });
+  }, [pieces, selectedPieceId, tool]);
 
   useEffect(() => {
     if (tool !== "boundary") {
@@ -1450,30 +1509,29 @@ export function MapStlTool() {
   async function addBoundaryPiece(next: MapSelection, arId?: string) {
     setError(null);
     if (cancelFlagRef.current) return;
-    const piece = await materializePiece(next, selectionDisplayName(next), arId);
-    if (!piece) return;
+    const piece = materializePiece(next, selectionDisplayName(next), arId);
     const adding =
       composeModeRef.current === "add" && piecesRef.current.length > 0;
     if (adding && arId && piecesRef.current.some((p) => p.arId === arId)) return;
-    applyPieces(adding ? [...piecesRef.current, piece] : [piece], true, true);
+    applyPieces(
+      adding ? [...piecesRef.current, piece] : [piece],
+      true,
+      true,
+      piece.id,
+    );
   }
 
-  async function applyClipToCoast(nextClip: boolean) {
-    if (clipBusy || nextClip === clipToCoastRef.current) return;
+  /** Bake land-only outline into the current selection (one-shot; not a sticky mode). */
+  async function applyCoastClip() {
+    if (clipBusy) return;
+    const current = piecesRef.current;
+    if (current.length === 0) return;
+
     cancelFlagRef.current = false;
     const jobId = ++clipJobIdRef.current;
-    const current = piecesRef.current;
-
-    // Preference with no pieces yet: flip immediately, nothing to reprocess.
-    if (current.length === 0) {
-      setClipToCoast(nextClip);
-      clipToCoastRef.current = nextClip;
-      applyPieces([], true, false, nextClip);
-      return;
-    }
-
     setClipBusy(true);
-    const label = nextClip ? t.boundaryClipping : t.boundaryRestoring;
+    setError(null);
+    const label = t.boundaryClipping;
     setProgress(label);
     setJobProgress({
       label,
@@ -1488,17 +1546,14 @@ export function MapStlTool() {
           setProgress(t.cancelled);
           return;
         }
-        const source = piece.sourceSelection ?? piece.selection;
-        const selection = nextClip
-          ? await clipSelectionToLand(source)
-          : source;
+        const clipped = await clipSelectionToLand(piece.selection);
         updated.push({
           ...piece,
-          sourceSelection: source,
-          selection,
+          selection: clipped,
+          sourceSelection: clipped,
           name:
-            selectionDisplayName(selection) ||
-            selectionDisplayName(source) ||
+            selectionDisplayName(clipped) ||
+            selectionDisplayName(piece.selection) ||
             piece.name,
         });
         done += 1;
@@ -1508,10 +1563,7 @@ export function MapStlTool() {
         setProgress(t.cancelled);
         return;
       }
-      // Commit switch + geometry together so undo/redo stay in sync.
-      setClipToCoast(nextClip);
-      clipToCoastRef.current = nextClip;
-      applyPieces(updated, true, true, nextClip);
+      applyPieces(updated, true, true);
     } catch {
       setError(t.boundaryError);
     } finally {
@@ -1575,7 +1627,7 @@ export function MapStlTool() {
   }
 
   function clearSelection() {
-    applyPieces([], true);
+    applyPieces([], true, false, null);
     setError(null);
     freehandPts.current = [];
       if (mapObj.current && freehandDraftLayer.current) {
@@ -1592,18 +1644,26 @@ export function MapStlTool() {
     );
   }
 
-  function updateSolePiece(next: MapSelection) {
-    if (piecesRef.current.length !== 1) return;
-    void (async () => {
-      const existing = piecesRef.current[0]!;
-      const piece = await materializePiece(
-        next,
-        existing.name,
-        existing.arId,
-      );
-      if (!piece) return;
-      applyPieces([{ ...piece, id: existing.id, arId: existing.arId }], true);
-    })();
+  function updateSelectedPiece(next: MapSelection) {
+    const id = selectedPieceIdRef.current;
+    if (!id) return;
+    const existing = piecesRef.current.find((p) => p.id === id);
+    if (!existing) return;
+    applyPieces(
+      piecesRef.current.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              selection: next,
+              sourceSelection: next,
+              name: selectionDisplayName(next) || p.name,
+            }
+          : p,
+      ),
+      true,
+      false,
+      id,
+    );
   }
 
   async function buildStl() {
@@ -1616,7 +1676,7 @@ export function MapStlTool() {
     const controller = new AbortController();
     abortRef.current = controller;
     const preset = DETAIL_PRESETS[detail];
-    const key = `${detail}|${waterMode}`;
+    const key = `${detail}|keep`;
     setError(null);
     setGenerating(true);
     setProgress(t.sampling);
@@ -1627,7 +1687,7 @@ export function MapStlTool() {
         resolution: preset.resolution,
         zoom,
         terrainSmooth: preset.terrainSmooth,
-        waterMode,
+        waterMode: "keep",
         signal: controller.signal,
         onProgress: (done, total) => {
           setProgress(`${t.sampling} ${Math.round((done / total) * 100)}%`);
@@ -1679,7 +1739,7 @@ export function MapStlTool() {
     });
   }, [heightGrid, verticalScale, modelSizeMm, baseMm, stlStale]);
 
-  const sampleKey = `${detail}|${waterMode}`;
+  const sampleKey = `${detail}|keep`;
   const gridMatchesSettings = Boolean(heightGrid && sampledKey === sampleKey);
   const sizeEstimate = useMemo(() => {
     if (!selection) return null;
@@ -1697,7 +1757,7 @@ export function MapStlTool() {
     }
     return estimatePrintDimensions(selection, {
       ...printOpts,
-      waterMode,
+      waterMode: "keep",
       resolution: preset.resolution,
       elevRangeM: heightGrid ? heightGrid.max - heightGrid.min : null,
     });
@@ -1707,7 +1767,6 @@ export function MapStlTool() {
     verticalScale,
     modelSizeMm,
     baseMm,
-    waterMode,
     heightGrid,
     gridMatchesSettings,
     stlStale,
@@ -1720,24 +1779,27 @@ export function MapStlTool() {
         ? [selectionDisplayName(selection)]
         : ["map-terrain"],
   );
-  const waterHint =
-    (waterMode === "keep"
-      ? t.waterHintKeep
-      : waterMode === "exclude"
-        ? t.waterHintExclude
-        : t.waterHintInclude) +
-    (clipToCoast && waterMode !== "keep" ? ` ${t.waterHintClipped}` : "");
 
-  const sole = pieces.length === 1 ? pieces[0]!.selection : null;
+  const selectedPiece =
+    selectedPieceId != null
+      ? pieces.find((p) => p.id === selectedPieceId) ?? null
+      : null;
+  const editableSelection = selectedPiece?.selection ?? null;
   const editLat =
-    sole?.kind === "rectangle"
-      ? (sole.north + sole.south) / 2
-      : sole && sole.kind !== "polygon"
-        ? sole.center.lat
+    editableSelection?.kind === "rectangle"
+      ? (editableSelection.north + editableSelection.south) / 2
+      : editableSelection && editableSelection.kind !== "polygon"
+        ? editableSelection.center.lat
         : selection
-          ? (selectionBounds(selection).north + selectionBounds(selection).south) / 2
+          ? (selectionBounds(selection).north +
+              selectionBounds(selection).south) /
+            2
           : -34.55;
   const shapeSteps = shapeInputSteps(mapZoom, editLat);
+  const rectMetrics =
+    editableSelection?.kind === "rectangle"
+      ? rectangleMetrics(editableSelection)
+      : null;
 
   const selectionSummary = useMemo(() => {
     if (!selection) return null;
@@ -1778,116 +1840,610 @@ export function MapStlTool() {
   ];
 
   const toolbarBtn =
-    "inline-flex cursor-pointer items-center gap-1.5 px-2.5 py-2 text-sm font-bold tracking-wide transition disabled:cursor-not-allowed disabled:opacity-40";
+    "inline-flex cursor-pointer items-center gap-1.5 px-2 py-1.5 text-sm font-bold tracking-wide transition disabled:cursor-not-allowed disabled:opacity-40";
+
+  const showBrushOptions = tool === "brush";
+  const showBoundaryOptions = tool === "boundary";
+  const showPieceEditor =
+    !showBrushOptions &&
+    !showBoundaryOptions &&
+    (pieces.length > 0 ||
+      tool === "rectangle" ||
+      tool === "circle" ||
+      tool === "ellipse");
+  const showToolOptions =
+    showBrushOptions || showBoundaryOptions || showPieceEditor;
 
   return (
     <ToolChrome eyebrow={t.eyebrow} title={t.title} lead={t.lead} wide>
       <div className="space-y-4">
-        <div className="flex flex-wrap items-end gap-x-5 gap-y-3 border border-line bg-surface/50 p-3">
-          <div className="flex flex-wrap gap-1.5">
-            {tools.map(([value, label, tip, Icon]) => (
-              <ToolTip key={value} label={tip}>
-                <button
-                  type="button"
-                  aria-label={label}
-                  onClick={() => setTool(value)}
-                  className={`${toolbarBtn} ${
-                    tool === value
-                      ? "bg-blue-deep text-white"
-                      : "border border-line text-ink-muted hover:text-ink"
-                  }`}
-                >
-                  <Icon />
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              </ToolTip>
-            ))}
-          </div>
+        <div className="border border-line bg-surface/50">
+          <div className="flex flex-wrap items-end gap-x-5 gap-y-3 p-3">
+            <div className="flex flex-wrap gap-1.5">
+              {tools.map(([value, label, tip, Icon]) => (
+                <ToolTip key={value} label={tip}>
+                  <button
+                    type="button"
+                    aria-label={label}
+                    onClick={() => setTool(value)}
+                    className={`${toolbarBtn} ${
+                      tool === value
+                        ? "bg-blue-deep text-white"
+                        : "border border-line text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    <Icon />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                </ToolTip>
+              ))}
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-green">
-              {t.composeMode}
-            </p>
-            <div className="flex flex-wrap gap-1.5 border border-line bg-white/40 p-1">
-              <ToolTip label={t.composeAdd}>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-green">
+                {t.composeMode}
+              </p>
+              <div className="flex flex-wrap gap-1.5 border border-line bg-white/40 p-1">
+                <ToolTip label={t.composeAdd}>
+                  <button
+                    type="button"
+                    aria-label={t.composeAdd}
+                    onClick={() => setComposeMode("add")}
+                    className={`${toolbarBtn} ${
+                      composeMode === "add"
+                        ? "bg-ink text-white"
+                        : "text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    <IconAdd />
+                    <span>{t.composeAdd}</span>
+                  </button>
+                </ToolTip>
+                <ToolTip label={t.composeReplace}>
+                  <button
+                    type="button"
+                    aria-label={t.composeReplace}
+                    onClick={() => setComposeMode("replace")}
+                    className={`${toolbarBtn} ${
+                      composeMode === "replace"
+                        ? "bg-ink text-white"
+                        : "text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    <IconReplace />
+                    <span>{t.composeReplace}</span>
+                  </button>
+                </ToolTip>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              <ToolTip label={t.undo}>
                 <button
                   type="button"
-                  aria-label={t.composeAdd}
-                  onClick={() => setComposeMode("add")}
-                  className={`${toolbarBtn} ${
-                    composeMode === "add"
-                      ? "bg-ink text-white"
-                      : "text-ink-muted hover:text-ink"
-                  }`}
+                  aria-label={t.undo}
+                  onClick={undo}
+                  disabled={!canUndo}
+                  className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
                 >
-                  <IconAdd />
-                  <span>{t.composeAdd}</span>
+                  <IconUndo />
                 </button>
               </ToolTip>
-              <ToolTip label={t.composeReplace}>
+              <ToolTip label={t.redo}>
                 <button
                   type="button"
-                  aria-label={t.composeReplace}
-                  onClick={() => setComposeMode("replace")}
-                  className={`${toolbarBtn} ${
-                    composeMode === "replace"
-                      ? "bg-ink text-white"
-                      : "text-ink-muted hover:text-ink"
-                  }`}
+                  aria-label={t.redo}
+                  onClick={redo}
+                  disabled={!canRedo}
+                  className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
                 >
-                  <IconReplace />
-                  <span>{t.composeReplace}</span>
+                  <IconRedo />
+                </button>
+              </ToolTip>
+              <ToolTip label={t.clearSelection}>
+                <button
+                  type="button"
+                  aria-label={t.clearSelection}
+                  onClick={clearSelection}
+                  disabled={pieces.length === 0}
+                  className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
+                >
+                  <IconClear />
+                </button>
+              </ToolTip>
+              <ToolTip label={t.fitSelection}>
+                <button
+                  type="button"
+                  aria-label={t.fitSelection}
+                  onClick={fitSelection}
+                  disabled={!selection}
+                  className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
+                >
+                  <IconFit />
                 </button>
               </ToolTip>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            <ToolTip label={t.undo}>
-              <button
-                type="button"
-                aria-label={t.undo}
-                onClick={undo}
-                disabled={!canUndo}
-                className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
-              >
-                <IconUndo />
-              </button>
-            </ToolTip>
-            <ToolTip label={t.redo}>
-              <button
-                type="button"
-                aria-label={t.redo}
-                onClick={redo}
-                disabled={!canRedo}
-                className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
-              >
-                <IconRedo />
-              </button>
-            </ToolTip>
-            <ToolTip label={t.clearSelection}>
-              <button
-                type="button"
-                aria-label={t.clearSelection}
-                onClick={clearSelection}
-                disabled={pieces.length === 0}
-                className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
-              >
-                <IconClear />
-              </button>
-            </ToolTip>
-            <ToolTip label={t.fitSelection}>
-              <button
-                type="button"
-                aria-label={t.fitSelection}
-                onClick={fitSelection}
-                disabled={!selection}
-                className={`${toolbarBtn} border border-line text-ink-muted hover:text-ink`}
-              >
-                <IconFit />
-              </button>
-            </ToolTip>
-          </div>
+          {showToolOptions ? (
+            <div className="border-t border-line bg-white/50 px-3 py-2">
+              {showBrushOptions ? (
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-6 sm:gap-y-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-green">
+                      {t.brush}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {(
+                        [
+                          ["paint", t.brushPaint],
+                          ["erase", t.brushErase],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setBrushMode(value)}
+                          className={`${toolbarBtn} ${
+                            brushMode === value
+                              ? "bg-ink text-white"
+                              : "border border-line text-ink-muted hover:text-ink"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="block min-w-[min(100%,220px)] flex-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-green">
+                      {t.brushRadius}:{" "}
+                      {brushRadiusM >= 1000
+                        ? `${(brushRadiusM / 1000).toFixed(1)} km`
+                        : `${brushRadiusM} m`}
+                    </span>
+                    <input
+                      type="range"
+                      min={200}
+                      max={50000}
+                      step={100}
+                      value={brushRadiusM}
+                      onChange={(e) => setBrushRadiusM(Number(e.target.value))}
+                      className="mt-2 w-full cursor-pointer"
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              {showBoundaryOptions ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-green">
+                        {t.boundaryCountry}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          disabled={boundaryLoading}
+                          onClick={() => selectArJurisdiction(AR_COUNTRY)}
+                          className={`cursor-pointer px-2.5 py-1.5 text-xs font-bold tracking-wide transition disabled:cursor-wait disabled:opacity-50 ${
+                            pieces.some((p) => p.arId === AR_COUNTRY.id)
+                              ? "bg-green text-white"
+                              : "border border-line text-ink-muted hover:text-ink"
+                          }`}
+                        >
+                          {locale === "es"
+                            ? AR_COUNTRY.nameEs
+                            : AR_COUNTRY.nameEn}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-green">
+                        {t.boundaryAr}
+                      </p>
+                      <div className="mt-1.5 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                        {AR_JURISDICTIONS.map((j) => (
+                          <button
+                            key={j.id}
+                            type="button"
+                            disabled={boundaryLoading}
+                            onClick={() => selectArJurisdiction(j)}
+                            className={`cursor-pointer px-2.5 py-1.5 text-xs font-bold tracking-wide transition disabled:cursor-wait disabled:opacity-50 ${
+                              pieces.some((p) => p.arId === j.id)
+                                ? "bg-green text-white"
+                                : "border border-line text-ink-muted hover:text-ink"
+                            }`}
+                          >
+                            {locale === "es" ? j.nameEs : j.nameEn}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+                    <label className="block">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-green">
+                        {t.boundarySearch}
+                      </span>
+                      <input
+                        type="search"
+                        value={boundaryQuery}
+                        onChange={(e) => setBoundaryQuery(e.target.value)}
+                        placeholder={t.boundarySearchPlaceholder}
+                        className={inputClass}
+                      />
+                    </label>
+                    <div className="max-h-28 overflow-y-auto">
+                      {boundaryHits.length > 0 ? (
+                        <div className="space-y-1">
+                          {boundaryHits.map((hit) => (
+                            <button
+                              key={hit.queryKey}
+                              type="button"
+                              onClick={() => selectSearchHit(hit)}
+                              className="block w-full cursor-pointer border border-line bg-white/70 px-2.5 py-1.5 text-left hover:bg-white"
+                            >
+                              <span className="flex items-baseline justify-between gap-2">
+                                <span className="text-sm font-semibold text-ink">
+                                  {hit.label}
+                                </span>
+                                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                                  {hit.kind}
+                                </span>
+                              </span>
+                              {hit.subtitle ? (
+                                <span className="mt-0.5 block text-xs text-ink-muted">
+                                  {hit.subtitle}
+                                </span>
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="pt-2 text-xs text-ink-muted">
+                          {t.boundaryEmpty}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs leading-relaxed text-ink-muted">
+                    {t.boundaryHint}
+                  </p>
+                </div>
+              ) : null}
+
+              {showPieceEditor ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className={sectionLabelClass}>
+                      {t.shapeEdit}
+                      {selectedPiece ? ` · ${selectedPiece.name}` : ""}
+                    </p>
+                    {!selectedPiece && pieces.length > 0 ? (
+                      <p className="text-xs text-ink-muted">{t.shapeEditPick}</p>
+                    ) : null}
+                  </div>
+
+                  {!selectedPiece ? (
+                    <p className="text-xs text-ink-muted">{t.shapeEditEmpty}</p>
+                  ) : editableSelection?.kind === "rectangle" &&
+                    rectMetrics ? (
+                    <div className="space-y-2">
+                      <div>
+                        <p className={fieldLabelClass}>{t.sides}</p>
+                        <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          <label className="block">
+                            <span className={fieldLabelClass}>{t.widthM}</span>
+                            <input
+                              type="number"
+                              min={1}
+                              step={shapeSteps.stepRadius}
+                              value={roundToStep(
+                                rectMetrics.widthM,
+                                shapeSteps.stepRadius,
+                              )}
+                              onChange={(e) => {
+                                const n = Number(e.target.value);
+                                if (Number.isNaN(n) || n < 1) return;
+                                updateSelectedPiece(
+                                  rectangleFromCenterSize(
+                                    rectMetrics.center,
+                                    n,
+                                    rectMetrics.heightM,
+                                  ),
+                                );
+                              }}
+                              className={inputClass}
+                            />
+                          </label>
+                          <label className="block">
+                            <span className={fieldLabelClass}>{t.heightM}</span>
+                            <input
+                              type="number"
+                              min={1}
+                              step={shapeSteps.stepRadius}
+                              value={roundToStep(
+                                rectMetrics.heightM,
+                                shapeSteps.stepRadius,
+                              )}
+                              onChange={(e) => {
+                                const n = Number(e.target.value);
+                                if (Number.isNaN(n) || n < 1) return;
+                                updateSelectedPiece(
+                                  rectangleFromCenterSize(
+                                    rectMetrics.center,
+                                    rectMetrics.widthM,
+                                    n,
+                                  ),
+                                );
+                              }}
+                              className={inputClass}
+                            />
+                          </label>
+                          <label className="block">
+                            <span className={fieldLabelClass}>{t.centerLat}</span>
+                            <input
+                              type="number"
+                              step={shapeSteps.stepLat}
+                              value={rectMetrics.center.lat}
+                              onChange={(e) => {
+                                const n = Number(e.target.value);
+                                if (Number.isNaN(n)) return;
+                                updateSelectedPiece(
+                                  rectangleFromCenterSize(
+                                    { lat: n, lng: rectMetrics.center.lng },
+                                    rectMetrics.widthM,
+                                    rectMetrics.heightM,
+                                  ),
+                                );
+                              }}
+                              className={inputClass}
+                            />
+                          </label>
+                          <label className="block">
+                            <span className={fieldLabelClass}>{t.centerLng}</span>
+                            <input
+                              type="number"
+                              step={shapeSteps.stepLng}
+                              value={rectMetrics.center.lng}
+                              onChange={(e) => {
+                                const n = Number(e.target.value);
+                                if (Number.isNaN(n)) return;
+                                updateSelectedPiece(
+                                  rectangleFromCenterSize(
+                                    { lat: rectMetrics.center.lat, lng: n },
+                                    rectMetrics.widthM,
+                                    rectMetrics.heightM,
+                                  ),
+                                );
+                              }}
+                              className={inputClass}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      <div>
+                        <p className={fieldLabelClass}>{t.vertices}</p>
+                        <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {(
+                            [
+                              ["nw", t.vertexNW],
+                              ["ne", t.vertexNE],
+                              ["sw", t.vertexSW],
+                              ["se", t.vertexSE],
+                            ] as const
+                          ).map(([corner, label]) => {
+                            const v = rectangleVertex(
+                              editableSelection,
+                              corner,
+                            );
+                            return (
+                              <div key={corner} className="space-y-1">
+                                <p className={fieldLabelClass}>{label}</p>
+                                <input
+                                  type="number"
+                                  step={shapeSteps.stepLat}
+                                  aria-label={`${label} lat`}
+                                  value={v.lat}
+                                  onChange={(e) => {
+                                    const n = Number(e.target.value);
+                                    if (Number.isNaN(n)) return;
+                                    updateSelectedPiece(
+                                      setRectangleVertex(
+                                        editableSelection,
+                                        corner,
+                                        n,
+                                        v.lng,
+                                      ),
+                                    );
+                                  }}
+                                  className={inputClass}
+                                />
+                                <input
+                                  type="number"
+                                  step={shapeSteps.stepLng}
+                                  aria-label={`${label} lng`}
+                                  value={v.lng}
+                                  onChange={(e) => {
+                                    const n = Number(e.target.value);
+                                    if (Number.isNaN(n)) return;
+                                    updateSelectedPiece(
+                                      setRectangleVertex(
+                                        editableSelection,
+                                        corner,
+                                        v.lat,
+                                        n,
+                                      ),
+                                    );
+                                  }}
+                                  className={inputClass}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : editableSelection?.kind === "circle" ? (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <label className="block">
+                        <span className={fieldLabelClass}>{t.centerLat}</span>
+                        <input
+                          type="number"
+                          step={shapeSteps.stepLat}
+                          value={editableSelection.center.lat}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isNaN(n)) return;
+                            updateSelectedPiece({
+                              ...editableSelection,
+                              center: {
+                                ...editableSelection.center,
+                                lat: n,
+                              },
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </label>
+                      <label className="block">
+                        <span className={fieldLabelClass}>{t.centerLng}</span>
+                        <input
+                          type="number"
+                          step={shapeSteps.stepLng}
+                          value={editableSelection.center.lng}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isNaN(n)) return;
+                            updateSelectedPiece({
+                              ...editableSelection,
+                              center: {
+                                ...editableSelection.center,
+                                lng: n,
+                              },
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </label>
+                      <label className="col-span-2 block sm:col-span-1">
+                        <span className={fieldLabelClass}>{t.radiusM}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          step={shapeSteps.stepRadius}
+                          value={roundToStep(
+                            editableSelection.radiusM,
+                            shapeSteps.stepRadius,
+                          )}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isNaN(n) || n < 1) return;
+                            updateSelectedPiece({
+                              ...editableSelection,
+                              radiusM: n,
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </label>
+                    </div>
+                  ) : editableSelection?.kind === "ellipse" ? (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <label className="block">
+                        <span className={fieldLabelClass}>{t.centerLat}</span>
+                        <input
+                          type="number"
+                          step={shapeSteps.stepLat}
+                          value={editableSelection.center.lat}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isNaN(n)) return;
+                            updateSelectedPiece({
+                              ...editableSelection,
+                              center: {
+                                ...editableSelection.center,
+                                lat: n,
+                              },
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </label>
+                      <label className="block">
+                        <span className={fieldLabelClass}>{t.centerLng}</span>
+                        <input
+                          type="number"
+                          step={shapeSteps.stepLng}
+                          value={editableSelection.center.lng}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isNaN(n)) return;
+                            updateSelectedPiece({
+                              ...editableSelection,
+                              center: {
+                                ...editableSelection.center,
+                                lng: n,
+                              },
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </label>
+                      <label className="block">
+                        <span className={fieldLabelClass}>{t.radiusXM}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          step={shapeSteps.stepRadius}
+                          value={roundToStep(
+                            editableSelection.radiusXM,
+                            shapeSteps.stepRadius,
+                          )}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isNaN(n) || n < 1) return;
+                            updateSelectedPiece({
+                              ...editableSelection,
+                              radiusXM: n,
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </label>
+                      <label className="block">
+                        <span className={fieldLabelClass}>{t.radiusYM}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          step={shapeSteps.stepRadius}
+                          value={roundToStep(
+                            editableSelection.radiusYM,
+                            shapeSteps.stepRadius,
+                          )}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isNaN(n) || n < 1) return;
+                            updateSelectedPiece({
+                              ...editableSelection,
+                              radiusYM: n,
+                            });
+                          }}
+                          className={inputClass}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-ink-muted">
+                      {t.shapeEditUnsupported}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.75fr)]">
@@ -1951,23 +2507,45 @@ export function MapStlTool() {
                     ? ` · ${selectionSummary.pieces} ${t.pieceSummary} · ${selectionSummary.areaLabel} · ${selectionSummary.spanLabel}`
                     : ""}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {pieces.map((piece) => (
-                    <span
-                      key={piece.id}
-                      className="inline-flex items-center gap-1 border border-line bg-white/70 px-2 py-1 text-xs font-semibold text-ink"
-                    >
-                      {piece.name}
-                      <button
-                        type="button"
-                        onClick={() => removePiece(piece.id)}
-                        className="cursor-pointer text-ink-muted hover:text-ink"
-                        aria-label={`Remove ${piece.name}`}
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {pieces.map((piece) => {
+                    const selected = piece.id === selectedPieceId;
+                    return (
+                      <span
+                        key={piece.id}
+                        className={`inline-flex items-center gap-1 border px-2 py-1 text-xs font-semibold transition ${
+                          selected
+                            ? "border-blue-deep bg-blue-deep text-white"
+                            : "border-line bg-white/70 text-ink"
+                        }`}
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            selectedPieceIdRef.current = piece.id;
+                            setSelectedPieceId(piece.id);
+                          }}
+                          className={`cursor-pointer ${
+                            selected ? "text-white" : "hover:text-ink"
+                          }`}
+                        >
+                          {piece.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePiece(piece.id)}
+                          className={`cursor-pointer ${
+                            selected
+                              ? "text-white/80 hover:text-white"
+                              : "text-ink-muted hover:text-ink"
+                          }`}
+                          aria-label={`Remove ${piece.name}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
@@ -1996,12 +2574,12 @@ export function MapStlTool() {
             </div>
           </div>
 
-          <div className="space-y-5 border border-line bg-surface/50 p-5">
+          <div className="space-y-4 border border-line bg-surface/50 p-4">
             <fieldset>
-              <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+              <legend className={sectionLabelClass}>
                 {t.basemap}
               </legend>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {(
                   [
                     ["hybrid", t.basemapRelief],
@@ -2012,7 +2590,7 @@ export function MapStlTool() {
                     key={value}
                     type="button"
                     onClick={() => setBasemap(value)}
-                    className={`cursor-pointer px-3 py-2 text-sm font-bold tracking-wide transition ${
+                    className={`cursor-pointer px-2.5 py-1.5 text-xs font-bold tracking-wide transition ${
                       basemap === value
                         ? "bg-green text-white"
                         : "border border-line text-ink-muted hover:text-ink"
@@ -2024,371 +2602,55 @@ export function MapStlTool() {
               </div>
             </fieldset>
 
-            {tool === "brush" ? (
-              <fieldset>
-                <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
-                  {t.brush}
-                </legend>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(
-                    [
-                      ["paint", t.brushPaint],
-                      ["erase", t.brushErase],
-                    ] as const
-                  ).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setBrushMode(value)}
-                      className={`cursor-pointer px-3 py-2 text-sm font-bold tracking-wide transition ${
-                        brushMode === value
-                          ? "bg-ink text-white"
-                          : "border border-line text-ink-muted hover:text-ink"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <label className="mt-4 block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
-                    {t.brushRadius}: {brushRadiusM >= 1000
-                      ? `${(brushRadiusM / 1000).toFixed(1)} km`
-                      : `${brushRadiusM} m`}
-                  </span>
-                  <input
-                    type="range"
-                    min={200}
-                    max={50000}
-                    step={100}
-                    value={brushRadiusM}
-                    onChange={(e) => setBrushRadiusM(Number(e.target.value))}
-                    className="mt-2 w-full cursor-pointer"
-                  />
-                </label>
-              </fieldset>
-            ) : null}
-
-            {tool === "boundary" ? (
-              <fieldset>
-                <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
-                  {t.boundary}
-                </legend>
-                <div className="mt-3 space-y-4">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      {t.boundaryCountry}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        disabled={boundaryLoading}
-                        onClick={() => selectArJurisdiction(AR_COUNTRY)}
-                        className={`cursor-pointer px-2.5 py-1.5 text-xs font-bold tracking-wide transition disabled:cursor-wait disabled:opacity-50 ${
-                          pieces.some((p) => p.arId === AR_COUNTRY.id)
-                            ? "bg-green text-white"
-                            : "border border-line text-ink-muted hover:text-ink"
-                        }`}
-                      >
-                        {locale === "es" ? AR_COUNTRY.nameEs : AR_COUNTRY.nameEn}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      {t.boundaryAr}
-                    </p>
-                    <div className="mt-2 flex max-h-36 flex-wrap gap-1.5 overflow-y-auto">
-                      {AR_JURISDICTIONS.map((j) => (
-                        <button
-                          key={j.id}
-                          type="button"
-                          disabled={boundaryLoading}
-                          onClick={() => selectArJurisdiction(j)}
-                          className={`cursor-pointer px-2.5 py-1.5 text-xs font-bold tracking-wide transition disabled:cursor-wait disabled:opacity-50 ${
-                            pieces.some((p) => p.arId === j.id)
-                              ? "bg-green text-white"
-                              : "border border-line text-ink-muted hover:text-ink"
-                          }`}
-                        >
-                          {locale === "es" ? j.nameEs : j.nameEn}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <label className="block">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      {t.boundarySearch}
-                    </span>
-                    <input
-                      type="search"
-                      value={boundaryQuery}
-                      onChange={(e) => setBoundaryQuery(e.target.value)}
-                      placeholder={t.boundarySearchPlaceholder}
-                      className={inputClass}
-                    />
-                  </label>
-                  {boundaryHits.length > 0 ? (
-                    <div className="max-h-48 space-y-1 overflow-y-auto">
-                      {boundaryHits.map((hit) => (
-                        <button
-                          key={hit.queryKey}
-                          type="button"
-                          onClick={() => selectSearchHit(hit)}
-                          className="block w-full cursor-pointer border border-line px-2.5 py-2 text-left hover:bg-white"
-                        >
-                          <span className="flex items-baseline justify-between gap-2">
-                            <span className="text-sm font-semibold text-ink">
-                              {hit.label}
-                            </span>
-                            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                              {hit.kind}
-                            </span>
-                          </span>
-                          {hit.subtitle ? (
-                            <span className="mt-0.5 block text-xs text-ink-muted">
-                              {hit.subtitle}
-                            </span>
-                          ) : null}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-ink-muted">{t.boundaryEmpty}</p>
-                  )}
-                  <p className="text-xs leading-relaxed text-ink-muted">
-                    {t.boundaryHint}
-                  </p>
-                </div>
-              </fieldset>
-            ) : null}
-
-            {sole &&
-            (sole.kind === "rectangle" ||
-              sole.kind === "circle" ||
-              sole.kind === "ellipse") ? (
-              <fieldset>
-                <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
-                  {t.shapeEdit}
-                </legend>
-                <button
-                  type="button"
-                  onClick={() => setShapeAdvancedOpen((v) => !v)}
-                  className="mt-3 flex w-full cursor-pointer items-center justify-between text-xs font-semibold text-ink-muted hover:text-ink"
-                >
-                  {t.shapeAdvanced}
-                  <span>{shapeAdvancedOpen ? "−" : "+"}</span>
-                </button>
-                {!shapeAdvancedOpen ? null : sole.kind === "rectangle" ? (
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    {(
-                      [
-                        ["north", t.north, sole.north],
-                        ["south", t.south, sole.south],
-                        ["west", t.west, sole.west],
-                        ["east", t.east, sole.east],
-                      ] as const
-                    ).map(([key, label, value]) => (
-                      <label key={key} className="block">
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                          {label}
-                        </span>
-                        <input
-                          type="number"
-                          step={
-                            key === "east" || key === "west"
-                              ? shapeSteps.stepLng
-                              : shapeSteps.stepLat
-                          }
-                          value={value}
-                          onChange={(e) => {
-                            const n = Number(e.target.value);
-                            if (Number.isNaN(n)) return;
-                            updateSolePiece({ ...sole, [key]: n });
-                          }}
-                          className={inputClass}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                ) : sole.kind === "circle" ? (
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <label className="block">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        {t.centerLat}
-                      </span>
-                      <input
-                        type="number"
-                        step={shapeSteps.stepLat}
-                        value={sole.center.lat}
-                        onChange={(e) => {
-                          const n = Number(e.target.value);
-                          if (Number.isNaN(n)) return;
-                          updateSolePiece({
-                            ...sole,
-                            center: { ...sole.center, lat: n },
-                          });
-                        }}
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        {t.centerLng}
-                      </span>
-                      <input
-                        type="number"
-                        step={shapeSteps.stepLng}
-                        value={sole.center.lng}
-                        onChange={(e) => {
-                          const n = Number(e.target.value);
-                          if (Number.isNaN(n)) return;
-                          updateSolePiece({
-                            ...sole,
-                            center: { ...sole.center, lng: n },
-                          });
-                        }}
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="col-span-2 block">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        {t.radiusM}
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        step={shapeSteps.stepRadius}
-                        value={roundToStep(sole.radiusM, shapeSteps.stepRadius)}
-                        onChange={(e) => {
-                          const n = Number(e.target.value);
-                          if (Number.isNaN(n) || n < 1) return;
-                          updateSolePiece({ ...sole, radiusM: n });
-                        }}
-                        className={inputClass}
-                      />
-                    </label>
-                  </div>
-                ) : (
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <label className="block">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        {t.radiusXM}
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        step={shapeSteps.stepRadius}
-                        value={roundToStep(sole.radiusXM, shapeSteps.stepRadius)}
-                        onChange={(e) => {
-                          const n = Number(e.target.value);
-                          if (Number.isNaN(n) || n < 1) return;
-                          updateSolePiece({ ...sole, radiusXM: n });
-                        }}
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        {t.radiusYM}
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        step={shapeSteps.stepRadius}
-                        value={roundToStep(sole.radiusYM, shapeSteps.stepRadius)}
-                        onChange={(e) => {
-                          const n = Number(e.target.value);
-                          if (Number.isNaN(n) || n < 1) return;
-                          updateSolePiece({ ...sole, radiusYM: n });
-                        }}
-                        className={inputClass}
-                      />
-                    </label>
-                  </div>
-                )}
-              </fieldset>
-            ) : null}
-
             <fieldset>
-              <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+              <legend className={sectionLabelClass}>
                 {t.silhouette}
               </legend>
-              <div className="mt-3 flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
+              <div className="mt-2 space-y-2">
+                <div>
                   <p className="text-sm font-semibold text-ink">{t.clipToCoast}</p>
-                  <p className="mt-1 text-xs text-ink-muted">{t.clipToCoastHint}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">{t.clipToCoastHint}</p>
                   {clipBusy ? (
                     <p className="mt-1 text-xs font-medium text-green">
-                      {clipToCoast ? t.boundaryRestoring : t.boundaryClipping}
+                      {t.boundaryClipping}
                     </p>
                   ) : null}
                 </div>
                 <button
                   type="button"
-                  role="switch"
-                  aria-checked={clipToCoast}
                   aria-busy={clipBusy}
-                  aria-label={t.clipToCoast}
-                  disabled={clipBusy || boundaryLoading}
-                  onClick={() => void applyClipToCoast(!clipToCoast)}
-                  className={`relative mt-0.5 h-7 w-12 shrink-0 cursor-pointer border transition disabled:cursor-wait disabled:opacity-60 ${
-                    clipToCoast
-                      ? "border-green bg-green"
-                      : "border-line bg-white/70"
-                  }`}
+                  aria-label={t.clipToCoastApply}
+                  disabled={
+                    clipBusy || boundaryLoading || pieces.length === 0
+                  }
+                  onClick={() => void applyCoastClip()}
+                  className="cursor-pointer border border-green bg-green px-2.5 py-1.5 text-xs font-bold tracking-wide text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 shadow-sm transition-[left] ${
-                      clipToCoast ? "left-6 bg-white" : "left-0.5 bg-ink/80"
-                    }`}
-                  />
+                  {clipBusy ? t.boundaryClipping : t.clipToCoastApply}
                 </button>
               </div>
-              <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                {t.waterMode}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {(
-                  [
-                    ["keep", t.waterKeep],
-                    ["exclude", t.waterExclude],
-                    ["include", t.waterInclude],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setWaterMode(value)}
-                    className={`cursor-pointer px-3 py-2 text-sm font-bold tracking-wide transition ${
-                      waterMode === value
-                        ? "bg-green text-white"
-                        : "border border-line text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-ink-muted">{waterHint}</p>
             </fieldset>
 
-            <div>
+            <div className="border-t border-line pt-4">
               <button
                 type="button"
                 onClick={() => setExportOpen((v) => !v)}
-                className="flex w-full cursor-pointer items-center justify-between text-xs font-semibold uppercase tracking-[0.14em] text-green"
+                className="flex w-full cursor-pointer items-center justify-between gap-3 text-left"
               >
-                {t.exportSettings}
-                <span>{exportOpen ? "−" : "+"}</span>
+                <span className="text-base font-bold tracking-wide text-ink">
+                  {t.exportSettings}
+                </span>
+                <span className="text-sm font-semibold text-ink-muted">
+                  {exportOpen ? "−" : "+"}
+                </span>
               </button>
               {exportOpen ? (
-                <div className="mt-4 space-y-4">
+                <div className="mt-3 space-y-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+                    <p className={sectionLabelClass}>
                       {t.detail}
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {(
                         [
                           ["low", t.detailLow, t.detailSpeedLow],
@@ -2400,7 +2662,7 @@ export function MapStlTool() {
                           key={value}
                           type="button"
                           onClick={() => setDetail(value)}
-                          className={`cursor-pointer px-3 py-2 text-sm font-bold tracking-wide transition ${
+                          className={`cursor-pointer px-2.5 py-1.5 text-xs font-bold tracking-wide transition ${
                             detail === value
                               ? "bg-green text-white"
                               : "border border-line text-ink-muted hover:text-ink"
@@ -2416,7 +2678,7 @@ export function MapStlTool() {
                     <p className="mt-1 text-xs text-ink-muted">{t.detailHint}</p>
                   </div>
                   <label className="block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+                    <span className={sectionLabelClass}>
                       {t.relief}:{" "}
                       {verticalScale >= 10
                         ? `${verticalScale.toFixed(0)}×`
@@ -2432,12 +2694,12 @@ export function MapStlTool() {
                       step={0.5}
                       value={verticalScale}
                       onChange={(e) => setVerticalScale(Number(e.target.value))}
-                      className="mt-2 w-full cursor-pointer"
+                      className="mt-1.5 w-full cursor-pointer"
                     />
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <label className="block">
-                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+                      <span className={sectionLabelClass}>
                         {t.modelSize}
                       </span>
                       <input
@@ -2450,7 +2712,7 @@ export function MapStlTool() {
                       />
                     </label>
                     <label className="block">
-                      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-green">
+                      <span className={sectionLabelClass}>
                         {t.base}
                       </span>
                       <input
@@ -2572,6 +2834,94 @@ function applyBasemap(
   ).addTo(map);
 }
 
+function drawPieces(
+  map: L.Map,
+  pieces: SelectionPiece[],
+  selectedId: string | null,
+  layerRef: React.MutableRefObject<L.Layer | null>,
+  options?: {
+    hoverId?: string | null;
+    draft?: MapSelection | null;
+  },
+) {
+  if (layerRef.current) {
+    map.removeLayer(layerRef.current);
+    layerRef.current = null;
+  }
+  const hoverId = options?.hoverId ?? null;
+  const draft = options?.draft ?? null;
+  if (pieces.length === 0 && !draft) return;
+
+  const group = L.layerGroup();
+  for (const piece of pieces) {
+    const selected = piece.id === selectedId;
+    const hovered = piece.id === hoverId;
+    const style = hovered
+      ? {
+          color: "#b42318",
+          weight: 3,
+          fillColor: "#f04438",
+          fillOpacity: 0.42,
+        }
+      : {
+          color: selected ? "#0c3d6e" : "#6a859e",
+          weight: selected ? 3 : 1.5,
+          fillColor: selected ? "#1f8f6a" : "#3d9b7a",
+          fillOpacity: selected ? 0.32 : 0.16,
+        };
+    addSelectionLayer(piece.selection, style, group);
+  }
+  if (draft) {
+    addSelectionLayer(
+      draft,
+      {
+        color: "#0c3d6e",
+        weight: 2,
+        fillColor: "#1f8f6a",
+        fillOpacity: 0.28,
+        dashArray: "6 4",
+      },
+      group,
+    );
+  }
+  layerRef.current = group.addTo(map);
+}
+
+function addSelectionLayer(
+  next: MapSelection,
+  style: L.PathOptions,
+  group: L.LayerGroup,
+) {
+  if (next.kind === "rectangle") {
+    const b = selectionBounds(next);
+    L.rectangle(
+      [
+        [b.south, b.west],
+        [b.north, b.east],
+      ],
+      style,
+    ).addTo(group);
+    return;
+  }
+  if (next.kind === "circle") {
+    L.circle([next.center.lat, next.center.lng], {
+      ...style,
+      radius: next.radiusM,
+    }).addTo(group);
+    return;
+  }
+  if (next.kind === "polygon") {
+    for (const polygon of next.polygons) {
+      const latLngs = polygon.map((ring) =>
+        ring.map((p) => [p.lat, p.lng] as [number, number]),
+      );
+      L.polygon(latLngs, style).addTo(group);
+    }
+    return;
+  }
+  L.polygon(ellipseRing(next, 64), style).addTo(group);
+}
+
 function drawSelection(
   map: L.Map,
   next: MapSelection,
@@ -2581,42 +2931,89 @@ function drawSelection(
     map.removeLayer(layerRef.current);
     layerRef.current = null;
   }
-  const style = {
-    color: "#0c3d6e",
-    weight: 2,
-    fillColor: "#1f8f6a",
-    fillOpacity: 0.25,
+  const group = L.layerGroup();
+  addSelectionLayer(
+    next,
+    {
+      color: "#0c3d6e",
+      weight: 2,
+      fillColor: "#1f8f6a",
+      fillOpacity: 0.25,
+    },
+    group,
+  );
+  layerRef.current = group.addTo(map);
+}
+
+type RectSelection = Extract<MapSelection, { kind: "rectangle" }>;
+type RectCorner = "nw" | "ne" | "sw" | "se";
+
+function rectangleMetrics(rect: RectSelection) {
+  const b = selectionBounds(rect);
+  const center = {
+    lat: (b.north + b.south) / 2,
+    lng: (b.east + b.west) / 2,
   };
-  if (next.kind === "rectangle") {
-    const b = selectionBounds(next);
-    layerRef.current = L.rectangle(
-      [
-        [b.south, b.west],
-        [b.north, b.east],
-      ],
-      style,
-    ).addTo(map);
-    return;
+  const mLat = metersPerDegreeLat(center.lat);
+  const mLng = Math.max(metersPerDegreeLng(center.lat), 1e-9);
+  return {
+    center,
+    widthM: Math.abs(b.east - b.west) * mLng,
+    heightM: Math.abs(b.north - b.south) * mLat,
+  };
+}
+
+function rectangleFromCenterSize(
+  center: { lat: number; lng: number },
+  widthM: number,
+  heightM: number,
+): RectSelection {
+  const mLat = metersPerDegreeLat(center.lat);
+  const mLng = Math.max(metersPerDegreeLng(center.lat), 1e-9);
+  const halfH = Math.max(heightM, 1) / 2 / mLat;
+  const halfW = Math.max(widthM, 1) / 2 / mLng;
+  return {
+    kind: "rectangle",
+    north: center.lat + halfH,
+    south: center.lat - halfH,
+    east: center.lng + halfW,
+    west: center.lng - halfW,
+  };
+}
+
+function rectangleVertex(rect: RectSelection, corner: RectCorner) {
+  const b = selectionBounds(rect);
+  switch (corner) {
+    case "nw":
+      return { lat: b.north, lng: b.west };
+    case "ne":
+      return { lat: b.north, lng: b.east };
+    case "sw":
+      return { lat: b.south, lng: b.west };
+    case "se":
+      return { lat: b.south, lng: b.east };
   }
-  if (next.kind === "circle") {
-    layerRef.current = L.circle([next.center.lat, next.center.lng], {
-      ...style,
-      radius: next.radiusM,
-    }).addTo(map);
-    return;
-  }
-  if (next.kind === "polygon") {
-    const group = L.layerGroup();
-    for (const polygon of next.polygons) {
-      const latLngs = polygon.map((ring) =>
-        ring.map((p) => [p.lat, p.lng] as [number, number]),
-      );
-      L.polygon(latLngs, style).addTo(group);
-    }
-    layerRef.current = group.addTo(map);
-    return;
-  }
-  layerRef.current = L.polygon(ellipseRing(next, 64), style).addTo(map);
+}
+
+function setRectangleVertex(
+  rect: RectSelection,
+  corner: RectCorner,
+  lat: number,
+  lng: number,
+): RectSelection {
+  const b = selectionBounds(rect);
+  let { north, south, east, west } = b;
+  if (corner === "nw" || corner === "ne") north = lat;
+  else south = lat;
+  if (corner === "nw" || corner === "sw") west = lng;
+  else east = lng;
+  return {
+    kind: "rectangle",
+    north: Math.max(north, south),
+    south: Math.min(north, south),
+    east: Math.max(east, west),
+    west: Math.min(east, west),
+  };
 }
 
 function selectionFromDrag(
