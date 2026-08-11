@@ -2262,9 +2262,15 @@ export function BeastPathGame() {
       setStageHeight(Math.max(240, Math.round(window.innerHeight - top - 10)));
     };
     measure();
+    // Also re-measure when the page chrome above the stage grows or shrinks
+    // (e.g. the header details toggle). Settles in one pass: the stage sits
+    // below everything it measures.
+    const observer = new ResizeObserver(() => measure());
+    observer.observe(document.body);
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
     return () => {
+      observer.disconnect();
       window.removeEventListener("resize", measure);
       window.removeEventListener("orientationchange", measure);
     };
