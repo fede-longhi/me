@@ -2583,7 +2583,10 @@ export function BeastPathGame() {
             <h2 className="beast-path__title text-xl font-bold">{labels.ui.shopTitle}</h2>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               {state.shopOffers.map((offer) => (
-                <li key={offer.id} className="beast-path__panel p-3">
+                <li
+                  key={offer.id}
+                  className="beast-path__panel beast-path__shop-offer p-3"
+                >
                   <p className="font-semibold">
                     {labels.shop[offer.labelKey]}
                     {offer.kind === "recruit" ? `: ${offer.monster.name}` : ""}

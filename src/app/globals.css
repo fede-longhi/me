@@ -1746,6 +1746,26 @@ body {
     padding: 0.7rem;
   }
 
+  /* Shop offers become one compact row each so the whole stock fits. */
+  .beast-path__shop-offer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.15rem 0.6rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .beast-path__shop-offer > * {
+    grid-column: 1;
+    margin: 0;
+  }
+
+  .beast-path__shop-offer > button {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: center;
+  }
+
   /* Starter picks become a scrollable list of wide cards. */
   .beast-path__starter-grid {
     grid-template-columns: minmax(0, 1fr);
