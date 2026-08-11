@@ -121,6 +121,8 @@ export type SiteUi = {
   languagesTitle: string;
   highlightsLabel: string;
   builtWithLabel: string;
+  showDetails: string;
+  hideDetails: string;
 };
 
 export type SiteData = {

@@ -73,7 +73,9 @@
       "educationTitle": "Education",
       "languagesTitle": "Languages",
       "highlightsLabel": "Highlights",
-      "builtWithLabel": "How it’s built"
+      "builtWithLabel": "How it’s built",
+      "showDetails": "Show details",
+      "hideDetails": "Hide details"
     },
     "home": {
       "name": "Fede Longhi",
@@ -361,7 +363,9 @@
       "educationTitle": "Educación",
       "languagesTitle": "Idiomas",
       "highlightsLabel": "Highlights",
-      "builtWithLabel": "Cómo está hecha"
+      "builtWithLabel": "Cómo está hecha",
+      "showDetails": "Ver detalles",
+      "hideDetails": "Ocultar detalles"
     },
     "home": {
       "name": "Fede Longhi",

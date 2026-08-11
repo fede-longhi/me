@@ -3,18 +3,23 @@
 import { Oxanium } from "next/font/google";
 import {
   Bed,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CircleHelp,
+  Coins,
   Crown,
   Droplets,
   Flower2,
   Heart,
   ImageIcon,
+  ListOrdered,
   Maximize2,
   Minimize2,
   Mountain,
   Palmtree,
+  ScrollText,
   Shield,
   ShoppingBag,
   Skull,
@@ -23,6 +28,7 @@ import {
   Trees,
   Waves,
   Wind,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -38,6 +44,7 @@ import {
 import { createPortal } from "react-dom";
 import { GameChrome } from "@/components/games/GameChrome";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useLayoutMode } from "@/lib/use-layout-mode";
 import { ELEMENT_COLOR } from "@/lib/roguelike/content";
 import {
   buildFightTimeline,
@@ -86,7 +93,7 @@ import type {
   NodeType,
   RunState,
 } from "@/lib/roguelike/types";
-import { MAX_MOVES } from "@/lib/roguelike/types";
+import { MAX_MOVES, PARTY_LIMIT } from "@/lib/roguelike/types";
 
 const oxanium = Oxanium({
   subsets: ["latin"],
@@ -100,6 +107,15 @@ const ROW_GAP = 52;
 const NODE_R = 24;
 const PAD_X = 48;
 const PAD_Y = 40;
+
+/** Vertical (portrait) path: columns run top → bottom, lanes spread sideways. */
+const V_COL_GAP = 78;
+const V_LANE_GAP = 58;
+const V_PAD_X = 30;
+const V_PAD_Y = 38;
+const COMPACT_NODE_R = 19;
+
+type MapAxis = "horizontal" | "vertical";
 
 /** Distinct accent per party slot (not tied to element). */
 const PARTY_COLORS = [
@@ -139,9 +155,24 @@ const HABITAT_ICONS: Record<
   swamp: Droplets,
 };
 
-function layoutMap(nodes: MapNode[]) {
+function layoutMap(nodes: MapNode[], axis: MapAxis) {
   const maxCols = Math.max(...nodes.map((n) => n.column)) + 1;
   const positions = new Map<string, { x: number; y: number }>();
+
+  if (axis === "vertical") {
+    for (const node of nodes) {
+      positions.set(node.id, {
+        x: V_PAD_X + node.row * V_LANE_GAP,
+        y: V_PAD_Y + node.column * V_COL_GAP,
+      });
+    }
+
+    return {
+      positions,
+      width: V_PAD_X * 2 + (MAP_LANES - 1) * V_LANE_GAP,
+      height: V_PAD_Y * 2 + (maxCols - 1) * V_COL_GAP,
+    };
+  }
 
   for (const node of nodes) {
     positions.set(node.id, {
@@ -155,6 +186,74 @@ function layoutMap(nodes: MapNode[]) {
     width: PAD_X * 2 + (maxCols - 1) * COL_GAP,
     height: PAD_Y * 2 + (MAP_LANES - 1) * ROW_GAP,
   };
+}
+
+/** Path between two nodes, bent along the travel axis. */
+function nodeLinkPath(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  axis: MapAxis,
+  radius: number,
+) {
+  if (axis === "vertical") {
+    const midY = (a.y + b.y) / 2;
+    return `M ${a.x} ${a.y + radius - 2} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y - radius + 2}`;
+  }
+  const midX = (a.x + b.x) / 2;
+  return `M ${a.x + radius - 2} ${a.y} C ${midX} ${a.y}, ${midX} ${b.y}, ${b.x - radius + 2} ${b.y}`;
+}
+
+/** Collapsible section used to fold secondary info away on small screens. */
+function Collapsible({
+  title,
+  meta,
+  badge,
+  preview,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  meta?: React.ReactNode;
+  badge?: React.ReactNode;
+  /** Shown next to the title while the section is folded. */
+  preview?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div
+      className={[
+        "beast-path__collapse",
+        open ? "beast-path__collapse--open" : "",
+      ].join(" ")}
+    >
+      <button
+        type="button"
+        className="beast-path__collapse-head"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="beast-path__collapse-title">{title}</span>
+        {badge != null ? (
+          <span className="beast-path__collapse-badge">{badge}</span>
+        ) : null}
+        {!open && preview != null ? (
+          <span className="beast-path__collapse-preview">{preview}</span>
+        ) : null}
+        {meta != null ? (
+          <span className="beast-path__collapse-meta">{meta}</span>
+        ) : null}
+        <span className="beast-path__collapse-chevron" aria-hidden>
+          <ChevronDown size={14} strokeWidth={2.25} />
+        </span>
+      </button>
+      {open ? (
+        <div className="beast-path__collapse-body">{children}</div>
+      ) : null}
+    </div>
+  );
 }
 
 function HpBar({
@@ -450,11 +549,70 @@ function PartyStrip({
   party,
   labels,
   gold,
+  compact,
 }: {
   party: Monster[];
   labels: ReturnType<typeof getLabels>;
   gold: number;
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <Collapsible
+        title={labels.ui.party}
+        badge={`${party.length}/${PARTY_LIMIT}`}
+        meta={
+          <span className="beast-path__gold-chip">
+            <Coins size={11} strokeWidth={2.25} aria-hidden />
+            {gold}
+          </span>
+        }
+        preview={
+          party.length > 0 ? (
+            <span
+              className="beast-path__party-pips"
+              aria-label={labels.ui.partyStatus}
+            >
+              {party.map((m) => (
+                <span key={m.uid} className="beast-path__party-pip">
+                  <HpBar hp={m.hp} maxHp={m.maxHp} />
+                </span>
+              ))}
+            </span>
+          ) : null
+        }
+      >
+        {party.length === 0 ? (
+          <p className="text-xs text-[var(--bp-muted)]">—</p>
+        ) : (
+          <ul className="beast-path__party-list">
+            {party.map((m) => (
+              <li key={m.uid} className="beast-path__party-row">
+                <span className="beast-path__party-thumb" aria-hidden>
+                  <ImageIcon size={13} strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-xs font-semibold leading-tight">
+                      {m.name}
+                    </span>
+                    <span className="shrink-0 text-[10px] text-[var(--bp-muted)]">
+                      {labels.ui.level} {m.level} · {m.hp}/{m.maxHp}
+                    </span>
+                  </span>
+                  <span className="mt-1 block space-y-1">
+                    <HpBar hp={m.hp} maxHp={m.maxHp} />
+                    <XpBar xp={m.xp} level={m.level} label={labels.ui.rewardXp} />
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Collapsible>
+    );
+  }
+
   return (
     <div className="beast-path__panel flex shrink-0 flex-col gap-2 p-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 flex-1">
@@ -607,18 +765,24 @@ function MapView({
   state,
   labels,
   onSelect,
+  axis,
+  compact = false,
 }: {
   state: RunState;
   labels: ReturnType<typeof getLabels>;
   onSelect: (id: string) => void;
+  axis: MapAxis;
+  compact?: boolean;
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollForward, setCanScrollForward] = useState(false);
+  const vertical = axis === "vertical";
+  const nodeRadius = compact ? COMPACT_NODE_R : NODE_R;
 
   const { positions, width, height } = useMemo(
-    () => layoutMap(state.map.nodes),
-    [state.map.nodes],
+    () => layoutMap(state.map.nodes, axis),
+    [state.map.nodes, axis],
   );
 
   const edges = useMemo(() => {
@@ -630,9 +794,16 @@ function MapView({
   const updateScrollState = useCallback(() => {
     const el = scrollerRef.current;
     if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 2);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
-  }, []);
+    if (vertical) {
+      setCanScrollBack(el.scrollTop > 2);
+      setCanScrollForward(
+        el.scrollTop + el.clientHeight < el.scrollHeight - 2,
+      );
+      return;
+    }
+    setCanScrollBack(el.scrollLeft > 2);
+    setCanScrollForward(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }, [vertical]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -645,11 +816,38 @@ function MapView({
       el.removeEventListener("scroll", updateScrollState);
       ro.disconnect();
     };
-  }, [updateScrollState, width]);
+  }, [updateScrollState, width, height]);
+
+  // Small screens only: keep the next open nodes in view without panning.
+  const focusNodeId = state.available[0] ?? state.currentNodeId;
+  useEffect(() => {
+    if (!compact) return;
+    const el = scrollerRef.current;
+    const pos = positions.get(focusNodeId);
+    if (!el || !pos) return;
+    if (vertical) {
+      el.scrollTo({
+        top: Math.max(0, pos.y - el.clientHeight * 0.55),
+        behavior: "smooth",
+      });
+      return;
+    }
+    el.scrollTo({
+      left: Math.max(0, pos.x - el.clientWidth * 0.5),
+      behavior: "smooth",
+    });
+  }, [compact, focusNodeId, positions, vertical]);
 
   function scrollMap(direction: -1 | 1) {
     const el = scrollerRef.current;
     if (!el) return;
+    if (vertical) {
+      el.scrollBy({
+        top: direction * Math.min(240, el.clientHeight * 0.6),
+        behavior: "smooth",
+      });
+      return;
+    }
     el.scrollBy({
       left: direction * Math.min(280, el.clientWidth * 0.55),
       behavior: "smooth",
@@ -658,37 +856,73 @@ function MapView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <p className="mb-2 shrink-0 text-xs text-[var(--bp-muted)]">
+      <p className="beast-path__map-hint mb-2 shrink-0 text-xs text-[var(--bp-muted)]">
         {labels.ui.mapHint}
       </p>
       <div className="beast-path__map-wrap">
-        <div className="beast-path__map-shell">
+        <div
+          className={[
+            "beast-path__map-shell",
+            vertical ? "beast-path__map-shell--vertical" : "",
+          ].join(" ")}
+        >
         <button
           type="button"
-          className="beast-path__map-arrow beast-path__map-arrow--left"
-          aria-label={labels.ui.scrollLeft}
-          disabled={!canScrollLeft}
+          className={[
+            "beast-path__map-arrow",
+            vertical
+              ? "beast-path__map-arrow--up"
+              : "beast-path__map-arrow--left",
+          ].join(" ")}
+          aria-label={vertical ? labels.ui.scrollUp : labels.ui.scrollLeft}
+          disabled={!canScrollBack}
           onClick={() => scrollMap(-1)}
         >
           <span className="beast-path__map-arrow-icon" aria-hidden>
-            <ChevronLeft size={22} strokeWidth={2.25} />
+            {vertical ? (
+              <ChevronUp size={22} strokeWidth={2.25} />
+            ) : (
+              <ChevronLeft size={22} strokeWidth={2.25} />
+            )}
           </span>
         </button>
         <button
           type="button"
-          className="beast-path__map-arrow beast-path__map-arrow--right"
-          aria-label={labels.ui.scrollRight}
-          disabled={!canScrollRight}
+          className={[
+            "beast-path__map-arrow",
+            vertical
+              ? "beast-path__map-arrow--down"
+              : "beast-path__map-arrow--right",
+          ].join(" ")}
+          aria-label={vertical ? labels.ui.scrollDown : labels.ui.scrollRight}
+          disabled={!canScrollForward}
           onClick={() => scrollMap(1)}
         >
           <span className="beast-path__map-arrow-icon" aria-hidden>
-            <ChevronRight size={22} strokeWidth={2.25} />
+            {vertical ? (
+              <ChevronDown size={22} strokeWidth={2.25} />
+            ) : (
+              <ChevronRight size={22} strokeWidth={2.25} />
+            )}
           </span>
         </button>
-        <div ref={scrollerRef} className="beast-path__map-scroller">
+        <div
+          ref={scrollerRef}
+          className={[
+            "beast-path__map-scroller",
+            vertical ? "beast-path__map-scroller--vertical" : "",
+          ].join(" ")}
+        >
           <div
-            className="beast-path__map"
-            style={{ width, height, minWidth: width }}
+            className={[
+              "beast-path__map",
+              vertical ? "beast-path__map--vertical" : "",
+            ].join(" ")}
+            style={
+              vertical
+                ? { width, height, minHeight: height }
+                : { width, height, minWidth: width }
+            }
           >
             <svg
               className="beast-path__map-svg"
@@ -698,7 +932,6 @@ function MapView({
                 const a = positions.get(from);
                 const b = positions.get(to);
                 if (!a || !b) return null;
-                const midX = (a.x + b.x) / 2;
                 const active =
                   state.available.includes(to) &&
                   (state.currentNodeId === from ||
@@ -708,7 +941,7 @@ function MapView({
                 return (
                   <path
                     key={`${from}-${to}`}
-                    d={`M ${a.x + NODE_R - 2} ${a.y} C ${midX} ${a.y}, ${midX} ${b.y}, ${b.x - NODE_R + 2} ${b.y}`}
+                    d={nodeLinkPath(a, b, axis, nodeRadius)}
                     className={[
                       "beast-path__path",
                       active ? "beast-path__path--active" : "",
@@ -748,6 +981,37 @@ function MapView({
         </div>
       </div>
     </div>
+  );
+}
+
+const LEGEND_TYPES: NodeType[] = [
+  "battle",
+  "elite",
+  "habitat",
+  "shop",
+  "event",
+  "rest",
+  "boss",
+  "start",
+];
+
+function MapLegend({ labels }: { labels: ReturnType<typeof getLabels> }) {
+  return (
+    <Collapsible title={labels.ui.mapLegend}>
+      <ul className="beast-path__legend">
+        {LEGEND_TYPES.map((type) => {
+          const Icon = NODE_ICONS[type];
+          return (
+            <li key={type}>
+              <span className="beast-path__legend-icon" aria-hidden>
+                <Icon size={13} strokeWidth={2} />
+              </span>
+              {labels.nodes[type]}
+            </li>
+          );
+        })}
+      </ul>
+    </Collapsible>
   );
 }
 
@@ -848,6 +1112,7 @@ function BattleView({
   onArmCapture,
   onFightComplete,
   onClaim,
+  compact = false,
 }: {
   state: RunState;
   labels: ReturnType<typeof getLabels>;
@@ -857,6 +1122,8 @@ function BattleView({
   onArmCapture: (enabled: boolean) => void;
   onFightComplete: (battle: BattleState) => void;
   onClaim: () => void;
+  /** Small screens: creatures + actions stay visible, the rest folds away. */
+  compact?: boolean;
 }) {
   const liveBattle = state.battle!;
   const [playback, setPlayback] = useState<{
@@ -869,6 +1136,8 @@ function BattleView({
   const playGen = useRef(0);
   const [focusActor, setFocusActor] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<MoveId | null>(null);
+  const [sheet, setSheet] = useState<"order" | "log" | null>(null);
+  const [inspectOpen, setInspectOpen] = useState(false);
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef(new Map<string, HTMLElement>());
   const [links, setLinks] = useState<
@@ -1161,31 +1430,230 @@ function BattleView({
     ));
   }
 
-  return (
-    <div className="beast-path__battle">
-      <div className="beast-path__battle-main">
-        <h2 className="beast-path__title shrink-0 text-base font-bold">
-          {isWild && liveBattle.habitat
-            ? labels.habitats[liveBattle.habitat]
-            : labels.ui.fight}
-        </h2>
-        <p className="mt-0.5 shrink-0 text-[10px] text-[var(--bp-muted)]">
-          {battle.phase === "won"
-            ? labels.ui.victoryBattle
-            : battle.phase === "lost"
-              ? labels.ui.defeatBattle
-                : resolving
-                ? labels.ui.resolving
-                : captureArmed
-                  ? labels.ui.captureArmed
-                  : pendingMove
-                    ? labels.ui.chooseTarget
-                    : ready
-                      ? labels.ui.yourTurn
-                      : labels.ui.needPlans}
-        </p>
+  const titleText =
+    isWild && liveBattle.habitat
+      ? labels.habitats[liveBattle.habitat]
+      : labels.ui.fight;
 
-        <div ref={fieldRef} className="relative mt-2 min-h-0 flex-1">
+  const phaseText =
+    battle.phase === "won"
+      ? labels.ui.victoryBattle
+      : battle.phase === "lost"
+        ? labels.ui.defeatBattle
+        : resolving
+          ? labels.ui.resolving
+          : captureArmed
+            ? labels.ui.captureArmed
+            : pendingMove
+              ? labels.ui.chooseTarget
+              : ready
+                ? labels.ui.yourTurn
+                : labels.ui.needPlans;
+
+  function renderMoveGrid(className: string) {
+    if (!focus) return null;
+    return (
+      <div className={className}>
+        {Array.from({ length: MAX_MOVES }, (_, slot) => {
+          const moveId = focus.moves[slot] ?? null;
+          if (!moveId) {
+            return (
+              <div
+                key={`empty-${slot}`}
+                className="beast-path__move-slot beast-path__move-slot--empty"
+                aria-hidden
+              >
+                {labels.ui.emptyMove}
+              </div>
+            );
+          }
+          const move = getMove(moveId);
+          const moveSelected = battle.plans[focus.uid]?.moveId === moveId;
+          const pending = pendingMove === moveId;
+          const uses = remainingUses(focus.moveUses, moveId);
+          const max = maxUsesFor(moveId);
+          const exhausted = uses <= 0;
+          const hasTargets =
+            validTargetsForMove(battle, focus.uid, moveId).length > 0;
+          const plannedTarget =
+            battle.plans[focus.uid]?.moveId === moveId
+              ? battle.plans[focus.uid]?.targetId
+              : null;
+          const impact = exhausted
+            ? null
+            : moveImpactHint(battle, focus.uid, moveId, labels, plannedTarget);
+          const impactTone =
+            move.kind === "attack"
+              ? "damage"
+              : move.effect?.type === "heal"
+                ? "heal"
+                : "buff";
+          return (
+            <button
+              key={moveId}
+              type="button"
+              disabled={exhausted || !hasTargets}
+              className={[
+                "beast-path__move-slot disabled:cursor-not-allowed disabled:opacity-40",
+                moveSelected || pending
+                  ? "border-[var(--bp-ember)] bg-[color-mix(in_oklab,var(--bp-ember)_12%,transparent)]"
+                  : "",
+              ].join(" ")}
+              onClick={() => selectMove(moveId)}
+            >
+              <div className="flex items-start justify-between gap-1.5">
+                <p className="text-[11px] font-semibold leading-tight">
+                  {labels.moves[moveId].name}
+                  <span className="ml-1 text-[8px] uppercase tracking-wide text-[var(--bp-muted)]">
+                    {move.kind}
+                  </span>
+                </p>
+                <span
+                  className={[
+                    "shrink-0 text-[9px] font-bold tabular-nums",
+                    exhausted
+                      ? "text-[var(--bp-ember)]"
+                      : "text-[var(--bp-muted)]",
+                  ].join(" ")}
+                >
+                  {uses}/{max}
+                </span>
+              </div>
+              {exhausted ? (
+                <p className="mt-0.5 text-[9px] font-semibold text-[var(--bp-ember)]">
+                  {labels.ui.noUses}
+                </p>
+              ) : impact ? (
+                <p
+                  className={[
+                    "beast-path__move-impact",
+                    impactTone === "heal"
+                      ? "beast-path__move-impact--heal"
+                      : impactTone === "buff"
+                        ? "beast-path__move-impact--buff"
+                        : "",
+                  ].join(" ")}
+                >
+                  {impact}
+                </p>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function renderSkipButton(extraClass: string) {
+    if (!focus) return null;
+    return (
+      <button
+        type="button"
+        className={[
+          extraClass,
+          battle.plans[focus.uid]?.moveId === null
+            ? "border-[var(--bp-gold)] text-[var(--bp-gold)]"
+            : "border-[var(--bp-line)] text-[var(--bp-muted)] hover:border-[var(--bp-gold)]",
+        ].join(" ")}
+        onClick={selectSkip}
+      >
+        {labels.ui.skipMove}
+      </button>
+    );
+  }
+
+  function renderCaptureButton(className: string) {
+    return (
+      <button
+        type="button"
+        className={[
+          className,
+          captureArmed ? "beast-path__capture-btn--armed" : "",
+        ].join(" ")}
+        onClick={() => {
+          setFocusActor(null);
+          setPendingMove(null);
+          onArmCapture(!captureArmed);
+        }}
+      >
+        {labels.ui.captureAction}
+      </button>
+    );
+  }
+
+  function renderFightButton(className: string) {
+    return (
+      <button
+        type="button"
+        disabled={!ready || Boolean(playback)}
+        className={[
+          "beast-path__btn disabled:cursor-not-allowed disabled:opacity-40",
+          className,
+        ].join(" ")}
+        onClick={() => {
+          void playFight();
+        }}
+      >
+        {playback ? labels.ui.resolving : labels.ui.fightRound}
+      </button>
+    );
+  }
+
+  const turnOrderList = (
+    <ol className="beast-path__turn-order">
+      {order.map((uid, idx) => {
+        const m = combatantsById.get(uid);
+        if (!m) return null;
+        const accent =
+          m.side === "player"
+            ? (partyColorById.get(m.uid) ?? PARTY_COLORS[0])
+            : "var(--bp-ember)";
+        return (
+          <li
+            key={uid}
+            style={
+              {
+                color: accent,
+                borderColor: `color-mix(in oklab, ${accent} 45%, transparent)`,
+              } as CSSProperties
+            }
+          >
+            {idx + 1}. {m.name}
+            <span className="mt-0.5 block opacity-70">
+              {labels.ui.spd} {m.spd}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+
+  const logList = (
+    <ul className="space-y-1 text-[var(--bp-muted)]">
+      {battle.log.map((entry) => (
+        <li key={entry.id}>{entry.text}</li>
+      ))}
+    </ul>
+  );
+
+  const victoryOverlay =
+    battle.phase === "won" && !playback ? (
+      <div className="beast-path__victory p-3">
+        <p className="text-sm font-semibold">{labels.ui.victoryBattle}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="beast-path__btn px-3 py-1.5 text-xs"
+            onClick={() => onClaim()}
+          >
+            {labels.ui.claimRewards}
+          </button>
+        </div>
+      </div>
+    ) : null;
+
+  const combatField = (
+    <div ref={fieldRef} className="relative mt-2 min-h-0 flex-1">
           <svg
             className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
             aria-hidden
@@ -1449,20 +1917,10 @@ function BattleView({
               </div>
             </div>
           </div>
-        </div>
+    </div>
+  );
 
-        {planning || playback ? (
-          <div
-            className={[
-              "beast-path__actions-dock",
-              inspected || (isWild && planning)
-                ? ""
-                : "beast-path__actions-dock--empty",
-            ].join(" ")}
-          >
-            {inspected || (isWild && planning) ? (
-              <div className="beast-path__dock-row">
-                {inspected ? (
+  const inspectPanel = inspected ? (
                   <div className="beast-path__panel beast-path__inspect p-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold leading-tight">
@@ -1513,238 +1971,263 @@ function BattleView({
                       </div>
                     )}
                   </div>
-                ) : null}
-                {focus ? (
-                  <div className="beast-path__panel beast-path__actions p-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-gold)]">
-                          {labels.ui.actionsPanel}
-                        </p>
-                        <p className="truncate text-[11px] text-[var(--bp-muted)]">
-                          {labels.ui.chooseMove}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className={[
-                          "shrink-0 border px-3 py-1.5 text-xs font-bold uppercase tracking-wide",
-                          battle.plans[focus.uid]?.moveId === null
-                            ? "border-[var(--bp-gold)] text-[var(--bp-gold)]"
-                            : "border-[var(--bp-line)] text-[var(--bp-muted)] hover:border-[var(--bp-gold)]",
-                        ].join(" ")}
-                        onClick={selectSkip}
-                      >
-                        {labels.ui.skipMove}
-                      </button>
-                    </div>
-                    <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-                      {Array.from({ length: MAX_MOVES }, (_, slot) => {
-                        const moveId = focus.moves[slot] ?? null;
-                        if (!moveId) {
-                          return (
-                            <div
-                              key={`empty-${slot}`}
-                              className="beast-path__move-slot beast-path__move-slot--empty"
-                              aria-hidden
-                            >
-                              {labels.ui.emptyMove}
-                            </div>
-                          );
-                        }
-                        const move = getMove(moveId);
-                        const moveSelected =
-                          battle.plans[focus.uid]?.moveId === moveId;
-                        const pending = pendingMove === moveId;
-                        const uses = remainingUses(focus.moveUses, moveId);
-                        const max = maxUsesFor(moveId);
-                        const exhausted = uses <= 0;
-                        const hasTargets =
-                          validTargetsForMove(battle, focus.uid, moveId)
-                            .length > 0;
-                        const plannedTarget =
-                          battle.plans[focus.uid]?.moveId === moveId
-                            ? battle.plans[focus.uid]?.targetId
-                            : null;
-                        const impact = exhausted
-                          ? null
-                          : moveImpactHint(
-                              battle,
-                              focus.uid,
-                              moveId,
-                              labels,
-                              plannedTarget,
-                            );
-                        const impactTone =
-                          move.kind === "attack"
-                            ? "damage"
-                            : move.effect?.type === "heal"
-                              ? "heal"
-                              : "buff";
-                        return (
-                          <button
-                            key={moveId}
-                            type="button"
-                            disabled={exhausted || !hasTargets}
-                            className={[
-                              "beast-path__move-slot disabled:cursor-not-allowed disabled:opacity-40",
-                              moveSelected || pending
-                                ? "border-[var(--bp-ember)] bg-[color-mix(in_oklab,var(--bp-ember)_12%,transparent)]"
-                                : "",
-                            ].join(" ")}
-                            onClick={() => selectMove(moveId)}
-                          >
-                            <div className="flex items-start justify-between gap-1.5">
-                              <p className="text-[11px] font-semibold leading-tight">
-                                {labels.moves[moveId].name}
-                                <span className="ml-1 text-[8px] uppercase tracking-wide text-[var(--bp-muted)]">
-                                  {move.kind}
-                                </span>
-                              </p>
-                              <span
-                                className={[
-                                  "shrink-0 text-[9px] font-bold tabular-nums",
-                                  exhausted
-                                    ? "text-[var(--bp-ember)]"
-                                    : "text-[var(--bp-muted)]",
-                                ].join(" ")}
-                              >
-                                {uses}/{max}
-                              </span>
-                            </div>
-                            {exhausted ? (
-                              <p className="mt-0.5 text-[9px] font-semibold text-[var(--bp-ember)]">
-                                {labels.ui.noUses}
-                              </p>
-                            ) : impact ? (
-                              <p
-                                className={[
-                                  "beast-path__move-impact",
-                                  impactTone === "heal"
-                                    ? "beast-path__move-impact--heal"
-                                    : impactTone === "buff"
-                                      ? "beast-path__move-impact--buff"
-                                      : "",
-                                ].join(" ")}
-                              >
-                                {impact}
-                              </p>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
+  ) : null;
+
+  const desktopDock =
+    planning || playback ? (
+      <div
+        className={[
+          "beast-path__actions-dock",
+          inspected || (isWild && planning)
+            ? ""
+            : "beast-path__actions-dock--empty",
+        ].join(" ")}
+      >
+        {inspected || (isWild && planning) ? (
+          <div className="beast-path__dock-row">
+            {inspectPanel}
+            {focus ? (
+              <div className="beast-path__panel beast-path__actions p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-gold)]">
+                      {labels.ui.actionsPanel}
+                    </p>
+                    <p className="truncate text-[11px] text-[var(--bp-muted)]">
+                      {labels.ui.chooseMove}
+                    </p>
                   </div>
-                ) : null}
-                {isWild && planning ? (
-                  <div className="beast-path__capture-slot">
-                    <button
-                      type="button"
-                      className={[
-                        "beast-path__capture-btn",
-                        captureArmed ? "beast-path__capture-btn--armed" : "",
-                      ].join(" ")}
-                      onClick={() => {
-                        setFocusActor(null);
-                        setPendingMove(null);
-                        onArmCapture(!captureArmed);
-                      }}
-                    >
-                      {labels.ui.captureAction}
-                    </button>
-                    {captureArmed ? (
-                      <p className="beast-path__capture-hint">
-                        {labels.ui.captureHint}
-                      </p>
-                    ) : null}
-                  </div>
+                  {renderSkipButton(
+                    "shrink-0 border px-3 py-1.5 text-xs font-bold uppercase tracking-wide",
+                  )}
+                </div>
+                {renderMoveGrid("mt-1.5 grid grid-cols-2 gap-1.5")}
+              </div>
+            ) : null}
+            {isWild && planning ? (
+              <div className="beast-path__capture-slot">
+                {renderCaptureButton("beast-path__capture-btn")}
+                {captureArmed ? (
+                  <p className="beast-path__capture-hint">
+                    {labels.ui.captureHint}
+                  </p>
                 ) : null}
               </div>
-            ) : (
-              <p>
-                {captureArmed
-                  ? labels.ui.captureHint
-                  : labels.ui.chooseMove}
-              </p>
-            )}
+            ) : null}
+          </div>
+        ) : (
+          <p>
+            {captureArmed ? labels.ui.captureHint : labels.ui.chooseMove}
+          </p>
+        )}
+      </div>
+    ) : null;
+
+  const compactDock =
+    planning || playback ? (
+      <div className="beast-path__cdock">
+        {inspected ? (
+          <div
+            className={[
+              "beast-path__cinspect",
+              inspectOpen ? "beast-path__cinspect--open" : "",
+            ].join(" ")}
+          >
+            <button
+              type="button"
+              className="beast-path__cinspect-head"
+              aria-expanded={inspectOpen}
+              onClick={() => setInspectOpen((value) => !value)}
+            >
+              <span className="beast-path__cinspect-name">
+                {inspected.name}
+              </span>
+              <span className="beast-path__cinspect-meta">
+                {labels.ui.level} {inspected.level} · {inspected.hp}/
+                {inspected.maxHp} ·{" "}
+                <span style={{ color: ELEMENT_COLOR[inspected.element] }}>
+                  {labels.elements[inspected.element]}
+                </span>
+              </span>
+              <span className="beast-path__collapse-chevron" aria-hidden>
+                <ChevronDown size={13} strokeWidth={2.25} />
+              </span>
+            </button>
+            {inspectOpen ? (
+              <div className="beast-path__cinspect-body">
+                <dl className="beast-path__inspect-stats">
+                  <div>
+                    <dt>{labels.ui.atk}</dt>
+                    <dd>{inspected.atk}</dd>
+                  </div>
+                  <div>
+                    <dt>{labels.ui.def}</dt>
+                    <dd>
+                      {inspected.def}
+                      {(inspected.tempDefBonus ?? 0) > 0
+                        ? `+${inspected.tempDefBonus}`
+                        : ""}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{labels.ui.spd}</dt>
+                    <dd>{inspected.spd}</dd>
+                  </div>
+                </dl>
+                <div className="mt-1.5 space-y-1">
+                  <HpBar hp={inspected.hp} maxHp={inspected.maxHp} />
+                  {inspected.side === "player" ? (
+                    <XpBar
+                      xp={inspected.xp}
+                      level={inspected.level}
+                      label={labels.ui.rewardXp}
+                    />
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-        {battle.phase === "won" && !playback ? (
-          <div className="beast-path__victory p-3">
-            <p className="text-sm font-semibold">{labels.ui.victoryBattle}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="beast-path__btn px-3 py-1.5 text-xs"
-                onClick={() => onClaim()}
-              >
-                {labels.ui.claimRewards}
-              </button>
+        {focus ? (
+          renderMoveGrid("beast-path__cmoves")
+        ) : (
+          <p className="beast-path__chint">
+            {captureArmed ? labels.ui.captureHint : labels.ui.chooseMove}
+          </p>
+        )}
+
+        <div className="beast-path__cdock-row">
+          {renderSkipButton("beast-path__cbtn")}
+          {isWild && planning
+            ? renderCaptureButton("beast-path__cbtn beast-path__cbtn--capture")
+            : null}
+          {renderFightButton("beast-path__cfight")}
+        </div>
+      </div>
+    ) : null;
+
+  if (compact) {
+    const sheetTitle =
+      sheet === "order" ? labels.ui.turnOrder : labels.ui.log;
+    return (
+      <div className="beast-path__battle beast-path__battle--compact">
+        <div className="beast-path__battle-main">
+          <div className="beast-path__cbar">
+            <div className="beast-path__cbar-info">
+              <p className="beast-path__cbar-title beast-path__title">
+                {titleText}
+              </p>
+              <p className="beast-path__cbar-phase">{phaseText}</p>
+            </div>
+            <span className="beast-path__gold-chip">
+              <Coins size={11} strokeWidth={2.25} aria-hidden />
+              {state.gold}
+            </span>
+            <button
+              type="button"
+              className={[
+                "beast-path__cbar-btn",
+                sheet === "order" ? "beast-path__cbar-btn--on" : "",
+              ].join(" ")}
+              aria-label={labels.ui.turnOrder}
+              aria-expanded={sheet === "order"}
+              onClick={() =>
+                setSheet((value) => (value === "order" ? null : "order"))
+              }
+            >
+              <ListOrdered size={15} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              className={[
+                "beast-path__cbar-btn",
+                sheet === "log" ? "beast-path__cbar-btn--on" : "",
+              ].join(" ")}
+              aria-label={labels.ui.log}
+              aria-expanded={sheet === "log"}
+              onClick={() =>
+                setSheet((value) => (value === "log" ? null : "log"))
+              }
+            >
+              <ScrollText size={15} strokeWidth={2} />
+            </button>
+          </div>
+
+          {combatField}
+          {compactDock}
+          {victoryOverlay}
+        </div>
+
+        {sheet ? (
+          <div
+            className="beast-path__sheet-backdrop"
+            role="presentation"
+            onClick={() => setSheet(null)}
+          >
+            <div
+              className="beast-path__sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-label={sheetTitle}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="beast-path__sheet-head">
+                <p>{sheetTitle}</p>
+                <button
+                  type="button"
+                  className="beast-path__sheet-close"
+                  aria-label={labels.ui.close}
+                  onClick={() => setSheet(null)}
+                >
+                  <X size={14} strokeWidth={2.25} />
+                </button>
+              </div>
+              <div className="beast-path__sheet-body">
+                {sheet === "order" ? turnOrderList : logList}
+              </div>
             </div>
           </div>
         ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="beast-path__battle">
+      <div className="beast-path__battle-main">
+        <h2 className="beast-path__title shrink-0 text-base font-bold">
+          {titleText}
+        </h2>
+        <p className="mt-0.5 shrink-0 text-[10px] text-[var(--bp-muted)]">
+          {phaseText}
+        </p>
+
+        {combatField}
+        {desktopDock}
+        {victoryOverlay}
       </div>
 
       <aside className="beast-path__battle-side">
         <p className="beast-path__title shrink-0 text-sm font-bold text-[var(--bp-gold)]">
           {labels.ui.gold}: {state.gold}
         </p>
-        {planning || playback ? (
-          <button
-            type="button"
-            disabled={!ready || Boolean(playback)}
-            className="beast-path__btn w-full px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-            onClick={() => {
-              void playFight();
-            }}
-          >
-            {playback ? labels.ui.resolving : labels.ui.fightRound}
-          </button>
-        ) : null}
+        {planning || playback
+          ? renderFightButton("w-full px-3 py-2 text-sm")
+          : null}
 
         <div>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-muted)]">
             {labels.ui.turnOrder}
           </p>
-          <ol className="beast-path__turn-order">
-            {order.map((uid, idx) => {
-              const m = combatantsById.get(uid);
-              if (!m) return null;
-              const accent =
-                m.side === "player"
-                  ? (partyColorById.get(m.uid) ??
-                    PARTY_COLORS[0])
-                  : "var(--bp-ember)";
-              return (
-                <li
-                  key={uid}
-                  style={
-                    {
-                      color: accent,
-                      borderColor: `color-mix(in oklab, ${accent} 45%, transparent)`,
-                    } as CSSProperties
-                  }
-                >
-                  {idx + 1}. {m.name}
-                  <span className="mt-0.5 block opacity-70">
-                    {labels.ui.spd} {m.spd}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+          {turnOrderList}
         </div>
 
         <div className="beast-path__panel beast-path__log p-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-muted)]">
-            Log
+            {labels.ui.log}
           </p>
-          <ul className="mt-1.5 space-y-1 text-[var(--bp-muted)]">
-            {battle.log.map((entry) => (
-              <li key={entry.id}>{entry.text}</li>
-            ))}
-          </ul>
+          <div className="mt-1.5">{logList}</div>
         </div>
       </aside>
     </div>
@@ -1754,6 +2237,7 @@ function BattleView({
 export function BeastPathGame() {
   const { locale } = useLanguage();
   const labels = getLabels(locale);
+  const { compact, portrait } = useLayoutMode();
   const [state, setState] = useState<RunState>(() => createRun(locale));
   const [starters, setStarters] = useState(() => getStarters(locale));
   const [sellOpen, setSellOpen] = useState(false);
@@ -1810,6 +2294,8 @@ export function BeastPathGame() {
         className={[
           `${oxanium.variable} beast-path p-4 sm:p-5`,
           isFullscreen ? "beast-path--fullscreen" : "",
+          compact ? "beast-path--compact" : "",
+          compact && portrait ? "beast-path--portrait" : "",
         ].join(" ")}
       >
         {canFullscreen ? (
@@ -1840,7 +2326,12 @@ export function BeastPathGame() {
           </div>
         ) : null}
         {state.screen.kind !== "battle" ? (
-          <PartyStrip party={state.party} labels={labels} gold={state.gold} />
+          <PartyStrip
+            party={state.party}
+            labels={labels}
+            gold={state.gold}
+            compact={compact}
+          />
         ) : null}
 
         <div
@@ -1879,10 +2370,15 @@ export function BeastPathGame() {
 
         {state.screen.kind === "map" ? (
           <div className="flex h-full min-h-0 flex-col gap-2">
-            <div className="flex shrink-0 justify-end">
+            <div className="flex shrink-0 items-center justify-end gap-2">
+              {compact ? (
+                <div className="min-w-0 flex-1">
+                  <MapLegend labels={labels} />
+                </div>
+              ) : null}
               <button
                 type="button"
-                className="beast-path__btn-ghost px-3 py-1.5 text-xs"
+                className="beast-path__btn-ghost shrink-0 px-3 py-1.5 text-xs"
                 onClick={() => setReserveOpen(true)}
               >
                 {labels.ui.reserveOpen}
@@ -1894,6 +2390,8 @@ export function BeastPathGame() {
                 state={state}
                 labels={labels}
                 onSelect={(id) => setState(enterNode(state, id, locale))}
+                axis={compact && portrait ? "vertical" : "horizontal"}
+                compact={compact}
               />
             </div>
             {reserveOpen ? (
@@ -2048,6 +2546,7 @@ export function BeastPathGame() {
               onClaim={() =>
                 setState((s) => claimBattleRewards(s, locale))
               }
+              compact={compact}
             />
           </div>
         ) : null}
