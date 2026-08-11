@@ -1653,7 +1653,10 @@ function BattleView({
     ) : null;
 
   const combatField = (
-    <div ref={fieldRef} className="relative mt-2 min-h-0 flex-1">
+    <div
+      ref={fieldRef}
+      className="beast-path__field-wrap relative mt-2 min-h-0 flex-1"
+    >
           <svg
             className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
             aria-hidden
@@ -2246,6 +2249,29 @@ export function BeastPathGame() {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canFullscreen, setCanFullscreen] = useState(false);
+  const [stageHeight, setStageHeight] = useState<number | null>(null);
+
+  // Small screens: fit the stage to whatever the page chrome leaves free, so the
+  // game never runs past the fold on phones.
+  useEffect(() => {
+    if (!compact) {
+      setStageHeight(null);
+      return;
+    }
+    const measure = () => {
+      const el = stageRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setStageHeight(Math.max(240, Math.round(window.innerHeight - top - 10)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+    };
+  }, [compact]);
 
   useEffect(() => {
     setCanFullscreen(
@@ -2295,8 +2321,12 @@ export function BeastPathGame() {
           `${oxanium.variable} beast-path p-4 sm:p-5`,
           isFullscreen ? "beast-path--fullscreen" : "",
           compact ? "beast-path--compact" : "",
-          compact && portrait ? "beast-path--portrait" : "",
         ].join(" ")}
+        style={
+          compact && !isFullscreen && stageHeight
+            ? { height: stageHeight }
+            : undefined
+        }
       >
         {canFullscreen ? (
           <div className="beast-path__chrome-bar">

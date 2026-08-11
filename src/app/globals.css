@@ -797,135 +797,6 @@ body {
   color: var(--bp-ink);
 }
 
-/* —— Beast Path · small screens / touch layout ——
-   Must stay in sync with COMPACT_MEDIA_QUERY in `src/lib/use-layout-mode.ts`. */
-@media (max-width: 767px),
-  (orientation: landscape) and (max-height: 560px) and (max-width: 1023px) {
-  .beast-path {
-    height: calc(100dvh - 7rem);
-    min-height: 22rem;
-    max-height: none;
-    padding: 0.55rem;
-  }
-
-  .beast-path__chrome-bar {
-    margin: -0.1rem 0 0.3rem;
-  }
-
-  .beast-path__body {
-    overflow-y: auto;
-  }
-
-  .beast-path__battle {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-
-  .beast-path__field {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 0.4rem;
-  }
-
-  .beast-path__field-party {
-    grid-column: 1;
-  }
-
-  .beast-path__field-enemies {
-    grid-column: 2;
-  }
-
-  .beast-path__field-party,
-  .beast-path__field-enemies {
-    max-width: none;
-  }
-
-  .beast-path__field-stack {
-    gap: 0.3rem;
-  }
-
-  .beast-path__combatant {
-    font-size: 11px;
-    grid-template-columns: 1.85rem minmax(0, 1fr);
-    gap: 0.3rem;
-    padding: 0.3rem 0.32rem;
-  }
-
-  .beast-path__dock-row {
-    flex-direction: column;
-  }
-
-  .beast-path__inspect {
-    flex-basis: auto;
-  }
-
-  .beast-path__capture-slot {
-    flex: 0 0 auto;
-    width: 100%;
-  }
-
-  .beast-path__map-shell {
-    max-height: none;
-  }
-
-  .beast-path__map-hint {
-    display: none;
-  }
-
-  .beast-path__map-scroller {
-    padding-inline: 2.4rem;
-  }
-
-  .beast-path__map-arrow {
-    width: 30px;
-    height: 30px;
-  }
-
-  .beast-path__modal {
-    padding: 0.7rem;
-  }
-
-  /* Starter picks become a scrollable list of wide cards. */
-  .beast-path__starter-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.45rem;
-    align-content: start;
-    overflow-y: auto;
-  }
-
-  .beast-path__starter-card {
-    display: grid;
-    grid-template-columns: 3.4rem minmax(0, 1fr);
-    align-items: center;
-    column-gap: 0.6rem;
-    row-gap: 0.2rem;
-    padding: 0.5rem;
-  }
-
-  .beast-path__starter-card > .beast-path__portrait {
-    grid-row: 1 / span 3;
-    grid-column: 1;
-    width: 3.4rem;
-    min-height: 0;
-    margin: 0;
-  }
-
-  .beast-path__starter-card > *:not(.beast-path__portrait) {
-    grid-column: 2;
-    margin: 0;
-  }
-}
-
-/* Landscape phones: keep the dock to two rows so the field keeps its height. */
-@media (orientation: landscape) and (max-height: 560px) and (max-width: 1023px) {
-  .beast-path__cmoves {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .beast-path__starter-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 .beast-path__victory {
   position: absolute;
   left: 50%;
@@ -1479,6 +1350,10 @@ body {
   gap: 0;
 }
 
+.beast-path__battle--compact .beast-path__battle-main {
+  flex: 1 1 auto;
+}
+
 .beast-path__cbar {
   display: flex;
   flex-shrink: 0;
@@ -1534,10 +1409,20 @@ body {
 
 .beast-path__cdock {
   display: flex;
+  min-height: 0;
   flex-shrink: 0;
   flex-direction: column;
   gap: 0.35rem;
   margin-top: 0.4rem;
+  overflow: hidden;
+}
+
+/* The move grid is the only part that may scroll: Skip / Capture / Fight stay put. */
+.beast-path__cmoves,
+.beast-path__cdock-row,
+.beast-path__cinspect,
+.beast-path__chint {
+  flex-shrink: 0;
 }
 
 .beast-path__cinspect {
@@ -1588,6 +1473,11 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.35rem;
+}
+
+/* Let long move names wrap instead of pushing the use counter out of the slot. */
+.beast-path--compact .beast-path__move-slot p {
+  min-width: 0;
 }
 
 .beast-path__chint {
@@ -1767,4 +1657,236 @@ body {
 
 .beast-path__map-arrow--down .beast-path__map-arrow-icon {
   animation: beast-path-arrow-down 1.35s ease-in-out infinite;
+}
+
+/* —— Beast Path · small screens / touch layout ——
+   Must stay in sync with COMPACT_MEDIA_QUERY in `src/lib/use-layout-mode.ts`. */
+@media (max-width: 767px),
+  (orientation: landscape) and (max-height: 560px) and (max-width: 1023px) {
+  .beast-path {
+    height: calc(100dvh - 10.5rem);
+    min-height: 20rem;
+    max-height: none;
+    padding: 0.55rem;
+  }
+
+  .beast-path__chrome-bar {
+    margin: -0.1rem 0 0.3rem;
+  }
+
+  .beast-path__body {
+    overflow-y: auto;
+  }
+
+  .beast-path__battle {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .beast-path__field {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.4rem;
+  }
+
+  .beast-path__field-party {
+    grid-column: 1;
+  }
+
+  .beast-path__field-enemies {
+    grid-column: 2;
+  }
+
+  .beast-path__field-party,
+  .beast-path__field-enemies {
+    max-width: none;
+  }
+
+  .beast-path__field-stack {
+    gap: 0.3rem;
+  }
+
+  .beast-path__combatant {
+    font-size: 11px;
+    grid-template-columns: 1.85rem minmax(0, 1fr);
+    gap: 0.3rem;
+    padding: 0.3rem 0.32rem;
+  }
+
+  .beast-path__dock-row {
+    flex-direction: column;
+  }
+
+  .beast-path__inspect {
+    flex-basis: auto;
+  }
+
+  .beast-path__capture-slot {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .beast-path__map-shell {
+    max-height: none;
+  }
+
+  .beast-path__map-hint {
+    display: none;
+  }
+
+  .beast-path__map-scroller {
+    padding-inline: 2.4rem;
+  }
+
+  .beast-path__map-arrow {
+    width: 30px;
+    height: 30px;
+  }
+
+  .beast-path__modal {
+    padding: 0.7rem;
+  }
+
+  /* Starter picks become a scrollable list of wide cards. */
+  .beast-path__starter-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+    align-content: start;
+    overflow-y: auto;
+  }
+
+  .beast-path__starter-card {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.6rem;
+    row-gap: 0.2rem;
+    padding: 0.5rem;
+  }
+
+  .beast-path__starter-card > .beast-path__portrait {
+    grid-row: 1 / span 3;
+    grid-column: 1;
+    width: 3.4rem;
+    min-height: 0;
+    margin: 0;
+  }
+
+  .beast-path__starter-card > *:not(.beast-path__portrait) {
+    grid-column: 2;
+    margin: 0;
+  }
+}
+
+/* Portrait phones: creature cards get the leftover height. */
+@media (max-width: 767px) and (orientation: portrait) {
+  .beast-path__cbar-phase {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+  }
+
+  .beast-path__combatant {
+    grid-template-columns: 3.4rem minmax(0, 1fr);
+    min-height: 3.6rem;
+  }
+
+  /* Spread the cards over the free height instead of leaving a dead zone. */
+  .beast-path__field-stack > .beast-path__combatant {
+    flex: 1 1 auto;
+    max-height: 7rem;
+  }
+}
+
+/* Landscape phones: every pixel of height goes to the game. */
+@media (orientation: landscape) and (max-height: 560px) and (max-width: 1023px) {
+  .game-chrome__intro {
+    display: none;
+  }
+
+  .game-chrome__inner {
+    padding-block: 0.4rem;
+  }
+
+  .game-chrome__stage {
+    margin-top: 0.4rem;
+  }
+
+  .beast-path {
+    height: calc(100dvh - 5rem);
+    min-height: 15rem;
+  }
+
+  /* Actions move beside the field so the creatures keep the full height. */
+  .beast-path__battle--compact .beast-path__battle-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 0.45rem;
+  }
+
+  .beast-path__battle--compact .beast-path__cbar {
+    grid-column: 1 / -1;
+  }
+
+  .beast-path__battle--compact .beast-path__field-wrap {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .beast-path__cdock {
+    grid-column: 2;
+    grid-row: 2;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+  }
+
+  .beast-path__cmoves {
+    min-height: 0;
+    flex-shrink: 1;
+    align-content: start;
+    overflow-y: auto;
+  }
+
+  .beast-path__cdock-row {
+    flex-wrap: wrap;
+  }
+
+  .beast-path__cfight {
+    flex-basis: 100%;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .beast-path--compact .beast-path__move-slot {
+    min-height: 1.9rem;
+    padding: 0.2rem 0.35rem;
+  }
+
+  .beast-path__cbar {
+    padding-bottom: 0.25rem;
+  }
+
+  .beast-path__cbar-title {
+    font-size: 0.78rem;
+  }
+
+  .beast-path__cinspect-head {
+    padding: 0.25rem 0.4rem;
+  }
+
+  .beast-path__cbtn {
+    padding: 0.4rem 0.55rem;
+  }
+
+  .beast-path__starter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .beast-path__starter-card {
+    grid-template-columns: 2.9rem minmax(0, 1fr);
+  }
+
+  .beast-path__starter-card > .beast-path__portrait {
+    width: 2.9rem;
+  }
 }

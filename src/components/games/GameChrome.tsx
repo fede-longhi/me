@@ -34,7 +34,9 @@ export function GameChrome({
       <main>
         <section className="border-b border-line">
           <div
-            className={`mx-auto px-5 ${wide ? "max-w-7xl" : "max-w-6xl"} ${
+            className={`game-chrome__inner mx-auto px-5 ${
+              wide ? "max-w-7xl" : "max-w-6xl"
+            } ${
               compact
                 ? "py-5 max-[767px]:py-3 sm:px-8 sm:py-6"
                 : "py-12 sm:px-8 sm:py-16"
@@ -46,6 +48,7 @@ export function GameChrome({
             >
               ← {data.ui.backToGames}
             </a>
+            <div className="game-chrome__intro">
             <p
               className={`text-xs font-semibold uppercase tracking-[0.18em] text-green ${
                 compact ? "mt-3 max-[767px]:mt-2" : "mt-6"
@@ -90,10 +93,11 @@ export function GameChrome({
             >
               {lead}
             </p>
+            </div>
             <div
-              className={
+              className={`game-chrome__stage ${
                 compact ? "mt-4 max-[767px]:mt-2" : "mt-10"
-              }
+              }`}
             >
               {children}
             </div>
