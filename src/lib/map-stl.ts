@@ -404,6 +404,44 @@ export function terrariumToElevation(r: number, g: number, b: number): number {
 }
 
 type TileCache = Map<string, ImageData>;
+type TileCoord = { z: number; x: number; y: number };
+
+const TILE_SIZE = 256;
+const TILE_PREFETCH_CONCURRENCY = 8;
+
+function tileKey(z: number, x: number, y: number) {
+  return `${z}/${x}/${y}`;
+}
+
+function latLngToGlobalPixel(lat: number, lng: number, zoom: number) {
+  const n = 2 ** zoom;
+  const x = ((lng + 180) / 360) * n;
+  const latRad = (lat * Math.PI) / 180;
+  const y =
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+  return { gx: x * TILE_SIZE, gy: y * TILE_SIZE };
+}
+
+/** Tiles covering a geographic bbox (plus 1-tile pad for bilinear edges). */
+function tilesCoveringBounds(
+  bounds: { south: number; west: number; north: number; east: number },
+  zoom: number,
+): TileCoord[] {
+  const n = 2 ** zoom;
+  const nw = latLngToTile(bounds.north, bounds.west, zoom);
+  const se = latLngToTile(bounds.south, bounds.east, zoom);
+  const x0 = Math.max(0, Math.min(nw.x, se.x) - 1);
+  const x1 = Math.min(n - 1, Math.max(nw.x, se.x) + 1);
+  const y0 = Math.max(0, Math.min(nw.y, se.y) - 1);
+  const y1 = Math.min(n - 1, Math.max(nw.y, se.y) + 1);
+  const out: TileCoord[] = [];
+  for (let y = y0; y <= y1; y += 1) {
+    for (let x = x0; x <= x1; x += 1) {
+      out.push({ z: zoom, x, y });
+    }
+  }
+  return out;
+}
 
 async function loadTerrariumTile(
   z: number,
@@ -412,7 +450,7 @@ async function loadTerrariumTile(
   cache: TileCache,
   signal?: AbortSignal,
 ): Promise<ImageData> {
-  const key = `${z}/${x}/${y}`;
+  const key = tileKey(z, x, y);
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -437,26 +475,56 @@ async function loadTerrariumTile(
   return data;
 }
 
-async function elevationAtGlobalPixel(
+/** Fetch all tiles for the sample area with bounded concurrency. */
+async function prefetchTerrariumTiles(
+  tiles: TileCoord[],
+  cache: TileCache,
+  signal?: AbortSignal,
+  onProgress?: (done: number, total: number) => void,
+): Promise<void> {
+  const total = tiles.length;
+  if (total === 0) return;
+  let done = 0;
+  let next = 0;
+
+  const worker = async () => {
+    while (true) {
+      if (signal?.aborted) throw new SampleAbortedError();
+      const i = next;
+      next += 1;
+      if (i >= total) return;
+      const t = tiles[i]!;
+      await loadTerrariumTile(t.z, t.x, t.y, cache, signal);
+      done += 1;
+      onProgress?.(done, total);
+    }
+  };
+
+  const pool = Math.min(TILE_PREFETCH_CONCURRENCY, total);
+  await Promise.all(Array.from({ length: pool }, () => worker()));
+}
+
+function elevationAtGlobalPixelSync(
   zoom: number,
   gx: number,
   gy: number,
   cache: TileCache,
-  signal?: AbortSignal,
-): Promise<number> {
+): number {
   const n = 2 ** zoom;
-  const tileSize = 256;
-  let tx = Math.floor(gx / tileSize);
-  let ty = Math.floor(gy / tileSize);
-  let px = gx - tx * tileSize;
-  let py = gy - ty * tileSize;
+  let tx = Math.floor(gx / TILE_SIZE);
+  let ty = Math.floor(gy / TILE_SIZE);
+  let px = gx - tx * TILE_SIZE;
+  let py = gy - ty * TILE_SIZE;
 
   tx = ((tx % n) + n) % n;
   ty = Math.min(n - 1, Math.max(0, ty));
-  px = Math.min(tileSize - 1, Math.max(0, px));
-  py = Math.min(tileSize - 1, Math.max(0, py));
+  px = Math.min(TILE_SIZE - 1, Math.max(0, px));
+  py = Math.min(TILE_SIZE - 1, Math.max(0, py));
 
-  const tile = await loadTerrariumTile(zoom, tx, ty, cache, signal);
+  const tile = cache.get(tileKey(zoom, tx, ty));
+  if (!tile) {
+    throw new Error(`Missing elevation tile ${zoom}/${tx}/${ty}`);
+  }
   const i = (py * tile.width + px) * 4;
   return terrariumToElevation(
     tile.data[i] ?? 0,
@@ -465,21 +533,14 @@ async function elevationAtGlobalPixel(
   );
 }
 
-/** Bilinear sample in elevación (suaviza el escalonado por píxel). */
-async function elevationAtLatLng(
+/** Bilinear elevation sample from a prefetched tile cache (no network). */
+function elevationAtLatLngSync(
   lat: number,
   lng: number,
   zoom: number,
   cache: TileCache,
-  signal?: AbortSignal,
-): Promise<number> {
-  const n = 2 ** zoom;
-  const x = ((lng + 180) / 360) * n;
-  const latRad = (lat * Math.PI) / 180;
-  const y =
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
-  const gx = x * 256;
-  const gy = y * 256;
+): number {
+  const { gx, gy } = latLngToGlobalPixel(lat, lng, zoom);
   const x0 = Math.floor(gx);
   const y0 = Math.floor(gy);
   const x1 = x0 + 1;
@@ -487,14 +548,20 @@ async function elevationAtLatLng(
   const fx = gx - x0;
   const fy = gy - y0;
 
-  const z00 = await elevationAtGlobalPixel(zoom, x0, y0, cache, signal);
-  const z10 = await elevationAtGlobalPixel(zoom, x1, y0, cache, signal);
-  const z01 = await elevationAtGlobalPixel(zoom, x0, y1, cache, signal);
-  const z11 = await elevationAtGlobalPixel(zoom, x1, y1, cache, signal);
+  const z00 = elevationAtGlobalPixelSync(zoom, x0, y0, cache);
+  const z10 = elevationAtGlobalPixelSync(zoom, x1, y0, cache);
+  const z01 = elevationAtGlobalPixelSync(zoom, x0, y1, cache);
+  const z11 = elevationAtGlobalPixelSync(zoom, x1, y1, cache);
 
   const z0 = z00 * (1 - fx) + z10 * fx;
   const z1 = z01 * (1 - fx) + z11 * fx;
   return z0 * (1 - fy) + z1 * fy;
+}
+
+function yieldToUi() {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }
 
 /** 3×3 weighted blur on finite cells (reduces DEM terrace artifacts). */
@@ -592,9 +659,28 @@ export async function sampleElevationGrid(
   const depthM =
     Math.abs(bounds.north - bounds.south) * metersPerDegreeLat(midLat);
 
-  const total = cols * rows;
-  let done = 0;
+  const tiles = tilesCoveringBounds(bounds, zoom);
+  const cellTotal = cols * rows;
+  // Weight progress: tile fetch is the slow phase; sampling is local CPU.
+  const tileWeight = Math.max(tiles.length * 8, 1);
+  const progressTotal = tileWeight + cellTotal;
 
+  try {
+    await prefetchTerrariumTiles(tiles, cache, signal, (done) => {
+      onProgress?.(done * 8, progressTotal);
+    });
+  } catch (err) {
+    if (
+      signal?.aborted ||
+      (err instanceof DOMException && err.name === "AbortError") ||
+      err instanceof SampleAbortedError
+    ) {
+      throw new SampleAbortedError();
+    }
+    throw err;
+  }
+
+  let done = 0;
   for (let row = 0; row < rows; row += 1) {
     if (signal?.aborted) throw new SampleAbortedError();
     const v = rows === 1 ? 0.5 : row / (rows - 1);
@@ -606,43 +692,29 @@ export async function sampleElevationGrid(
       const index = row * cols + col;
       const inLand = pointInSelection(lat, lng, selection);
 
-      try {
-        if (waterMode === "include") {
-          const elev = await elevationAtLatLng(lat, lng, zoom, cache, signal);
-          if (inLand) {
-            values[index] = elev;
-          } else if (elev <= seaLevel) {
-            values[index] = Math.min(elev, 0);
-          } else {
-            values[index] = Number.NaN;
-          }
-        } else if (!inLand) {
-          values[index] = Number.NaN;
+      if (waterMode === "include") {
+        const elev = elevationAtLatLngSync(lat, lng, zoom, cache);
+        if (inLand) {
+          values[index] = elev;
+        } else if (elev <= seaLevel) {
+          values[index] = Math.min(elev, 0);
         } else {
-          values[index] = await elevationAtLatLng(
-            lat,
-            lng,
-            zoom,
-            cache,
-            signal,
-          );
+          values[index] = Number.NaN;
         }
-      } catch (err) {
-        if (
-          signal?.aborted ||
-          (err instanceof DOMException && err.name === "AbortError") ||
-          err instanceof SampleAbortedError
-        ) {
-          throw new SampleAbortedError();
-        }
-        throw err;
+      } else if (!inLand) {
+        values[index] = Number.NaN;
+      } else {
+        values[index] = elevationAtLatLngSync(lat, lng, zoom, cache);
       }
 
       done += 1;
-      if (onProgress && (done % 32 === 0 || done === total)) {
-        onProgress(done, total);
+      if (onProgress && (done % 256 === 0 || done === cellTotal)) {
+        onProgress(tileWeight + done, progressTotal);
       }
     }
+
+    // Keep the UI responsive on large grids.
+    if (row % 8 === 7) await yieldToUi();
   }
 
   let processed =

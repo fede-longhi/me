@@ -8,9 +8,10 @@ import { STLLoader } from "three/addons/loaders/STLLoader.js";
 type StlPreviewProps = {
   buffer: ArrayBuffer | null;
   emptyLabel: string;
+  controlsHint?: string;
 };
 
-export function StlPreview({ buffer, emptyLabel }: StlPreviewProps) {
+export function StlPreview({ buffer, emptyLabel, controlsHint }: StlPreviewProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -41,7 +42,23 @@ export function StlPreview({ buffer, emptyLabel }: StlPreviewProps) {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.enablePan = false;
+    controls.dampingFactor = 0.08;
+    controls.enablePan = true;
+    controls.screenSpacePanning = true;
+    controls.enableZoom = true;
+    controls.panSpeed = 0.9;
+    controls.rotateSpeed = 0.85;
+    controls.zoomSpeed = 1.05;
+    controls.minDistance = 0.5;
+    // Look down onto the terrain top (Y up)
+    const fitCamera = (maxDim: number) => {
+      camera.position.set(maxDim * 0.95, maxDim * 1.15, maxDim * 0.95);
+      camera.up.set(0, 1, 0);
+      controls.target.set(0, 0, 0);
+      controls.minDistance = Math.max(maxDim * 0.08, 0.5);
+      controls.maxDistance = maxDim * 8;
+      controls.update();
+    };
 
     const loader = new STLLoader();
     const geometry = loader.parse(buffer);
@@ -63,12 +80,12 @@ export function StlPreview({ buffer, emptyLabel }: StlPreviewProps) {
     const box = new THREE.Box3().setFromObject(mesh);
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z, 1);
+    fitCamera(maxDim);
 
-    // Look down onto the terrain top (Y up)
-    camera.position.set(maxDim * 0.95, maxDim * 1.15, maxDim * 0.95);
-    camera.up.set(0, 1, 0);
-    controls.target.set(0, 0, 0);
-    controls.update();
+    const onDoubleClick = () => {
+      fitCamera(maxDim);
+    };
+    renderer.domElement.addEventListener("dblclick", onDoubleClick);
 
     let frame = 0;
     const animate = () => {
@@ -90,6 +107,7 @@ export function StlPreview({ buffer, emptyLabel }: StlPreviewProps) {
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
+      renderer.domElement.removeEventListener("dblclick", onDoubleClick);
       controls.dispose();
       geometry.dispose();
       material.dispose();
@@ -109,9 +127,14 @@ export function StlPreview({ buffer, emptyLabel }: StlPreviewProps) {
   }
 
   return (
-    <div
-      ref={hostRef}
-      className="h-72 w-full overflow-hidden border border-line bg-[#f4fbf8]"
-    />
+    <div className="space-y-1.5">
+      <div
+        ref={hostRef}
+        className="h-80 w-full cursor-grab overflow-hidden border border-line bg-[#f4fbf8] active:cursor-grabbing"
+      />
+      {controlsHint ? (
+        <p className="text-[11px] text-ink-muted">{controlsHint}</p>
+      ) : null}
+    </div>
   );
 }

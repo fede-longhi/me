@@ -181,6 +181,7 @@ const copy: Record<
     download: string;
     preview: string;
     previewEmpty: string;
+    previewControls: string;
     hint: string;
     toolHintPan: string;
     toolHintDraw: string;
@@ -282,6 +283,8 @@ const copy: Record<
     download: "Download STL",
     preview: "Preview",
     previewEmpty: "Generate an STL to preview it here.",
+    previewControls:
+      "Drag to rotate · Shift+drag or right-click to pan · scroll to zoom · double-click to reset",
     hint: "Elevation comes from SRTM tiles. Middle-drag always pans the map.",
     toolHintPan: "Drag to pan. Click a piece to select it. Space or middle-click also pan.",
     toolHintDraw: "Drag to draw. Esc cancels, Space pans, Delete clears.",
@@ -383,6 +386,8 @@ const copy: Record<
     download: "Descargar STL",
     preview: "Previsualización",
     previewEmpty: "Generá un STL para previsualizarlo acá.",
+    previewControls:
+      "Arrastrá para rotar · Shift+arrastrar o clic derecho para mover · rueda para zoom · doble clic para reiniciar",
     hint: "La elevación viene de tiles SRTM. El arrastre con la rueda siempre mueve el mapa.",
     toolHintPan: "Arrastrá para mover el mapa. Clic en una pieza para seleccionarla. Espacio o clic medio también panean.",
     toolHintDraw: "Arrastrá para dibujar. Esc cancela, Espacio panea, Supr limpia.",
@@ -2553,7 +2558,11 @@ export function MapStlTool() {
                 {t.preview}
               </p>
               <div className="mt-3">
-                <StlPreview buffer={stlBuffer} emptyLabel={t.previewEmpty} />
+                <StlPreview
+                  buffer={stlBuffer}
+                  emptyLabel={t.previewEmpty}
+                  controlsHint={t.previewControls}
+                />
               </div>
               {stlBuffer && previewMeta ? (
                 <p className="mt-2 text-xs text-ink-muted">

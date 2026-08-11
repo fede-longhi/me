@@ -9,12 +9,14 @@ import { Section } from "@/components/Section";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNav } from "@/components/SiteNav";
 import { SkillsList } from "@/components/SkillsList";
+import { GamesList } from "@/components/GamesList";
 import { ToolsList } from "@/components/ToolsList";
 
 export function SiteShell() {
   const { data } = useLanguage();
   const { ui } = data;
   const featuredTools = data.tools.filter((tool) => tool.featured);
+  const featuredGames = data.games.filter((game) => game.featured);
 
   return (
     <div className="site-shell">
@@ -81,6 +83,30 @@ export function SiteShell() {
               className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold tracking-wide text-blue-deep transition hover:text-blue"
             >
               {ui.viewAllTools}
+              <span aria-hidden className="text-xs">
+                ↗
+              </span>
+            </a>
+          </div>
+        </Section>
+
+        <Section
+          id="games"
+          eyebrow={ui.sections.games.eyebrow}
+          title={ui.sections.games.title}
+          lead={ui.sections.games.lead}
+        >
+          <GamesList
+            items={featuredGames}
+            openLabel={ui.openGame}
+            emptyLabel={ui.gamesEmpty}
+          />
+          <div className="mt-8">
+            <a
+              href="/games"
+              className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold tracking-wide text-blue-deep transition hover:text-blue"
+            >
+              {ui.viewAllGames}
               <span aria-hidden className="text-xs">
                 ↗
               </span>

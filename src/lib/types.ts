@@ -62,10 +62,12 @@ export type ArtItem = {
 };
 
 export type GameItem = {
-  title: string;
-  engine: string;
+  name: string;
   description: string;
-  link?: string | null;
+  href: string;
+  category: string;
+  /** When true, shown in the home Games section. All games appear on /games. */
+  featured?: boolean;
 };
 
 export type CertificationItem = {
@@ -100,6 +102,7 @@ export type SiteUi = {
     academy: SectionCopy;
     art: SectionCopy;
     games: SectionCopy;
+    gamesPage: SectionCopy;
   };
   heroVisual: string;
   playLink: string;
@@ -108,6 +111,10 @@ export type SiteUi = {
   viewAllTools: string;
   toolsEmpty: string;
   backToTools: string;
+  openGame: string;
+  viewAllGames: string;
+  gamesEmpty: string;
+  backToGames: string;
   visitSite: string;
   certificationsTitle: string;
   educationTitle: string;

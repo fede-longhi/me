@@ -7,7 +7,8 @@
         { "href": "/#experience", "label": "Experience" },
         { "href": "/#skills", "label": "Skills" },
         { "href": "/#projects", "label": "Projects" },
-        { "href": "/tools", "label": "Tools" }
+        { "href": "/tools", "label": "Tools" },
+        { "href": "/games", "label": "Games" }
       ],
       "sections": {
         "experience": {
@@ -47,8 +48,13 @@
         },
         "games": {
           "eyebrow": "Games",
-          "title": "Playable experiments",
-          "lead": "Small worlds, mechanics, and prototypes."
+          "title": "Games",
+          "lead": "A few playable experiments — see the full list on the games page."
+        },
+        "gamesPage": {
+          "eyebrow": "Games",
+          "title": "Games",
+          "lead": "All the playable experiments in one place — pick one and jump in."
         }
       },
       "heroVisual": "salesforce · systems · build",
@@ -58,6 +64,10 @@
       "viewAllTools": "View all tools",
       "toolsEmpty": "No tools published yet. Check back soon.",
       "backToTools": "Back to tools",
+      "openGame": "Play",
+      "viewAllGames": "View all games",
+      "gamesEmpty": "No games published yet. Check back soon.",
+      "backToGames": "Back to games",
       "visitSite": "Visit site",
       "certificationsTitle": "Certifications",
       "educationTitle": "Education",
@@ -254,10 +264,11 @@
     ],
     "games": [
       {
-        "title": "Game Title",
-        "engine": "Godot",
-        "description": "Prototype playground for mechanics, feel, and small playable experiments.",
-        "link": null
+        "name": "Beast Path",
+        "category": "Roguelike",
+        "description": "Pick a starter monster, choose your path through fights, shops and wild events, and challenge the boss with the pets you capture along the way.",
+        "href": "/games/beast-path",
+        "featured": true
       }
     ],
     "contact": {
@@ -284,7 +295,8 @@
         { "href": "/#experience", "label": "Experiencia" },
         { "href": "/#skills", "label": "Skills" },
         { "href": "/#projects", "label": "Proyectos" },
-        { "href": "/tools", "label": "Herramientas" }
+        { "href": "/tools", "label": "Herramientas" },
+        { "href": "/games", "label": "Juegos" }
       ],
       "sections": {
         "experience": {
@@ -324,8 +336,13 @@
         },
         "games": {
           "eyebrow": "Juegos",
-          "title": "Experimentos jugables",
-          "lead": "Mundos pequeños, mecánicas y prototipos."
+          "title": "Juegos",
+          "lead": "Algunos experimentos jugables — el listado completo está en la página de juegos."
+        },
+        "gamesPage": {
+          "eyebrow": "Juegos",
+          "title": "Juegos",
+          "lead": "Todos los experimentos jugables en un solo lugar — elegí uno y metete."
         }
       },
       "heroVisual": "salesforce · sistemas · build",
@@ -335,6 +352,10 @@
       "viewAllTools": "Ver todas las herramientas",
       "toolsEmpty": "Todavía no hay herramientas publicadas. Volvé pronto.",
       "backToTools": "Volver a herramientas",
+      "openGame": "Jugar",
+      "viewAllGames": "Ver todos los juegos",
+      "gamesEmpty": "Todavía no hay juegos publicados. Volvé pronto.",
+      "backToGames": "Volver a juegos",
       "visitSite": "Visitar sitio",
       "certificationsTitle": "Certificaciones",
       "educationTitle": "Educación",
@@ -531,10 +552,11 @@
     ],
     "games": [
       {
-        "title": "Game Title",
-        "engine": "Godot",
-        "description": "Patio de prototipos para mecánicas, feel y pequeños experimentos jugables.",
-        "link": null
+        "name": "Camino de Bestias",
+        "category": "Roguelike",
+        "description": "Elegí un monstruo inicial, avanzá por pelea, tienda y eventos, y enfrentá al boss con las mascotas que captures en el camino.",
+        "href": "/games/beast-path",
+        "featured": true
       }
     ],
     "contact": {
