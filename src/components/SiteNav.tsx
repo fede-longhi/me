@@ -51,7 +51,7 @@ export function SiteNav() {
         </button>
       </div>
       {menuOpen ? (
-        <div className="border-t border-line/70 px-5 pb-3 pt-2 min-[768px]:hidden">
+        <div className="border-t border-line/70 bg-[color-mix(in_oklab,var(--bg)_92%,transparent)] px-5 pb-3 pt-2 min-[768px]:hidden">
           <nav
             aria-label={data.ui.navAria}
             className="grid text-sm text-ink-muted"

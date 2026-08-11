@@ -2254,10 +2254,7 @@ export function BeastPathGame() {
   // Small screens: fit the stage to whatever the page chrome leaves free, so the
   // game never runs past the fold on phones.
   useEffect(() => {
-    if (!compact) {
-      setStageHeight(null);
-      return;
-    }
+    if (!compact) return;
     const measure = () => {
       const el = stageRef.current;
       if (!el) return;
