@@ -1,5 +1,6 @@
 import type { LocaleLabel } from "./content";
 import { SPECIES } from "./content";
+import { xpToNext } from "./content/rewards/tables";
 import {
   initMoveUses,
   learnMovesForLevelUp,
@@ -9,6 +10,8 @@ import {
 } from "./moves";
 import type { Element, Monster, MoveId, Species } from "./types";
 import { MAX_MOVES } from "./types";
+
+export { xpToNext };
 
 let uidCounter = 0;
 
@@ -21,8 +24,16 @@ export function resetUidCounter() {
   uidCounter = 0;
 }
 
-export function xpToNext(level: number) {
-  return 12 + level * 8;
+/** Keep new UIDs unique after loading a saved party/reserve. */
+export function syncUidCounterFrom(monsters: Monster[]) {
+  let max = uidCounter;
+  for (const monster of monsters) {
+    const parts = monster.uid.split("-");
+    if (parts.length < 2) continue;
+    const n = Number(parts[parts.length - 2]);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  uidCounter = max;
 }
 
 export function scaledStat(base: number, level: number) {
@@ -39,8 +50,8 @@ export function createMonster(
   return {
     uid: nextUid(species.id),
     speciesId: species.id,
-    name: labels.species[species.id],
-    element: species.element,
+    name: labels.species[species.id] ?? species.id,
+    ...(species.element ? { element: species.element } : {}),
     level,
     xp: 0,
     maxHp,
@@ -54,15 +65,21 @@ export function createMonster(
 }
 
 export function createMonsterById(
-  speciesId: keyof typeof SPECIES,
+  speciesId: string,
   level: number,
   labels: LocaleLabel,
 ) {
-  return createMonster(SPECIES[speciesId], level, labels);
+  const species = SPECIES[speciesId];
+  if (!species) {
+    throw new Error(`Unknown species: ${speciesId}`);
+  }
+  return createMonster(species, level, labels);
 }
 
 export function healParty(party: Monster[], amount: number | "full" | "half") {
   return party.map((m) => {
+    // Fainted beasts stay down until a rest site (restParty).
+    if (m.hp <= 0) return m;
     if (amount === "full") return { ...m, hp: m.maxHp };
     if (amount === "half") {
       const heal = Math.max(1, Math.round(m.maxHp * 0.5));
@@ -79,9 +96,14 @@ export function restorePartyMoves(party: Monster[]) {
   }));
 }
 
-/** Rest / healing spots: recover 50% max HP and refill move uses. */
+/** Rest site: revive fainted beasts, heal 50% max HP, refill moves. */
 export function restParty(party: Monster[]) {
-  return restorePartyMoves(healParty(party, "half"));
+  return restorePartyMoves(
+    party.map((m) => {
+      const heal = Math.max(1, Math.round(m.maxHp * 0.5));
+      return { ...m, hp: Math.min(m.maxHp, Math.max(0, m.hp) + heal) };
+    }),
+  );
 }
 
 export function applyPartyBuff(
@@ -146,7 +168,11 @@ export function gainXp(
   return { monster: next, notes };
 }
 
-export function typeMultiplier(attacker: Element, defender: Element): number {
+export function typeMultiplier(
+  attacker?: Element | null,
+  defender?: Element | null,
+): number {
+  if (!attacker || !defender) return 1;
   const advantages: Partial<Record<Element, Element>> = {
     ember: "moss",
     tide: "ember",
@@ -164,7 +190,7 @@ export function calcMoveDamage(
   attacker: Monster,
   defender: Monster,
   power: number,
-  moveElement: Element,
+  moveElement?: Element | null,
   defenderTempDef = 0,
 ) {
   const mult = typeMultiplier(moveElement, defender.element);
@@ -178,7 +204,7 @@ export function estimateMoveDamage(
   attacker: Monster,
   defender: Monster,
   power: number,
-  moveElement: Element,
+  moveElement?: Element | null,
   defenderTempDef = 0,
 ) {
   const mult = typeMultiplier(moveElement, defender.element);

@@ -10,10 +10,11 @@ import {
   Droplets,
   Flower2,
   Heart,
-  ImageIcon,
   Maximize2,
+  Menu,
   Minimize2,
   Mountain,
+  Package,
   Palmtree,
   Shield,
   ShoppingBag,
@@ -23,6 +24,7 @@ import {
   Trees,
   Waves,
   Wind,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -38,10 +40,13 @@ import {
 import { createPortal } from "react-dom";
 import { GameChrome } from "@/components/games/GameChrome";
 import { useLanguage } from "@/components/LanguageProvider";
-import { ELEMENT_COLOR } from "@/lib/roguelike/content";
+import { elementColorOf, getItem, isBeastPathDev, SPECIES, speciesFullArt, speciesThumbArt, syncPublishedContent } from "@/lib/roguelike/content";
+import { BeastPathContentPanel } from "@/components/games/BeastPathContentPanel";
+import { BeastPortrait } from "@/components/games/BeastPortrait";
 import {
   buildFightTimeline,
-  canFight,
+  allPlansReady,
+  canStartFight,
   moveImpactHint,
   moveRequiresTargetChoice,
   plannedEffectsOn,
@@ -51,7 +56,7 @@ import {
   type MovePreview,
 } from "@/lib/roguelike/combat";
 import { MAP_LANES } from "@/lib/roguelike/map";
-import { getMove, maxUsesFor, remainingUses } from "@/lib/roguelike/moves";
+import { getMove, maxUsesFor, moveIsOffensive, remainingUses } from "@/lib/roguelike/moves";
 import { xpToNext } from "@/lib/roguelike/monsters";
 import {
   applyFightBattle,
@@ -60,6 +65,7 @@ import {
   claimBattleRewards,
   clearMovePlan,
   continueFromEvent,
+  createMenuState,
   createRun,
   enterNode,
   getFightSeed,
@@ -76,7 +82,15 @@ import {
   skipMove,
   swapReserveIntoParty,
   takeRest,
+  useItem,
 } from "@/lib/roguelike/run";
+import {
+  clearSavedRun,
+  hasSavedRun,
+  hydrateRun,
+  readSavedRun,
+  syncRunPersistence,
+} from "@/lib/roguelike/persist";
 import type {
   BattleState,
   HabitatId,
@@ -85,8 +99,10 @@ import type {
   MoveId,
   NodeType,
   RunState,
+  Species,
 } from "@/lib/roguelike/types";
-import { MAX_MOVES } from "@/lib/roguelike/types";
+import { BAG_LIMIT } from "@/lib/roguelike/types";
+import { MAX_MOVES, MAX_RUN_LEVEL } from "@/lib/roguelike/types";
 
 const oxanium = Oxanium({
   subsets: ["latin"],
@@ -96,10 +112,10 @@ const oxanium = Oxanium({
 });
 
 const COL_GAP = 100;
-const ROW_GAP = 52;
+const ROW_GAP = 58;
 const NODE_R = 24;
 const PAD_X = 48;
-const PAD_Y = 40;
+const PAD_Y = 44;
 
 /** Distinct accent per party slot (not tied to element). */
 const PARTY_COLORS = [
@@ -298,6 +314,20 @@ function floatersFromFx(fx: BattleFx[], stepKey: string): Floater[] {
         text: item.text,
         tone: item.kind,
       });
+    } else if (item.kind === "status") {
+      out.push({
+        key: `${stepKey}-s${i}`,
+        targetId: item.targetId,
+        text: item.text,
+        tone: "buff",
+      });
+    } else if (item.kind === "ward") {
+      out.push({
+        key: `${stepKey}-w${i}`,
+        targetId: item.targetId,
+        text: "ward",
+        tone: "guard",
+      });
     } else if (item.kind === "capture") {
       out.push({
         key: `${stepKey}-c${i}`,
@@ -332,24 +362,28 @@ function effectIcon(effect: MovePreview): LucideIcon {
 }
 
 function MonsterPortrait({
+  speciesId,
   label,
   compact,
+  variant = "thumb",
 }: {
+  speciesId: string;
   label: string;
   compact?: boolean;
+  variant?: "thumb" | "full";
 }) {
+  const species = SPECIES[speciesId];
+  const art =
+    variant === "full" ? speciesFullArt(species) : speciesThumbArt(species);
   return (
     <div
       className={[
         "beast-path__portrait",
+        variant === "full" ? "beast-path__portrait--full" : "",
         compact ? "mb-1.5 min-h-[3.5rem]" : "mb-3",
       ].join(" ")}
-      aria-hidden
     >
-      <span className="flex flex-col items-center gap-1">
-        <ImageIcon size={compact ? 16 : 18} strokeWidth={1.75} />
-        <span>{label}</span>
-      </span>
+      <BeastPortrait art={art} alt={label} variant={variant} fill />
     </div>
   );
 }
@@ -382,7 +416,12 @@ function MonsterCard({
 
   const body = (
     <>
-      <MonsterPortrait label={labels.ui.artPlaceholder} compact={compact} />
+      <MonsterPortrait
+        speciesId={monster.speciesId}
+        label={monster.name}
+        compact={compact}
+        variant="full"
+      />
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p
@@ -395,8 +434,10 @@ function MonsterCard({
           </p>
           <p className="mt-0.5 text-[11px] text-[var(--bp-muted)]">
             {labels.ui.level} {monster.level} ·{" "}
-            <span style={{ color: ELEMENT_COLOR[monster.element] }}>
-              {labels.elements[monster.element]}
+            <span style={{ color: elementColorOf(monster.element) }}>
+              {monster.element
+                ? labels.elements[monster.element]
+                : labels.ui.elementNone}
             </span>
           </p>
         </div>
@@ -446,63 +487,324 @@ function MonsterCard({
   return <div className={className}>{body}</div>;
 }
 
+function rarityLabel(
+  rarity: Species["rarity"],
+  labels: ReturnType<typeof getLabels>,
+) {
+  switch (rarity) {
+    case "uncommon":
+      return labels.ui.rarityUncommon;
+    case "rare":
+      return labels.ui.rarityRare;
+    case "boss":
+      return labels.ui.rarityBoss;
+    default:
+      return labels.ui.rarityCommon;
+  }
+}
+
+function PartyBeastDetail({
+  monster,
+  labels,
+  onClose,
+}: {
+  monster: Monster;
+  labels: ReturnType<typeof getLabels>;
+  onClose: () => void;
+}) {
+  const species = SPECIES[monster.speciesId];
+  const need = xpToNext(monster.level);
+  const moveIds = monster.moves.filter(Boolean);
+
+  return (
+    <div
+      className="beast-path__modal-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="beast-path__modal beast-path__party-detail"
+        role="dialog"
+        aria-modal="true"
+        aria-label={labels.ui.partyDetail}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold">{labels.ui.partyDetail}</p>
+          <button
+            type="button"
+            className="beast-path__btn-ghost px-2 py-1 text-[10px]"
+            onClick={onClose}
+          >
+            {labels.ui.partyDetailClose}
+          </button>
+        </div>
+
+        <div className="beast-path__party-detail-body">
+          <div className="beast-path__party-detail-layout">
+            <div className="beast-path__party-detail-art">
+              <BeastPortrait
+                art={speciesThumbArt(species)}
+                alt={monster.name}
+                variant="thumb"
+                fill
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold leading-tight">
+                {monster.name}
+              </p>
+              <p className="mt-1 text-[11px] text-[var(--bp-muted)]">
+                {labels.ui.level} {monster.level}
+                {" · "}
+                <span style={{ color: elementColorOf(monster.element) }}>
+                  {monster.element
+                    ? labels.elements[monster.element]
+                    : labels.ui.elementNone}
+                </span>
+                {species ? (
+                  <>
+                    {" · "}
+                    {labels.ui.partyDetailRarity}:{" "}
+                    {rarityLabel(species.rarity, labels)}
+                  </>
+                ) : null}
+              </p>
+
+              <div className="mt-3 space-y-1.5">
+                <div>
+                  <div className="mb-0.5 flex items-baseline justify-between gap-2 text-[10px] text-[var(--bp-muted)]">
+                    <span>{labels.ui.hp}</span>
+                    <span>
+                      {monster.hp}/{monster.maxHp}
+                    </span>
+                  </div>
+                  <HpBar hp={monster.hp} maxHp={monster.maxHp} />
+                </div>
+                <div>
+                  <div className="mb-0.5 flex items-baseline justify-between gap-2 text-[10px] text-[var(--bp-muted)]">
+                    <span>{labels.ui.rewardXp}</span>
+                    <span>
+                      {labels.ui.partyDetailXp
+                        .replace("{xp}", String(monster.xp))
+                        .replace("{need}", String(need))}
+                    </span>
+                  </div>
+                  <XpBar
+                    xp={monster.xp}
+                    level={monster.level}
+                    label={labels.ui.rewardXp}
+                  />
+                </div>
+              </div>
+
+              <dl className="beast-path__party-detail-stats">
+                <div>
+                  <dt>{labels.ui.atk}</dt>
+                  <dd>{monster.atk}</dd>
+                </div>
+                <div>
+                  <dt>{labels.ui.def}</dt>
+                  <dd>{monster.def}</dd>
+                </div>
+                <div>
+                  <dt>{labels.ui.spd}</dt>
+                  <dd>{monster.spd}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <div className="beast-path__party-detail-moves">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-gold)]">
+              {labels.ui.partyDetailMoves}
+            </p>
+            {moveIds.length === 0 ? (
+              <p className="text-[11px] text-[var(--bp-muted)]">
+                {labels.ui.partyDetailEmptyMoves}
+              </p>
+            ) : (
+              moveIds.map((moveId) => {
+                const move = getMove(moveId);
+                const moveLabel = labels.moves[moveId];
+                const uses = remainingUses(monster.moveUses, moveId);
+                const max = maxUsesFor(moveId);
+                const element = move.element ?? monster.element;
+                return (
+                  <div key={moveId} className="beast-path__party-detail-move">
+                    <div className="beast-path__party-detail-move-top">
+                      <p className="truncate text-xs font-semibold">
+                        {moveLabel?.name ?? moveId}
+                      </p>
+                      <p className="shrink-0 text-[10px] text-[var(--bp-muted)]">
+                        {labels.ui.partyDetailUses
+                          .replace("{n}", String(uses))
+                          .replace("{max}", String(max))}
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-[var(--bp-muted)]">
+                      <span style={{ color: elementColorOf(element) }}>
+                        {element
+                          ? labels.elements[element]
+                          : labels.ui.elementNone}
+                      </span>
+                      {" · "}
+                      {(() => {
+                        const dmg = move.effects.find(
+                          (e) => e.type === "damage" || e.type === "chain",
+                        );
+                        return moveIsOffensive(move)
+                          ? `${labels.ui.atk} ${dmg?.power ?? "—"}`
+                          : labels.ui.previewBuff;
+                      })()}
+                    </p>
+                    {moveLabel?.description ? (
+                      <p className="mt-1 text-[11px] leading-snug text-[var(--bp-muted)]">
+                        {moveLabel.description}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PartyStrip({
   party,
   labels,
   gold,
+  currentLevel,
+  regionId,
+  reserveCount = 0,
+  itemCount = 0,
+  relicCount = 0,
+  onOpenReserve,
+  onOpenBag,
 }: {
   party: Monster[];
   labels: ReturnType<typeof getLabels>;
   gold: number;
+  currentLevel: number;
+  regionId: string;
+  reserveCount?: number;
+  itemCount?: number;
+  relicCount?: number;
+  onOpenReserve?: () => void;
+  onOpenBag?: () => void;
 }) {
+  const [detailUid, setDetailUid] = useState<string | null>(null);
+  const detail =
+    detailUid == null
+      ? null
+      : (party.find((m) => m.uid === detailUid) ?? null);
+  const regionName = labels.regions[regionId] ?? regionId;
+
+  useEffect(() => {
+    if (detailUid && !party.some((m) => m.uid === detailUid)) {
+      setDetailUid(null);
+    }
+  }, [party, detailUid]);
+
   return (
-    <div className="beast-path__panel flex shrink-0 flex-col gap-2 p-3 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--bp-moss)]">
-          {labels.ui.party}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+    <>
+      <div className="beast-path__party-panel beast-path__panel shrink-0 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--bp-moss)]">
+              {labels.ui.party}
+            </p>
+            <p className="text-[11px] font-semibold text-[var(--bp-gold)]">
+              {labels.ui.pathLabel
+                .replace("{n}", String(currentLevel))
+                .replace("{max}", String(MAX_RUN_LEVEL))}
+            </p>
+            <p className="text-[11px] text-[var(--bp-muted)]">
+              {labels.ui.pathRegion.replace("{name}", regionName)}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {onOpenBag ? (
+              <button
+                type="button"
+                className="beast-path__btn-ghost px-2.5 py-1 text-[11px]"
+                onClick={onOpenBag}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <Package size={12} strokeWidth={2} />
+                  {labels.ui.bag}
+                  {itemCount + relicCount > 0
+                    ? ` (${itemCount}${relicCount ? `+${relicCount}` : ""})`
+                    : ""}
+                </span>
+              </button>
+            ) : null}
+            {onOpenReserve ? (
+              <button
+                type="button"
+                className="beast-path__btn-ghost px-2.5 py-1 text-[11px]"
+                onClick={onOpenReserve}
+              >
+                {labels.ui.reserveOpen}
+                {reserveCount > 0 ? ` (${reserveCount})` : ""}
+              </button>
+            ) : null}
+            <p className="beast-path__title text-sm font-bold text-[var(--bp-gold)] sm:text-base">
+              {labels.ui.gold}: {gold}
+            </p>
+          </div>
+        </div>
+        <div className="beast-path__party-grid mt-2.5">
           {party.length === 0 ? (
             <p className="text-sm text-[var(--bp-muted)]">—</p>
           ) : (
-            party.map((m) => {
-              return (
-                <div
-                  key={m.uid}
-                  className="grid w-[200px] grid-cols-[40px_minmax(0,1fr)] items-center gap-2.5 border border-[var(--bp-line)] bg-black/20 px-2 py-2"
-                >
-                  <div
-                    className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--bp-line)] bg-[color-mix(in_oklab,black_30%,var(--bp-bg-panel))] text-[var(--bp-muted)]"
-                    aria-hidden
-                  >
-                    <ImageIcon size={16} strokeWidth={1.75} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold leading-tight">
-                      {m.name}
-                    </p>
-                    <p className="mt-0.5 truncate text-[10px] leading-tight text-[var(--bp-muted)]">
-                      {labels.ui.level} {m.level} · {m.hp}/{m.maxHp}
-                    </p>
-                    <div className="mt-1.5 space-y-1">
-                      <HpBar hp={m.hp} maxHp={m.maxHp} />
-                      <XpBar
-                        xp={m.xp}
-                        level={m.level}
-                        label={labels.ui.rewardXp}
-                      />
-                    </div>
+            party.map((m) => (
+              <button
+                key={m.uid}
+                type="button"
+                className="beast-path__party-card"
+                onClick={() => setDetailUid(m.uid)}
+                aria-label={`${labels.ui.partyDetail}: ${m.name}`}
+              >
+                <BeastPortrait
+                  art={speciesThumbArt(SPECIES[m.speciesId])}
+                  alt={m.name}
+                  size={32}
+                  className="beast-path__party-card-art"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold leading-tight sm:text-base">
+                    {m.name}
+                  </p>
+                  <p className="mt-0.5 truncate text-[10px] leading-tight text-[var(--bp-muted)]">
+                    {labels.ui.level} {m.level} · {m.hp}/{m.maxHp}
+                  </p>
+                  <div className="mt-1 space-y-1">
+                    <HpBar hp={m.hp} maxHp={m.maxHp} />
+                    <XpBar
+                      xp={m.xp}
+                      level={m.level}
+                      label={labels.ui.rewardXp}
+                    />
                   </div>
                 </div>
-              );
-            })
+              </button>
+            ))
           )}
         </div>
       </div>
-      <p className="beast-path__title shrink-0 text-lg font-bold text-[var(--bp-gold)]">
-        {labels.ui.gold}: {gold}
-      </p>
-    </div>
+      {detail ? (
+        <PartyBeastDetail
+          monster={detail}
+          labels={labels}
+          onClose={() => setDetailUid(null)}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -634,18 +936,42 @@ function MapView({
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
   }, []);
 
+  const centerOnCurrent = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const el = scrollerRef.current;
+      const pos = positions.get(state.currentNodeId);
+      if (!el || !pos) return;
+      const padLeft = Number.parseFloat(getComputedStyle(el).paddingLeft) || 0;
+      const target = pos.x + padLeft - el.clientWidth / 2;
+      const max = Math.max(0, el.scrollWidth - el.clientWidth);
+      el.scrollTo({
+        left: Math.max(0, Math.min(max, target)),
+        behavior,
+      });
+      updateScrollState();
+    },
+    [positions, state.currentNodeId, updateScrollState],
+  );
+
+  useLayoutEffect(() => {
+    centerOnCurrent("auto");
+  }, [centerOnCurrent]);
+
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
     updateScrollState();
     el.addEventListener("scroll", updateScrollState, { passive: true });
-    const ro = new ResizeObserver(() => updateScrollState());
+    const ro = new ResizeObserver(() => {
+      centerOnCurrent("auto");
+      updateScrollState();
+    });
     ro.observe(el);
     return () => {
       el.removeEventListener("scroll", updateScrollState);
       ro.disconnect();
     };
-  }, [updateScrollState, width]);
+  }, [updateScrollState, centerOnCurrent, width]);
 
   function scrollMap(direction: -1 | 1) {
     const el = scrollerRef.current;
@@ -846,6 +1172,7 @@ function BattleView({
   onClearPlan,
   onSkip,
   onArmCapture,
+  onOpenBag,
   onFightComplete,
   onClaim,
 }: {
@@ -855,7 +1182,11 @@ function BattleView({
   onClearPlan: (actorId: string) => void;
   onSkip: (actorId: string) => void;
   onArmCapture: (enabled: boolean) => void;
-  onFightComplete: (battle: BattleState) => void;
+  onOpenBag: () => void;
+  onFightComplete: (
+    battle: BattleState,
+    consumedItemSlot?: number,
+  ) => void;
   onClaim: () => void;
 }) {
   const liveBattle = state.battle!;
@@ -869,11 +1200,25 @@ function BattleView({
   const playGen = useRef(0);
   const [focusActor, setFocusActor] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<MoveId | null>(null);
+  const [fightWarnOpen, setFightWarnOpen] = useState(false);
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef(new Map<string, HTMLElement>());
+  const frozenLinksRef = useRef(
+    new Map<string, { d: string; color: string; bend: number }>(),
+  );
   const [links, setLinks] = useState<
     { key: string; d: string; color: string; active?: boolean }[]
   >([]);
+
+  // Always focus the first living party beast when a battle starts / resumes planning.
+  const battleKey = `${liveBattle.enemies.map((e) => e.uid).join("|")}:${liveBattle.player.map((p) => p.uid).join("|")}`;
+  useEffect(() => {
+    const firstLiving =
+      liveBattle.player.find((m) => m.hp > 0) ?? liveBattle.player[0] ?? null;
+    setFocusActor(firstLiving?.uid ?? null);
+    setPendingMove(null);
+    frozenLinksRef.current.clear();
+  }, [battleKey]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally key on roster identity
 
   const battle = playback?.battle ?? liveBattle;
   const resolving = playback != null || battle.phase === "resolving";
@@ -898,7 +1243,8 @@ function BattleView({
   }, [battle.player]);
 
   const planning = battle.phase === "planning" && !playback;
-  const ready = canFight(liveBattle) && !playback;
+  const fightable = canStartFight(liveBattle) && !playback;
+  const plansReady = allPlansReady(liveBattle);
   const captureArmed = liveBattle.captureAttempt;
   const isWild = liveBattle.battleKind === "wild";
   const inspected =
@@ -937,83 +1283,116 @@ function BattleView({
     return map;
   }, [playback?.floaters]);
 
-  const updateLinks = useCallback(() => {
-    const field = fieldRef.current;
-    if (!field) {
-      setLinks([]);
-      return;
-    }
-    const fieldRect = field.getBoundingClientRect();
-    const next: { key: string; d: string; color: string; active?: boolean }[] =
-      [];
-    const plans = [
-      ...Object.values(battle.plans),
-      ...Object.values(battle.enemyPlans),
-    ];
-    plans.forEach((plan, idx) => {
-      if (!plan.moveId || !plan.targetId || plan.actorId === plan.targetId) {
+  const updateLinks = useCallback(
+    (opts?: { reflow?: boolean }) => {
+      const field = fieldRef.current;
+      if (!field) {
+        setLinks([]);
         return;
       }
-      const fromEl = cardRefs.current.get(plan.actorId);
-      const toEl = cardRefs.current.get(plan.targetId);
-      if (!fromEl || !toEl) return;
-      const actor = combatantsById.get(plan.actorId);
-      const target = combatantsById.get(plan.targetId);
-      if (!actor || !target || actor.hp <= 0 || target.hp <= 0) return;
-      const a = fromEl.getBoundingClientRect();
-      const b = toEl.getBoundingClientRect();
-      const aLeft = a.left - fieldRect.left;
-      const aTop = a.top - fieldRect.top;
-      const bLeft = b.left - fieldRect.left;
-      const bTop = b.top - fieldRect.top;
-      const aCx = aLeft + a.width / 2;
-      const aCy = aTop + a.height / 2;
-      const bCx = bLeft + b.width / 2;
-      const bCy = bTop + b.height / 2;
-      const start = edgePoint(aLeft, aTop, a.width, a.height, bCx, bCy);
-      const end = edgePoint(bLeft, bTop, b.width, b.height, aCx, aCy);
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const pull = Math.min(6, len * 0.08);
-      const x2 = end.x - (dx / len) * pull;
-      const y2 = end.y - (dy / len) * pull;
-      const bend = (idx % 2 === 0 ? 1 : -1) * (18 + idx * 10);
-      const color =
-        actor.side === "player"
-          ? (partyColorById.get(actor.uid) ??
-            ELEMENT_COLOR[actor.element])
-          : (partyColorById.get(target.uid) ??
-            ELEMENT_COLOR[target.element]);
-      next.push({
-        key: `${plan.actorId}-${plan.targetId}-${plan.moveId}`,
-        d: curvedLinkPath(start.x, start.y, x2, y2, bend),
-        color,
-        active: playback?.actorId === plan.actorId,
+      const reflow = opts?.reflow === true;
+      const fieldRect = field.getBoundingClientRect();
+      const next: { key: string; d: string; color: string; active?: boolean }[] =
+        [];
+      const plans = [
+        ...Object.values(liveBattle.plans),
+        ...Object.values(liveBattle.enemyPlans),
+      ];
+      const seen = new Set<string>();
+
+      plans.forEach((plan) => {
+        if (!plan.moveId || !plan.targetId || plan.actorId === plan.targetId) {
+          return;
+        }
+        const actor = combatantsById.get(plan.actorId);
+        const target = combatantsById.get(plan.targetId);
+        if (!actor || !target) return;
+
+        const key = `${plan.actorId}-${plan.targetId}-${plan.moveId}`;
+        seen.add(key);
+
+        const frozen = frozenLinksRef.current.get(key);
+        if (frozen && !reflow) {
+          next.push({
+            key,
+            d: frozen.d,
+            color: frozen.color,
+            active: playback?.actorId === plan.actorId,
+          });
+          return;
+        }
+
+        // Only place new arrows while both ends are still up.
+        if (actor.hp <= 0 || target.hp <= 0) return;
+        const fromEl = cardRefs.current.get(plan.actorId);
+        const toEl = cardRefs.current.get(plan.targetId);
+        if (!fromEl || !toEl) return;
+        const a = fromEl.getBoundingClientRect();
+        const b = toEl.getBoundingClientRect();
+        const aLeft = a.left - fieldRect.left;
+        const aTop = a.top - fieldRect.top;
+        const bLeft = b.left - fieldRect.left;
+        const bTop = b.top - fieldRect.top;
+        const aCx = aLeft + a.width / 2;
+        const aCy = aTop + a.height / 2;
+        const bCx = bLeft + b.width / 2;
+        const bCy = bTop + b.height / 2;
+        const start = edgePoint(aLeft, aTop, a.width, a.height, bCx, bCy);
+        const end = edgePoint(bLeft, bTop, b.width, b.height, aCx, aCy);
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const pull = Math.min(6, len * 0.08);
+        const x2 = end.x - (dx / len) * pull;
+        const y2 = end.y - (dy / len) * pull;
+        // Stable bend from actor id — never reshuffles when other plans appear.
+        let hash = 0;
+        for (let i = 0; i < plan.actorId.length; i += 1) {
+          hash = (hash * 31 + plan.actorId.charCodeAt(i)) | 0;
+        }
+        const bend =
+          ((hash & 1) === 0 ? 1 : -1) * (16 + (Math.abs(hash) % 5) * 7);
+        const color =
+          actor.side === "player"
+            ? (partyColorById.get(actor.uid) ?? elementColorOf(actor.element))
+            : (partyColorById.get(target.uid) ?? elementColorOf(target.element));
+        const d = curvedLinkPath(start.x, start.y, x2, y2, bend);
+        frozenLinksRef.current.set(key, { d, color, bend });
+        next.push({
+          key,
+          d,
+          color,
+          active: playback?.actorId === plan.actorId,
+        });
       });
-    });
-    setLinks(next);
-  }, [
-    battle.enemyPlans,
-    battle.plans,
-    combatantsById,
-    partyColorById,
-    playback?.actorId,
-  ]);
+
+      for (const key of [...frozenLinksRef.current.keys()]) {
+        if (!seen.has(key)) frozenLinksRef.current.delete(key);
+      }
+      setLinks(next);
+    },
+    [
+      combatantsById,
+      liveBattle.enemyPlans,
+      liveBattle.plans,
+      partyColorById,
+      playback?.actorId,
+    ],
+  );
 
   useLayoutEffect(() => {
     updateLinks();
-  }, [updateLinks, battle.player, battle.enemies, pendingMove, playback]);
+  }, [updateLinks]);
 
   useEffect(() => {
     const field = fieldRef.current;
-    const onResize = () => updateLinks();
+    const onResize = () => updateLinks({ reflow: true });
     window.addEventListener("resize", onResize);
     document.addEventListener("fullscreenchange", onResize);
     const ro =
       field && typeof ResizeObserver !== "undefined"
         ? new ResizeObserver(() => {
-            updateLinks();
+            updateLinks({ reflow: true });
           })
         : null;
     if (field && ro) ro.observe(field);
@@ -1072,7 +1451,8 @@ function BattleView({
   }
 
   async function playFight() {
-    if (!ready || playback) return;
+    if (!fightable || playback) return;
+    setFightWarnOpen(false);
     const timeline = buildFightTimeline(
       liveBattle,
       labels,
@@ -1135,8 +1515,22 @@ function BattleView({
     }
 
     if (playGen.current !== gen) return;
-    onFightComplete(timeline.final);
+    onFightComplete(timeline.final, timeline.consumedItemSlot);
     setPlayback(null);
+    const firstLiving =
+      timeline.final.player.find((m) => m.hp > 0) ??
+      timeline.final.player[0] ??
+      null;
+    setFocusActor(firstLiving?.uid ?? null);
+  }
+
+  function requestFight() {
+    if (!fightable || playback) return;
+    if (!plansReady && !captureArmed) {
+      setFightWarnOpen(true);
+      return;
+    }
+    void playFight();
   }
 
   // Previews only for confirmed plans — never while still picking a target.
@@ -1180,7 +1574,7 @@ function BattleView({
                   ? labels.ui.captureArmed
                   : pendingMove
                     ? labels.ui.chooseTarget
-                    : ready
+                    : plansReady
                       ? labels.ui.yourTurn
                       : labels.ui.needPlans}
         </p>
@@ -1280,8 +1674,13 @@ function BattleView({
                       ].join(" ")}
                     >
                       {renderFloaters(m.uid)}
-                      <span className="beast-path__combatant-thumb" aria-hidden>
-                        <ImageIcon size={14} strokeWidth={1.75} />
+                      <span className="beast-path__combatant-thumb">
+                        <BeastPortrait
+                          art={speciesThumbArt(SPECIES[m.speciesId])}
+                          alt={m.name}
+                          variant="thumb"
+                          fill
+                        />
                       </span>
                       <div className="beast-path__combatant-body">
                         <div className="flex items-start justify-between gap-1">
@@ -1399,8 +1798,13 @@ function BattleView({
                       ].join(" ")}
                     >
                       {renderFloaters(m.uid)}
-                      <span className="beast-path__combatant-thumb" aria-hidden>
-                        <ImageIcon size={14} strokeWidth={1.75} />
+                      <span className="beast-path__combatant-thumb">
+                        <BeastPortrait
+                          art={speciesThumbArt(SPECIES[m.speciesId])}
+                          alt={m.name}
+                          variant="thumb"
+                          fill
+                        />
                       </span>
                       <div className="beast-path__combatant-body">
                         <div className="flex items-start justify-between gap-1">
@@ -1452,32 +1856,40 @@ function BattleView({
         </div>
 
         {planning || playback ? (
-          <div
-            className={[
-              "beast-path__actions-dock",
-              inspected || (isWild && planning)
-                ? ""
-                : "beast-path__actions-dock--empty",
-            ].join(" ")}
-          >
-            {inspected || (isWild && planning) ? (
-              <div className="beast-path__dock-row">
+          <div className="beast-path__actions-dock">
+            <div className="beast-path__dock-row">
+              <div className="beast-path__panel beast-path__inspect p-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-muted)]">
+                  {labels.ui.statsPanel}
+                </p>
                 {inspected ? (
-                  <div className="beast-path__panel beast-path__inspect p-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold leading-tight">
-                        {inspected.name}
-                      </p>
-                      <p className="mt-0.5 truncate text-[10px] text-[var(--bp-muted)]">
-                        {labels.ui.level} {inspected.level} ·{" "}
-                        <span
-                          style={{ color: ELEMENT_COLOR[inspected.element] }}
-                        >
-                          {labels.elements[inspected.element]}
-                        </span>
-                        {" · "}
-                        {inspected.hp}/{inspected.maxHp}
-                      </p>
+                  <>
+                    <div className="beast-path__inspect-head">
+                      <div className="beast-path__inspect-art">
+                        <BeastPortrait
+                          art={speciesThumbArt(SPECIES[inspected.speciesId])}
+                          alt={inspected.name}
+                          variant="thumb"
+                          fill
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold leading-tight">
+                          {inspected.name}
+                        </p>
+                        <p className="mt-0.5 truncate text-[10px] text-[var(--bp-muted)]">
+                          {labels.ui.level} {inspected.level} ·{" "}
+                          <span
+                            style={{ color: elementColorOf(inspected.element) }}
+                          >
+                            {inspected.element
+                              ? labels.elements[inspected.element]
+                              : labels.ui.elementNone}
+                          </span>
+                          {" · "}
+                          {inspected.hp}/{inspected.maxHp}
+                        </p>
+                      </div>
                     </div>
                     <dl className="beast-path__inspect-stats">
                       <div>
@@ -1512,168 +1924,210 @@ function BattleView({
                         <HpBar hp={inspected.hp} maxHp={inspected.maxHp} />
                       </div>
                     )}
+                  </>
+                ) : (
+                  <p className="beast-path__panel-empty mt-3">
+                    {labels.ui.statsEmpty}
+                  </p>
+                )}
+              </div>
+
+              <div className="beast-path__panel beast-path__moves p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-gold)]">
+                      {labels.ui.movesPanel}
+                    </p>
+                    <p className="truncate text-[11px] text-[var(--bp-muted)]">
+                      {focus
+                        ? labels.ui.chooseMove
+                        : captureArmed
+                          ? labels.ui.captureHint
+                          : labels.ui.movesEmpty}
+                    </p>
                   </div>
-                ) : null}
-                {focus ? (
-                  <div className="beast-path__panel beast-path__actions p-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-gold)]">
-                          {labels.ui.actionsPanel}
-                        </p>
-                        <p className="truncate text-[11px] text-[var(--bp-muted)]">
-                          {labels.ui.chooseMove}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className={[
-                          "shrink-0 border px-3 py-1.5 text-xs font-bold uppercase tracking-wide",
-                          battle.plans[focus.uid]?.moveId === null
-                            ? "border-[var(--bp-gold)] text-[var(--bp-gold)]"
-                            : "border-[var(--bp-line)] text-[var(--bp-muted)] hover:border-[var(--bp-gold)]",
-                        ].join(" ")}
-                        onClick={selectSkip}
-                      >
-                        {labels.ui.skipMove}
-                      </button>
-                    </div>
-                    <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-                      {Array.from({ length: MAX_MOVES }, (_, slot) => {
-                        const moveId = focus.moves[slot] ?? null;
-                        if (!moveId) {
-                          return (
-                            <div
-                              key={`empty-${slot}`}
-                              className="beast-path__move-slot beast-path__move-slot--empty"
-                              aria-hidden
-                            >
-                              {labels.ui.emptyMove}
-                            </div>
-                          );
-                        }
-                        const move = getMove(moveId);
-                        const moveSelected =
-                          battle.plans[focus.uid]?.moveId === moveId;
-                        const pending = pendingMove === moveId;
-                        const uses = remainingUses(focus.moveUses, moveId);
-                        const max = maxUsesFor(moveId);
-                        const exhausted = uses <= 0;
-                        const hasTargets =
-                          validTargetsForMove(battle, focus.uid, moveId)
-                            .length > 0;
-                        const plannedTarget =
-                          battle.plans[focus.uid]?.moveId === moveId
-                            ? battle.plans[focus.uid]?.targetId
-                            : null;
-                        const impact = exhausted
-                          ? null
-                          : moveImpactHint(
-                              battle,
-                              focus.uid,
-                              moveId,
-                              labels,
-                              plannedTarget,
-                            );
-                        const impactTone =
-                          move.kind === "attack"
-                            ? "damage"
-                            : move.effect?.type === "heal"
-                              ? "heal"
-                              : "buff";
-                        return (
-                          <button
-                            key={moveId}
-                            type="button"
-                            disabled={exhausted || !hasTargets}
-                            className={[
-                              "beast-path__move-slot disabled:cursor-not-allowed disabled:opacity-40",
-                              moveSelected || pending
-                                ? "border-[var(--bp-ember)] bg-[color-mix(in_oklab,var(--bp-ember)_12%,transparent)]"
-                                : "",
-                            ].join(" ")}
-                            onClick={() => selectMove(moveId)}
-                          >
-                            <div className="flex items-start justify-between gap-1.5">
-                              <p className="text-[11px] font-semibold leading-tight">
-                                {labels.moves[moveId].name}
-                                <span className="ml-1 text-[8px] uppercase tracking-wide text-[var(--bp-muted)]">
-                                  {move.kind}
-                                </span>
-                              </p>
-                              <span
-                                className={[
-                                  "shrink-0 text-[9px] font-bold tabular-nums",
-                                  exhausted
-                                    ? "text-[var(--bp-ember)]"
-                                    : "text-[var(--bp-muted)]",
-                                ].join(" ")}
-                              >
-                                {uses}/{max}
-                              </span>
-                            </div>
-                            {exhausted ? (
-                              <p className="mt-0.5 text-[9px] font-semibold text-[var(--bp-ember)]">
-                                {labels.ui.noUses}
-                              </p>
-                            ) : impact ? (
-                              <p
-                                className={[
-                                  "beast-path__move-impact",
-                                  impactTone === "heal"
-                                    ? "beast-path__move-impact--heal"
-                                    : impactTone === "buff"
-                                      ? "beast-path__move-impact--buff"
-                                      : "",
-                                ].join(" ")}
-                              >
-                                {impact}
-                              </p>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
-                {isWild && planning ? (
-                  <div className="beast-path__capture-slot">
+                  {focus ? (
                     <button
                       type="button"
                       className={[
-                        "beast-path__capture-btn",
-                        captureArmed ? "beast-path__capture-btn--armed" : "",
+                        "shrink-0 border px-3 py-1.5 text-xs font-bold uppercase tracking-wide",
+                        battle.plans[focus.uid]?.moveId === null
+                          ? "border-[var(--bp-gold)] text-[var(--bp-gold)]"
+                          : "border-[var(--bp-line)] text-[var(--bp-muted)] hover:border-[var(--bp-gold)]",
                       ].join(" ")}
-                      onClick={() => {
-                        setFocusActor(null);
-                        setPendingMove(null);
-                        onArmCapture(!captureArmed);
-                      }}
+                      onClick={selectSkip}
                     >
-                      {labels.ui.captureAction}
+                      {labels.ui.skipMove}
                     </button>
-                    {captureArmed ? (
-                      <p className="beast-path__capture-hint">
-                        {labels.ui.captureHint}
-                      </p>
-                    ) : null}
+                  ) : null}
+                </div>
+                {focus ? (
+                  <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                    {Array.from({ length: MAX_MOVES }, (_, slot) => {
+                      const moveId = focus.moves[slot] ?? null;
+                      if (!moveId) {
+                        return (
+                          <div
+                            key={`empty-${slot}`}
+                            className="beast-path__move-slot beast-path__move-slot--empty"
+                            aria-hidden
+                          >
+                            {labels.ui.emptyMove}
+                          </div>
+                        );
+                      }
+                      const move = getMove(moveId);
+                      const moveSelected =
+                        battle.plans[focus.uid]?.moveId === moveId;
+                      const pending = pendingMove === moveId;
+                      const uses = remainingUses(focus.moveUses, moveId);
+                      const max = maxUsesFor(moveId);
+                      const exhausted = uses <= 0;
+                      const hasTargets =
+                        validTargetsForMove(battle, focus.uid, moveId)
+                          .length > 0;
+                      const plannedTarget =
+                        battle.plans[focus.uid]?.moveId === moveId
+                          ? battle.plans[focus.uid]?.targetId
+                          : null;
+                      const impact = exhausted
+                        ? null
+                        : moveImpactHint(
+                            battle,
+                            focus.uid,
+                            moveId,
+                            labels,
+                            plannedTarget,
+                          );
+                      const impactTone = moveIsOffensive(move)
+                        ? "damage"
+                        : move.effects.some((e) => e.type === "heal")
+                          ? "heal"
+                          : "buff";
+                      return (
+                        <button
+                          key={moveId}
+                          type="button"
+                          disabled={exhausted || !hasTargets || captureArmed}
+                          className={[
+                            "beast-path__move-slot disabled:cursor-not-allowed disabled:opacity-40",
+                            moveSelected || pending
+                              ? "border-[var(--bp-ember)] bg-[color-mix(in_oklab,var(--bp-ember)_12%,transparent)]"
+                              : "",
+                          ].join(" ")}
+                          onClick={() => selectMove(moveId)}
+                        >
+                          <div className="flex items-start justify-between gap-1.5">
+                            <p className="text-[13px] font-semibold leading-tight">
+                              {labels.moves[moveId].name}
+                            </p>
+                            <span
+                              className={[
+                                "shrink-0 text-[9px] font-bold tabular-nums",
+                                exhausted
+                                  ? "text-[var(--bp-ember)]"
+                                  : "text-[var(--bp-muted)]",
+                              ].join(" ")}
+                            >
+                              {uses}/{max}
+                            </span>
+                          </div>
+                          {exhausted ? (
+                            <p className="mt-0.5 text-[9px] font-semibold text-[var(--bp-ember)]">
+                              {labels.ui.noUses}
+                            </p>
+                          ) : impact ? (
+                            <p
+                              className={[
+                                "beast-path__move-impact",
+                                impactTone === "heal"
+                                  ? "beast-path__move-impact--heal"
+                                  : impactTone === "buff"
+                                    ? "beast-path__move-impact--buff"
+                                    : "",
+                              ].join(" ")}
+                            >
+                              {impact}
+                            </p>
+                          ) : null}
+                        </button>
+                      );
+                    })}
                   </div>
-                ) : null}
+                ) : (
+                  <div className="beast-path__moves-grid-placeholder mt-1.5">
+                    {Array.from({ length: MAX_MOVES }, (_, slot) => (
+                      <div
+                        key={`ph-${slot}`}
+                        className="beast-path__move-slot beast-path__move-slot--empty"
+                        aria-hidden
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <p>
-                {captureArmed
-                  ? labels.ui.captureHint
-                  : labels.ui.chooseMove}
-              </p>
-            )}
+
+              <div className="beast-path__panel beast-path__battle-actions p-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--bp-muted)]">
+                  {labels.ui.actionsPanel}
+                </p>
+                <div className="beast-path__battle-actions-list mt-1.5">
+                  <button
+                    type="button"
+                    disabled={!planning}
+                    className="beast-path__capture-btn"
+                    onClick={() => onOpenBag()}
+                  >
+                    {labels.ui.battleBag}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!isWild || !planning}
+                    className={[
+                      "beast-path__capture-btn",
+                      captureArmed ? "beast-path__capture-btn--armed" : "",
+                    ].join(" ")}
+                    onClick={() => {
+                      setFocusActor(null);
+                      setPendingMove(null);
+                      onArmCapture(!captureArmed);
+                    }}
+                  >
+                    {labels.ui.captureAction}
+                  </button>
+                  {captureArmed && planning ? (
+                    <p className="beast-path__capture-hint">
+                      {labels.ui.captureHint}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
           </div>
         ) : null}
 
         {battle.phase === "won" && !playback ? (
-          <div className="beast-path__victory p-3">
+          <div className="beast-path__victory p-3 text-center">
             <p className="text-sm font-semibold">{labels.ui.victoryBattle}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            {battle.capturedMonster ? (
+              <div className="beast-path__capture-art mx-auto mt-3">
+                <BeastPortrait
+                  art={speciesFullArt(
+                    SPECIES[battle.capturedMonster.speciesId],
+                  )}
+                  alt={battle.capturedMonster.name}
+                  variant="full"
+                  fill
+                />
+                <p className="mt-2 text-xs font-semibold">
+                  {battle.capturedMonster.name}
+                </p>
+                <p className="text-[10px] text-[var(--bp-muted)]">
+                  {labels.ui.captureSuccess}
+                </p>
+              </div>
+            ) : null}
+            <div className="mt-3 flex justify-center">
               <button
                 type="button"
                 className="beast-path__btn px-3 py-1.5 text-xs"
@@ -1693,11 +2147,9 @@ function BattleView({
         {planning || playback ? (
           <button
             type="button"
-            disabled={!ready || Boolean(playback)}
+            disabled={!fightable || Boolean(playback)}
             className="beast-path__btn w-full px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-            onClick={() => {
-              void playFight();
-            }}
+            onClick={requestFight}
           >
             {playback ? labels.ui.resolving : labels.ui.fightRound}
           </button>
@@ -1747,21 +2199,92 @@ function BattleView({
           </ul>
         </div>
       </aside>
+
+      {fightWarnOpen ? (
+        <div
+          className="beast-path__modal-backdrop"
+          role="presentation"
+          onClick={() => setFightWarnOpen(false)}
+        >
+          <div
+            className="beast-path__modal beast-path__modal--sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label={labels.ui.fightWarnTitle}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="shrink-0 text-sm font-semibold">
+              {labels.ui.fightWarnTitle}
+            </p>
+            <div className="beast-path__modal-body flex flex-col">
+              <p className="text-xs leading-relaxed text-[var(--bp-muted)]">
+                {labels.ui.fightWarnBody}
+              </p>
+              <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  className="beast-path__btn-ghost px-3 py-1.5 text-xs"
+                  onClick={() => setFightWarnOpen(false)}
+                >
+                  {labels.ui.fightWarnCancel}
+                </button>
+                <button
+                  type="button"
+                  className="beast-path__btn px-3 py-1.5 text-xs"
+                  onClick={() => {
+                    void playFight();
+                  }}
+                >
+                  {labels.ui.fightWarnConfirm}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export function BeastPathGame() {
   const { locale } = useLanguage();
-  const labels = getLabels(locale);
-  const [state, setState] = useState<RunState>(() => createRun(locale));
+  const [contentEpoch, setContentEpoch] = useState(0);
+  const labels = useMemo(() => getLabels(locale), [locale, contentEpoch]);
+  const [state, setState] = useState<RunState>(() => createMenuState());
   const [starters, setStarters] = useState(() => getStarters(locale));
+  const [hasSave, setHasSave] = useState(false);
+  const [overwriteOpen, setOverwriteOpen] = useState(false);
+  const [gameMenuOpen, setGameMenuOpen] = useState(false);
+  const [bagOpen, setBagOpen] = useState(false);
+  const [bagFocusSlot, setBagFocusSlot] = useState<number | null>(null);
+  const [bagHoverSlot, setBagHoverSlot] = useState<number | null>(null);
+  const [contentDevOpen, setContentDevOpen] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
+  const showContentDev = isBeastPathDev();
   const [reserveOpen, setReserveOpen] = useState(false);
   const [reserveSwapParty, setReserveSwapParty] = useState<string | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canFullscreen, setCanFullscreen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await syncPublishedContent();
+      if (cancelled) return;
+      setStarters(getStarters(locale));
+      setContentEpoch((n) => n + 1);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // locale is read once on mount so stored author packs apply before first menu paint.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    setHasSave(hasSavedRun());
+  }, []);
 
   useEffect(() => {
     setCanFullscreen(
@@ -1774,6 +2297,33 @@ export function BeastPathGame() {
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
+
+  const commit = useCallback((next: RunState) => {
+    syncRunPersistence(next);
+    setState(next);
+  }, []);
+
+  const commitUpdate = useCallback(
+    (updater: (prev: RunState) => RunState) => {
+      setState((prev) => {
+        const next = updater(prev);
+        syncRunPersistence(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (state.screen.kind === "map" && state.party.length > 0) {
+      setHasSave(true);
+    } else if (
+      state.screen.kind === "victory" ||
+      state.screen.kind === "defeat"
+    ) {
+      setHasSave(false);
+    }
+  }, [state.screen.kind, state.party.length]);
 
   async function toggleFullscreen() {
     const el = stageRef.current;
@@ -1789,12 +2339,65 @@ export function BeastPathGame() {
     }
   }
 
-  function restart() {
-    setState(createRun(locale));
-    setStarters(getStarters(locale));
+  function resetUiFlags() {
     setSellOpen(false);
     setReserveOpen(false);
     setReserveSwapParty(null);
+    setOverwriteOpen(false);
+    setGameMenuOpen(false);
+    setBagOpen(false);
+    setBagFocusSlot(null);
+    setBagHoverSlot(null);
+    setContentDevOpen(false);
+  }
+
+  function goToMenu() {
+    resetUiFlags();
+    setHasSave(hasSavedRun());
+    setState(createMenuState());
+  }
+
+  /** Leave to main menu without wiping the save. */
+  function returnToMainMenu() {
+    if (state.screen.kind === "map" && state.party.length > 0) {
+      syncRunPersistence(state);
+    }
+    resetUiFlags();
+    setHasSave(hasSavedRun());
+    setState(createMenuState());
+  }
+
+  function abandonRun() {
+    clearSavedRun();
+    setHasSave(false);
+    goToMenu();
+  }
+
+  function startNewRun() {
+    clearSavedRun();
+    setHasSave(false);
+    resetUiFlags();
+    setStarters(getStarters(locale));
+    setState(createRun(locale));
+  }
+
+  function requestNewRun() {
+    if (hasSave) {
+      setOverwriteOpen(true);
+      return;
+    }
+    startNewRun();
+  }
+
+  function continueRun() {
+    const saved = readSavedRun();
+    if (!saved) {
+      setHasSave(false);
+      return;
+    }
+    resetUiFlags();
+    setHasSave(true);
+    setState(hydrateRun(saved));
   }
 
   return (
@@ -1812,47 +2415,416 @@ export function BeastPathGame() {
           isFullscreen ? "beast-path--fullscreen" : "",
         ].join(" ")}
       >
-        {canFullscreen ? (
-          <div className="beast-path__chrome-bar">
+        <div
+          className={[
+            "beast-path__chrome-bar",
+            state.screen.kind === "menu" ? "beast-path__chrome-bar--end" : "",
+          ].join(" ")}
+        >
+          {state.screen.kind !== "menu" ? (
             <button
               type="button"
-              className="beast-path__fullscreen-btn"
-              onClick={() => {
-                void toggleFullscreen();
-              }}
-              aria-label={
-                isFullscreen
-                  ? labels.ui.fullscreenExit
-                  : labels.ui.fullscreenEnter
-              }
-              title={
-                isFullscreen
-                  ? labels.ui.fullscreenExit
-                  : labels.ui.fullscreenEnter
-              }
+              className="beast-path__chrome-btn"
+              onClick={() => setGameMenuOpen(true)}
+              aria-label={labels.ui.gameMenu}
+              title={labels.ui.gameMenu}
             >
-              {isFullscreen ? (
-                <Minimize2 size={15} strokeWidth={2} />
-              ) : (
-                <Maximize2 size={15} strokeWidth={2} />
-              )}
+              <Menu size={15} strokeWidth={2} />
             </button>
+          ) : null}
+          <div className="ml-auto flex items-center gap-2">
+            {showContentDev && state.screen.kind === "menu" ? (
+              <button
+                type="button"
+                className="beast-path__chrome-btn"
+                onClick={() => setContentDevOpen((open) => !open)}
+                aria-label={labels.ui.contentDev}
+                title={labels.ui.contentDev}
+              >
+                <Wrench size={15} strokeWidth={2} />
+              </button>
+            ) : null}
+            {canFullscreen ? (
+              <button
+                type="button"
+                className="beast-path__chrome-btn"
+                onClick={() => {
+                  void toggleFullscreen();
+                }}
+                aria-label={
+                  isFullscreen
+                    ? labels.ui.fullscreenExit
+                    : labels.ui.fullscreenEnter
+                }
+                title={
+                  isFullscreen
+                    ? labels.ui.fullscreenExit
+                    : labels.ui.fullscreenEnter
+                }
+              >
+                {isFullscreen ? (
+                  <Minimize2 size={15} strokeWidth={2} />
+                ) : (
+                  <Maximize2 size={15} strokeWidth={2} />
+                )}
+              </button>
+            ) : null}
           </div>
-        ) : null}
-        {state.screen.kind !== "battle" ? (
-          <PartyStrip party={state.party} labels={labels} gold={state.gold} />
+        </div>
+        {state.screen.kind !== "battle" && state.screen.kind !== "menu" ? (
+          <PartyStrip
+            party={state.party}
+            labels={labels}
+            gold={state.gold}
+            currentLevel={state.currentLevel}
+            regionId={state.regionId}
+            reserveCount={state.reserve.length}
+            itemCount={state.items.length}
+            relicCount={state.relics.length}
+            onOpenBag={() => {
+              setBagFocusSlot(null);
+              setBagHoverSlot(null);
+              setBagOpen(true);
+            }}
+            onOpenReserve={
+              state.screen.kind === "map"
+                ? () => setReserveOpen(true)
+                : undefined
+            }
+          />
         ) : null}
 
         <div
           className={[
             "beast-path__body",
-            state.screen.kind !== "battle" ? "mt-3" : "",
+            state.screen.kind === "menu" || contentDevOpen
+              ? "beast-path__body--menu"
+              : "",
+            state.screen.kind !== "battle" &&
+            state.screen.kind !== "menu" &&
+            !contentDevOpen
+              ? "mt-3"
+              : "",
           ].join(" ")}
         >
-        {state.lastMessage ? (
+        {contentDevOpen && showContentDev && state.screen.kind === "menu" ? (
+          <BeastPathContentPanel
+            layout="page"
+            labels={labels}
+            onClose={() => setContentDevOpen(false)}
+            onContentChange={() => {
+              setContentEpoch((n) => n + 1);
+              setStarters(getStarters(locale));
+            }}
+          />
+        ) : null}
+
+        {!(contentDevOpen && state.screen.kind === "menu") && state.lastMessage ? (
           <p className="beast-path__panel mb-3 px-3 py-2 text-xs text-[var(--bp-muted)]">
             {state.lastMessage}
           </p>
+        ) : null}
+
+        {gameMenuOpen && state.screen.kind !== "menu" ? (
+          <div
+            className="beast-path__modal-backdrop"
+            role="presentation"
+            onClick={() => setGameMenuOpen(false)}
+          >
+            <div
+              className="beast-path__modal beast-path__modal--sm"
+              role="dialog"
+              aria-modal="true"
+              aria-label={labels.ui.gameMenu}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="shrink-0 text-sm font-semibold">{labels.ui.gameMenu}</p>
+              <div className="beast-path__modal-body mt-0 flex flex-col gap-2">
+                <button
+                  type="button"
+                  className="beast-path__btn px-3 py-2 text-xs"
+                  onClick={returnToMainMenu}
+                >
+                  {labels.ui.menuReturnSave}
+                </button>
+                <button
+                  type="button"
+                  className="beast-path__btn-ghost px-3 py-2 text-xs"
+                  onClick={abandonRun}
+                >
+                  {labels.ui.abandonRun}
+                </button>
+                <button
+                  type="button"
+                  className="beast-path__btn-ghost px-3 py-2 text-xs"
+                  onClick={() => setGameMenuOpen(false)}
+                >
+                  {labels.ui.abandonCancel}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {bagOpen && state.screen.kind !== "menu" ? (
+          <div
+            className="beast-path__modal-backdrop"
+            role="presentation"
+            onClick={() => {
+              setBagOpen(false);
+              setBagFocusSlot(null);
+              setBagHoverSlot(null);
+            }}
+          >
+            <div
+              className="beast-path__modal beast-path__modal--bag"
+              role="dialog"
+              aria-modal="true"
+              aria-label={labels.ui.inventory}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex shrink-0 items-center justify-between gap-2">
+                <p className="text-sm font-semibold">{labels.ui.inventory}</p>
+                <button
+                  type="button"
+                  className="beast-path__btn-ghost px-2 py-1 text-[10px]"
+                  onClick={() => {
+                    setBagOpen(false);
+                    setBagFocusSlot(null);
+                    setBagHoverSlot(null);
+                  }}
+                >
+                  {labels.ui.reserveClose}
+                </button>
+              </div>
+              <div className="beast-path__modal-body">
+                <div className="flex shrink-0 items-baseline justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--bp-muted)]">
+                    {labels.ui.bag}
+                  </p>
+                  <p className="text-[10px] text-[var(--bp-muted)]">
+                    {labels.ui.bagSlots.replace(
+                      "{n}",
+                      String(state.items.length),
+                    )}
+                  </p>
+                </div>
+                <div className="beast-path__bag-grid">
+                  {Array.from({ length: BAG_LIMIT }, (_, slot) => {
+                    const stack = state.items[slot];
+                    const active =
+                      bagHoverSlot === slot || bagFocusSlot === slot;
+                    return (
+                      <button
+                        key={`bag-slot-${slot}`}
+                        type="button"
+                        className={[
+                          "beast-path__bag-slot",
+                          stack ? "" : "beast-path__bag-slot--empty",
+                          active ? "beast-path__bag-slot--active" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        disabled={!stack}
+                        onMouseEnter={() => {
+                          if (stack) setBagHoverSlot(slot);
+                        }}
+                        onMouseLeave={() => setBagHoverSlot(null)}
+                        onFocus={() => {
+                          if (stack) setBagFocusSlot(slot);
+                        }}
+                        onClick={() => {
+                          if (!stack) return;
+                          setBagFocusSlot(slot);
+                        }}
+                        aria-label={
+                          stack
+                            ? (labels.items[stack.itemId]?.name ?? stack.itemId)
+                            : undefined
+                        }
+                      >
+                        {stack ? (
+                          <BeastPortrait
+                            art={getItem(stack.itemId)?.art}
+                            alt={
+                              labels.items[stack.itemId]?.name ?? stack.itemId
+                            }
+                            variant="thumb"
+                            fill
+                          />
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+                {(() => {
+                  const detailSlot = bagHoverSlot ?? bagFocusSlot;
+                  const stack =
+                    detailSlot != null ? state.items[detailSlot] : null;
+                const canUseBattle =
+                  state.screen.kind === "battle" &&
+                  state.battle?.phase === "planning";
+                const canUseMap = state.screen.kind !== "battle";
+                if (!stack) {
+                  return (
+                    <div className="beast-path__bag-detail">
+                      <p className="text-[11px] text-[var(--bp-muted)]">
+                        {state.items.length === 0
+                          ? labels.ui.inventoryEmpty
+                          : null}
+                      </p>
+                    </div>
+                  );
+                }
+                const itemCopy = labels.items[stack.itemId];
+                const def = getItem(stack.itemId);
+                const effectHint = (def?.effects ?? [])
+                  .map((effect) => {
+                    if (effect.type === "healParty") {
+                      return effect.amount === "full"
+                        ? "HP full"
+                        : effect.amount === "half"
+                          ? "HP 50%"
+                          : `HP +${effect.amount}`;
+                    }
+                    if (effect.type === "buffParty") {
+                      return `${effect.stat.toUpperCase()} +${effect.amount}`;
+                    }
+                    if (effect.type === "damageParty") {
+                      return `HP -${effect.amount}`;
+                    }
+                    return "";
+                  })
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <div className="beast-path__bag-detail">
+                    <p className="text-xs font-semibold">
+                      {itemCopy?.name ?? stack.itemId}
+                    </p>
+                    {itemCopy?.description ? (
+                      <p className="mt-1 text-[10px] leading-relaxed text-[var(--bp-muted)]">
+                        {itemCopy.description}
+                      </p>
+                    ) : null}
+                    {effectHint ? (
+                      <p className="mt-1 text-[10px] text-[var(--bp-gold)]">
+                        {effectHint}
+                      </p>
+                    ) : null}
+                    {(canUseMap || canUseBattle) && detailSlot != null ? (
+                      <button
+                        type="button"
+                        className="beast-path__btn mt-2 px-2.5 py-1 text-[10px]"
+                        onClick={() => {
+                          commit(useItem(state, detailSlot, locale));
+                          setBagFocusSlot(null);
+                          setBagHoverSlot(null);
+                        }}
+                      >
+                        {labels.ui.useItem}
+                      </button>
+                    ) : null}
+                  </div>
+                );
+                })()}
+                <div className="beast-path__bag-relics">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--bp-muted)]">
+                    {labels.ui.relics}
+                  </p>
+                  {state.relics.length === 0 ? (
+                    <p className="mt-1 text-[11px] text-[var(--bp-muted)]">
+                      {labels.ui.relicsEmpty}
+                    </p>
+                  ) : (
+                    <ul className="mt-1 grid gap-1">
+                      {state.relics.map((id) => (
+                        <li
+                          key={id}
+                          className="border border-[var(--bp-line)] px-2 py-1.5"
+                        >
+                          <span className="block truncate text-xs font-semibold">
+                            {labels.relics[id]?.name ?? id}
+                          </span>
+                          <span className="block text-[10px] text-[var(--bp-muted)]">
+                            {labels.relics[id]?.description}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {state.screen.kind === "menu" && !contentDevOpen ? (
+          <div className="beast-path__menu">
+            <h2 className="beast-path__title text-2xl font-bold sm:text-3xl">
+              {labels.ui.menuTitle}
+            </h2>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--bp-muted)]">
+              {labels.ui.menuLead}
+            </p>
+            <div className="beast-path__menu-actions mt-12">
+              <button
+                type="button"
+                className="beast-path__btn px-5 py-3 text-sm"
+                onClick={requestNewRun}
+              >
+                {labels.ui.menuNewRun}
+              </button>
+              <button
+                type="button"
+                className="beast-path__btn-ghost px-5 py-3 text-sm disabled:cursor-default disabled:opacity-40"
+                disabled={!hasSave}
+                onClick={continueRun}
+              >
+                {labels.ui.menuContinue}
+              </button>
+            </div>
+            {overwriteOpen ? (
+              <div
+                className="beast-path__modal-backdrop"
+                role="presentation"
+                onClick={() => setOverwriteOpen(false)}
+              >
+                <div
+                  className="beast-path__modal beast-path__modal--sm"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={labels.ui.menuOverwriteTitle}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p className="shrink-0 text-sm font-semibold">
+                    {labels.ui.menuOverwriteTitle}
+                  </p>
+                  <div className="beast-path__modal-body flex flex-col">
+                    <p className="text-xs leading-relaxed text-[var(--bp-muted)]">
+                      {labels.ui.menuOverwriteBody}
+                    </p>
+                    <div className="mt-auto flex flex-wrap justify-end gap-2 pt-3">
+                      <button
+                        type="button"
+                        className="beast-path__btn-ghost px-3 py-1.5 text-xs"
+                        onClick={() => setOverwriteOpen(false)}
+                      >
+                        {labels.ui.menuOverwriteCancel}
+                      </button>
+                      <button
+                        type="button"
+                        className="beast-path__btn px-3 py-1.5 text-xs"
+                        onClick={startNewRun}
+                      >
+                        {labels.ui.menuOverwriteConfirm}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         {state.screen.kind === "starter" ? (
@@ -1870,7 +2842,7 @@ export function BeastPathGame() {
                   monster={monster}
                   labels={labels}
                   compact
-                  onClick={() => setState(selectStarter(state, monster))}
+                  onClick={() => commit(selectStarter(state, monster))}
                 />
               ))}
             </div>
@@ -1879,16 +2851,6 @@ export function BeastPathGame() {
 
         {state.screen.kind === "map" ? (
           <div className="flex h-full min-h-0 flex-col gap-2">
-            <div className="flex shrink-0 justify-end">
-              <button
-                type="button"
-                className="beast-path__btn-ghost px-3 py-1.5 text-xs"
-                onClick={() => setReserveOpen(true)}
-              >
-                {labels.ui.reserveOpen}
-                {state.reserve.length > 0 ? ` (${state.reserve.length})` : ""}
-              </button>
-            </div>
             <div className="min-h-0 flex-1">
               <MapView
                 state={state}
@@ -1912,7 +2874,7 @@ export function BeastPathGame() {
                   aria-label={labels.ui.reserve}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex shrink-0 items-center justify-between gap-2">
                     <p className="text-sm font-semibold">{labels.ui.reserve}</p>
                     <button
                       type="button"
@@ -1925,10 +2887,11 @@ export function BeastPathGame() {
                       {labels.ui.reserveClose}
                     </button>
                   </div>
-                  <p className="mt-1 text-[11px] text-[var(--bp-muted)]">
+                  <p className="mt-1 shrink-0 text-[11px] text-[var(--bp-muted)]">
                     {labels.ui.reserveHint}
                   </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="beast-path__modal-body">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--bp-muted)]">
                         {labels.ui.party}
@@ -1965,7 +2928,7 @@ export function BeastPathGame() {
                           type="button"
                           className="beast-path__btn-ghost mt-2 w-full px-2 py-1 text-[10px]"
                           onClick={() => {
-                            setState((s) =>
+                            commitUpdate((s) =>
                               movePartyToReserve(s, reserveSwapParty),
                             );
                             setReserveSwapParty(null);
@@ -1992,7 +2955,7 @@ export function BeastPathGame() {
                                 className="w-full border border-[var(--bp-line)] px-2 py-1.5 text-left text-xs hover:border-[color-mix(in_oklab,var(--bp-gold)_50%,transparent)]"
                                 onClick={() => {
                                   if (reserveSwapParty) {
-                                    setState((s) =>
+                                    commitUpdate((s) =>
                                       swapReserveIntoParty(
                                         s,
                                         m.uid,
@@ -2002,7 +2965,9 @@ export function BeastPathGame() {
                                     setReserveSwapParty(null);
                                     return;
                                   }
-                                  setState((s) => moveReserveToParty(s, m.uid));
+                                  commitUpdate((s) =>
+                                    moveReserveToParty(s, m.uid),
+                                  );
                                 }}
                               >
                                 <span className="block truncate font-semibold">
@@ -2020,6 +2985,7 @@ export function BeastPathGame() {
                         </ul>
                       )}
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -2042,11 +3008,18 @@ export function BeastPathGame() {
               onArmCapture={(enabled) =>
                 setState((s) => armCapture(s, enabled))
               }
-              onFightComplete={(battle) =>
-                setState((s) => applyFightBattle(s, battle, locale))
+              onOpenBag={() => {
+                setBagFocusSlot(null);
+                setBagHoverSlot(null);
+                setBagOpen(true);
+              }}
+              onFightComplete={(battle, consumedItemSlot) =>
+                commitUpdate((s) =>
+                  applyFightBattle(s, battle, locale, consumedItemSlot),
+                )
               }
               onClaim={() =>
-                setState((s) => claimBattleRewards(s, locale))
+                commitUpdate((s) => claimBattleRewards(s, locale))
               }
             />
           </div>
@@ -2059,14 +3032,42 @@ export function BeastPathGame() {
               {state.shopOffers.map((offer) => (
                 <li key={offer.id} className="beast-path__panel p-3">
                   <p className="font-semibold">
-                    {labels.shop[offer.labelKey]}
+                    {offer.kind === "item"
+                      ? `${labels.shop.item}: ${labels.items[offer.itemId]?.name ?? offer.itemId}`
+                      : offer.kind === "relic"
+                        ? `${labels.shop.relic}: ${labels.relics[offer.relicId]?.name ?? offer.relicId}`
+                        : labels.shop[offer.labelKey]}
                     {offer.kind === "recruit" ? `: ${offer.monster.name}` : ""}
                   </p>
                   {offer.kind === "recruit" ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="beast-path__shop-recruit-art">
+                        <BeastPortrait
+                          art={speciesFullArt(
+                            SPECIES[offer.monster.speciesId],
+                          )}
+                          alt={offer.monster.name}
+                          variant="full"
+                          fill
+                        />
+                      </div>
+                      <p className="text-xs text-[var(--bp-muted)]">
+                        {labels.ui.level} {offer.monster.level} ·{" "}
+                        {offer.monster.element
+                          ? labels.elements[offer.monster.element]
+                          : labels.ui.elementNone}{" "}
+                        · ATK {offer.monster.atk}
+                      </p>
+                    </div>
+                  ) : null}
+                  {offer.kind === "item" ? (
                     <p className="mt-1 text-xs text-[var(--bp-muted)]">
-                      {labels.ui.level} {offer.monster.level} ·{" "}
-                      {labels.elements[offer.monster.element]} · ATK{" "}
-                      {offer.monster.atk}
+                      {labels.items[offer.itemId]?.description}
+                    </p>
+                  ) : null}
+                  {offer.kind === "relic" ? (
+                    <p className="mt-1 text-xs text-[var(--bp-muted)]">
+                      {labels.relics[offer.relicId]?.description}
                     </p>
                   ) : null}
                   <p className="mt-2 text-sm text-[var(--bp-gold)]">
@@ -2097,7 +3098,7 @@ export function BeastPathGame() {
                 className="beast-path__btn-ghost px-4 py-2 text-sm"
                 onClick={() => {
                   setSellOpen(false);
-                  setState(leaveShop(state));
+                  commit(leaveShop(state));
                 }}
               >
                 {labels.ui.leaveShop}
@@ -2118,17 +3119,19 @@ export function BeastPathGame() {
             onClick={() => setSellOpen(false)}
           >
             <div
-              className="beast-path__modal"
+              className="beast-path__modal beast-path__modal--md"
               role="dialog"
               aria-modal="true"
               aria-label={labels.ui.shopSellTitle}
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-sm font-semibold">{labels.ui.shopSellPick}</p>
-              <p className="mt-1 text-[11px] text-[var(--bp-muted)]">
+              <p className="shrink-0 text-sm font-semibold">
+                {labels.ui.shopSellPick}
+              </p>
+              <p className="mt-1 shrink-0 text-[11px] text-[var(--bp-muted)]">
                 {labels.ui.shopSellOnce}
               </p>
-              <ul className="mt-3 grid grid-cols-1 gap-1.5">
+              <ul className="beast-path__modal-body mt-0 grid grid-cols-1 content-start gap-1.5">
                 {state.party.map((monster) => (
                   <li key={monster.uid}>
                     <button
@@ -2157,7 +3160,7 @@ export function BeastPathGame() {
               </ul>
               <button
                 type="button"
-                className="beast-path__btn-ghost mt-3 w-full px-3 py-1.5 text-xs"
+                className="beast-path__btn-ghost mt-3 w-full shrink-0 px-3 py-1.5 text-xs"
                 onClick={() => setSellOpen(false)}
               >
                 {labels.ui.shopSellClose}
@@ -2175,7 +3178,7 @@ export function BeastPathGame() {
             <button
               type="button"
               className="beast-path__btn mt-5 px-4 py-2 text-sm"
-              onClick={() => setState(takeRest(state, locale))}
+              onClick={() => commit(takeRest(state, locale))}
             >
               {labels.ui.restAction}
             </button>
@@ -2239,7 +3242,7 @@ export function BeastPathGame() {
               <button
                 type="button"
                 className="beast-path__btn mt-5 px-4 py-2 text-sm"
-                onClick={() => setState(continueFromEvent(state))}
+                onClick={() => commit(continueFromEvent(state))}
               >
                 {labels.ui.continue}
               </button>
@@ -2257,9 +3260,9 @@ export function BeastPathGame() {
             <button
               type="button"
               className="beast-path__btn mt-6 px-5 py-3 text-sm"
-              onClick={restart}
+              onClick={goToMenu}
             >
-              {labels.ui.newRun}
+              {labels.ui.menuMain}
             </button>
           </div>
         ) : null}

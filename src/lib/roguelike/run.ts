@@ -1,10 +1,13 @@
 import type { Locale } from "@/lib/types";
+import { copy, pickRegionForLevel } from "./content";
+import { xpFromGoldReward } from "./content/rewards/tables";
+import { getItem } from "./content/items";
 import {
   buildEncounter,
+  buildFightTimeline,
   buildWildEncounter,
-  canFight,
+  canStartFight,
   clearPlan,
-  executeFightRound,
   randomStarterOptions,
   rewardGoldFor,
   setCaptureAttempt as setBattleCaptureAttempt,
@@ -12,28 +15,35 @@ import {
   setSkipPlan,
   startBattle,
 } from "./combat";
-import { copy } from "./content";
 import {
+  addItem,
   applyEventChoice,
   buildShopOffers,
+  isBagFull,
   pickRandomEvent,
+  removeItemAt,
 } from "./events";
-import { generateMap, getNode } from "./map";
+import { applyItemEffectsToParty } from "./items";
+import { generateMap, getNode, mapSeedForLevel } from "./map";
 import {
   applyPartyBuff,
   gainXp,
+  healParty,
   resetUidCounter,
   restParty,
+  restorePartyMoves,
 } from "./monsters";
 import type {
   BattleState,
   HabitatId,
   Monster,
   MoveId,
+  RunLevel,
+  RunMap,
   RunState,
   ShopOffer,
 } from "./types";
-import { PARTY_LIMIT } from "./types";
+import { MAX_RUN_LEVEL, PARTY_LIMIT } from "./types";
 
 export function getFightSeed(state: RunState): number {
   if (!state.battle) return state.seed;
@@ -49,14 +59,20 @@ function beginWildBattle(
   seed: number,
 ): RunState {
   const labels = copy[locale];
-  const enemies = buildWildEncounter(habitat, column, seed, labels);
+  const enemies = buildWildEncounter(
+    habitat,
+    column,
+    seed,
+    labels,
+    state.currentLevel,
+  );
   const battle = startBattle(
     state.party,
     enemies,
-    rewardGoldFor("habitat", column),
+    rewardGoldFor("habitat", column, state.currentLevel, state.relics),
     labels,
     seed,
-    { kind: "wild", habitat },
+    { kind: "wild", habitat, relicIds: state.relics },
   );
   return {
     ...state,
@@ -68,14 +84,46 @@ function beginWildBattle(
   };
 }
 
+const EMPTY_MAP: RunMap = { nodes: [], startId: "", bossId: "" };
+
+/** Idle shell shown on the main menu (no active run). */
+export function createMenuState(): RunState {
+  return {
+    seed: 0,
+    currentLevel: 1,
+    regionId: "meadow",
+    gold: 0,
+    party: [],
+    reserve: [],
+    items: [],
+    relics: [],
+    map: EMPTY_MAP,
+    currentNodeId: "",
+    visited: [],
+    available: [],
+    screen: { kind: "menu" },
+    battle: null,
+    shopOffers: [],
+    shopSoldCreature: false,
+    event: null,
+    eventResolved: false,
+    lastMessage: null,
+  };
+}
+
 export function createRun(locale: Locale, seed = Date.now()): RunState {
   resetUidCounter();
-  const map = generateMap(seed);
+  const map = generateMap(mapSeedForLevel(seed, 1));
+  const regionId = pickRegionForLevel(seed, 1);
   return {
     seed,
+    currentLevel: 1,
+    regionId,
     gold: 30,
     party: [],
     reserve: [],
+    items: [{ itemId: "potion-heal", qty: 1 }],
+    relics: [],
     map,
     currentNodeId: map.startId,
     visited: [map.startId],
@@ -126,7 +174,13 @@ export function enterNode(state: RunState, nodeId: string, locale: Locale): RunS
     return {
       ...base,
       screen: { kind: "shop", nodeId },
-      shopOffers: buildShopOffers(state.seed + node.column * 17, node.column, labels),
+      shopOffers: buildShopOffers(
+        state.seed + node.column * 17,
+        node.column,
+        labels,
+        state.relics,
+        state.regionId,
+      ),
       shopSoldCreature: false,
     };
   }
@@ -142,7 +196,11 @@ export function enterNode(state: RunState, nodeId: string, locale: Locale): RunS
     return {
       ...base,
       screen: { kind: "event", nodeId },
-      event: pickRandomEvent(state.seed + node.column * 31 + node.row * 7),
+      event: pickRandomEvent(
+        state.seed + node.column * 31 + node.row * 7,
+        node.column,
+        state.regionId,
+      ),
     };
   }
 
@@ -154,23 +212,30 @@ export function enterNode(state: RunState, nodeId: string, locale: Locale): RunS
       node.column,
       nodeId,
       locale,
-      state.seed + node.column * 97 + node.row * 13,
+      state.seed +
+        state.currentLevel * 7919 +
+        node.column * 97 +
+        node.row * 13,
     );
   }
 
+  const fightSeed =
+    state.seed + state.currentLevel * 7919 + node.column * 97 + node.row * 13;
   const enemies = buildEncounter(
     node.type,
     node.column,
-    state.seed + node.column * 97 + node.row * 13,
+    fightSeed,
     labels,
+    state.currentLevel,
+    state.regionId,
   );
   const battle = startBattle(
     state.party,
     enemies,
-    rewardGoldFor(node.type, node.column),
+    rewardGoldFor(node.type, node.column, state.currentLevel, state.relics),
     labels,
-    state.seed + node.column * 97 + node.row * 13,
-    { kind: "enemy", habitat: null },
+    fightSeed,
+    { kind: "enemy", habitat: null, relicIds: state.relics },
   );
 
   return {
@@ -180,12 +245,59 @@ export function enterNode(state: RunState, nodeId: string, locale: Locale): RunS
   };
 }
 
-export function advanceAfterNode(state: RunState): RunState {
+/** Full heal + revive + refill moves between paths. */
+function refreshRoster(party: Monster[]) {
+  return restorePartyMoves(party.map((m) => ({ ...m, hp: m.maxHp })));
+}
+
+function beginNextPath(state: RunState, locale: Locale): RunState {
+  const nextLevel = (state.currentLevel + 1) as RunLevel;
+  const map = generateMap(mapSeedForLevel(state.seed, nextLevel));
+  const regionId = pickRegionForLevel(state.seed, nextLevel);
+  const labels = copy[locale];
+  const advanceMsg = labels.ui.pathAdvance
+    .replace("{from}", String(state.currentLevel))
+    .replace("{to}", String(nextLevel));
+
+  return {
+    ...state,
+    currentLevel: nextLevel,
+    regionId,
+    map,
+    currentNodeId: map.startId,
+    visited: [map.startId],
+    available: getNode(map, map.startId)?.next ?? [],
+    screen: { kind: "map" },
+    battle: null,
+    shopOffers: [],
+    shopSoldCreature: false,
+    event: null,
+    eventResolved: false,
+    party: refreshRoster(state.party),
+    reserve: refreshRoster(state.reserve),
+    lastMessage: state.lastMessage
+      ? `${state.lastMessage} · ${advanceMsg}`
+      : advanceMsg,
+  };
+}
+
+export function advanceAfterNode(
+  state: RunState,
+  locale: Locale = "en",
+): RunState {
   const node = getNode(state.map, state.currentNodeId);
   if (!node) return state;
 
   if (node.type === "boss") {
-    return { ...state, screen: { kind: "victory" }, available: [], battle: null };
+    if (state.currentLevel < MAX_RUN_LEVEL) {
+      return beginNextPath(state, locale);
+    }
+    return {
+      ...state,
+      screen: { kind: "victory" },
+      available: [],
+      battle: null,
+    };
   }
 
   return {
@@ -241,27 +353,42 @@ export function applyFightBattle(
   state: RunState,
   battle: BattleState,
   locale: Locale = "en",
+  consumedItemSlot?: number,
 ): RunState {
   if (!state.battle || state.screen.kind !== "battle") return state;
   const labels = copy[locale];
+  const items =
+    consumedItemSlot != null
+      ? removeItemAt(state.items, consumedItemSlot)
+      : state.items;
+  const cleanedBattle: BattleState = {
+    ...battle,
+    pendingItemId: null,
+    pendingItemSlot: null,
+  };
 
-  if (battle.phase === "lost") {
+  if (cleanedBattle.phase === "lost") {
     return {
       ...state,
-      battle,
-      party: battle.player.map(({ side: _s, tempDefBonus: _t, ...m }) => m),
+      battle: cleanedBattle,
+      items,
+      party: cleanedBattle.player.map(
+        ({ side: _s, tempDefBonus: _t, ...m }) => m,
+      ),
       screen: { kind: "defeat" },
       lastMessage: null,
     };
   }
 
-  if (battle.phase === "won") {
-    let party = battle.player.map(({ side: _s, tempDefBonus: _t, ...m }) => m);
+  if (cleanedBattle.phase === "won") {
+    let party = cleanedBattle.player.map(
+      ({ side: _s, tempDefBonus: _t, ...m }) => m,
+    );
     let reserve = [...state.reserve];
     let lastMessage: string | null = null;
 
-    if (battle.capturedMonster) {
-      const caught = battle.capturedMonster;
+    if (cleanedBattle.capturedMonster) {
+      const caught = cleanedBattle.capturedMonster;
       if (party.length < PARTY_LIMIT) {
         party = [...party, caught];
         lastMessage = caught.name;
@@ -273,7 +400,8 @@ export function applyFightBattle(
 
     return {
       ...state,
-      battle: { ...battle, capturedMonster: null },
+      battle: cleanedBattle,
+      items,
       party,
       reserve,
       lastMessage,
@@ -282,21 +410,34 @@ export function applyFightBattle(
 
   return {
     ...state,
-    battle,
-    party: battle.player.map(({ side: _s, tempDefBonus: _t, ...m }) => m),
+    battle: cleanedBattle,
+    items,
+    party: cleanedBattle.player.map(
+      ({ side: _s, tempDefBonus: _t, ...m }) => m,
+    ),
     lastMessage: null,
   };
 }
 
 export function fightRound(state: RunState, locale: Locale): RunState {
   if (!state.battle || state.screen.kind !== "battle") return state;
-  if (!canFight(state.battle)) {
+  if (!canStartFight(state.battle)) {
     return { ...state, lastMessage: copy[locale].ui.needPlans };
   }
 
   const labels = copy[locale];
-  const battle = executeFightRound(state.battle, labels, getFightSeed(state));
-  return applyFightBattle(state, battle, locale);
+  const timeline = buildFightTimeline(
+    state.battle,
+    labels,
+    getFightSeed(state),
+  );
+  if (!timeline) return state;
+  return applyFightBattle(
+    state,
+    timeline.final,
+    locale,
+    timeline.consumedItemSlot,
+  );
 }
 
 export function claimBattleRewards(
@@ -305,7 +446,10 @@ export function claimBattleRewards(
 ): RunState {
   if (!state.battle || state.battle.phase !== "won") return state;
   const labels = copy[locale];
-  const xpEach = Math.max(4, Math.round(10 + state.battle.goldReward / 4));
+  const xpEach = xpFromGoldReward(
+    state.battle.goldReward,
+    state.relics,
+  );
   const battleById = new Map(
     state.battle.player.map((m) => [m.uid, m] as const),
   );
@@ -342,7 +486,7 @@ export function claimBattleRewards(
     }
     return {
       ...member,
-      hp: Math.max(1, Math.floor(member.maxHp * 0.25)),
+      hp: 0,
       atk: battler.atk,
       def: battler.def,
       spd: battler.spd,
@@ -367,7 +511,7 @@ export function claimBattleRewards(
     lastMessage: message,
   };
 
-  return advanceAfterNode(next);
+  return advanceAfterNode(next, locale);
 }
 
 export function buyOffer(state: RunState, offer: ShopOffer, locale: Locale): RunState {
@@ -377,8 +521,12 @@ export function buyOffer(state: RunState, offer: ShopOffer, locale: Locale): Run
   }
 
   let party = state.party;
+  let items = state.items;
+  let relics = state.relics;
+  let message: string = labels.shop[offer.labelKey];
+
   if (offer.kind === "heal") {
-    party = restParty(party);
+    party = restorePartyMoves(healParty(party, "half"));
   } else if (offer.kind === "buff") {
     party = applyPartyBuff(
       party,
@@ -390,14 +538,32 @@ export function buyOffer(state: RunState, offer: ShopOffer, locale: Locale): Run
       return { ...state, lastMessage: labels.ui.emptyParty };
     }
     party = [...party, offer.monster];
+  } else if (offer.kind === "item") {
+    if (isBagFull(items)) {
+      return { ...state, lastMessage: labels.ui.bagFull };
+    }
+    const nextItems = addItem(items, offer.itemId, 1);
+    if (nextItems.length === items.length) {
+      return { ...state, lastMessage: labels.ui.bagFull };
+    }
+    items = nextItems;
+    message = labels.items[offer.itemId]?.name ?? offer.itemId;
+  } else if (offer.kind === "relic") {
+    if (relics.includes(offer.relicId)) {
+      return { ...state, lastMessage: labels.relics[offer.relicId]?.name ?? offer.relicId };
+    }
+    relics = [...relics, offer.relicId];
+    message = labels.relics[offer.relicId]?.name ?? offer.relicId;
   }
 
   return {
     ...state,
     gold: state.gold - offer.cost,
     party,
+    items,
+    relics,
     shopOffers: state.shopOffers.filter((o) => o.id !== offer.id),
-    lastMessage: labels.shop[offer.labelKey],
+    lastMessage: message,
   };
 }
 
@@ -436,11 +602,14 @@ export function leaveShop(state: RunState): RunState {
 
 export function takeRest(state: RunState, locale: Locale): RunState {
   const labels = copy[locale];
-  return advanceAfterNode({
-    ...state,
-    party: restParty(state.party),
-    lastMessage: labels.ui.restAction,
-  });
+  return advanceAfterNode(
+    {
+      ...state,
+      party: restParty(state.party),
+      lastMessage: labels.ui.restAction,
+    },
+    locale,
+  );
 }
 
 export function resolveEvent(
@@ -459,6 +628,8 @@ export function resolveEvent(
     labels,
     PARTY_LIMIT,
     state.seed + (node?.column ?? 0) * 31,
+    state.items,
+    state.relics,
   );
 
   if (result.startWildHabitat && node) {
@@ -467,6 +638,8 @@ export function resolveEvent(
         ...state,
         party: result.party,
         gold: result.gold,
+        items: result.items,
+        relics: result.relics,
         event: null,
         eventResolved: false,
         lastMessage: result.message,
@@ -483,8 +656,69 @@ export function resolveEvent(
     ...state,
     party: result.party,
     gold: result.gold,
+    items: result.items,
+    relics: result.relics,
     eventResolved: true,
     lastMessage: result.message,
+  };
+}
+
+/** Use a consumable from the bag. Map or battle planning: apply immediately. */
+export function useItem(
+  state: RunState,
+  itemIdOrSlot: string | number,
+  locale: Locale,
+): RunState {
+  const labels = copy[locale];
+
+  let slotIndex: number;
+  let itemId: string;
+  if (typeof itemIdOrSlot === "number") {
+    slotIndex = itemIdOrSlot;
+    const stack = state.items[slotIndex];
+    if (!stack) return state;
+    itemId = stack.itemId;
+  } else {
+    itemId = itemIdOrSlot;
+    slotIndex = state.items.findIndex((s) => s.itemId === itemId);
+    if (slotIndex < 0) return state;
+  }
+
+  const def = getItem(itemId);
+  if (!def) return state;
+  const itemName = labels.items[itemId]?.name ?? itemId;
+  const items = removeItemAt(state.items, slotIndex);
+
+  if (state.screen.kind === "battle") {
+    if (!state.battle || state.battle.phase !== "planning") return state;
+    const player = applyItemEffectsToParty(state.battle.player, def.effects);
+    const used = labels.ui.itemUsed.replace("{item}", itemName);
+    return {
+      ...state,
+      items,
+      party: player.map(({ side: _s, tempDefBonus: _t, ...m }) => m),
+      battle: {
+        ...state.battle,
+        player,
+        pendingItemId: null,
+        pendingItemSlot: null,
+        log: [
+          ...state.battle.log,
+          {
+            id: `item-${state.battle.log.length}-${slotIndex}`,
+            text: used,
+          },
+        ].slice(-12),
+      },
+      lastMessage: itemName,
+    };
+  }
+
+  return {
+    ...state,
+    party: applyItemEffectsToParty(state.party, def.effects),
+    items,
+    lastMessage: itemName,
   };
 }
 
@@ -533,4 +767,4 @@ export function moveReserveToParty(state: RunState, reserveUid: string): RunStat
   };
 }
 
-export { canFight };
+export { allPlansReady, canFight, canStartFight } from "./combat";

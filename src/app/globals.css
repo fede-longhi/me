@@ -169,16 +169,18 @@ body {
   --bp-moss: #6f9f6a;
   --bp-gold: #d4b56a;
   --bp-danger: #c45c4a;
-  --bp-ui: 1;
+  --bp-ui: 1.16;
+  --bp-font-mult: 1;
   --bp-font-display: var(--font-oxanium), ui-sans-serif, sans-serif;
   --bp-font-body: var(--font-oxanium), ui-sans-serif, sans-serif;
   position: relative;
   color: var(--bp-ink);
   font-family: var(--bp-font-body);
+  font-size: calc(1rem * var(--bp-font-mult));
   display: flex;
   flex-direction: column;
-  height: min(42rem, calc(100dvh - 9.5rem));
-  max-height: calc(100dvh - 8rem);
+  height: min(52rem, calc(100dvh - 6.5rem));
+  max-height: calc(100dvh - 5rem);
   overflow: hidden;
   border: 1px solid var(--bp-line);
   background:
@@ -196,7 +198,7 @@ body {
   border: none;
   border-radius: 0;
   box-shadow: none;
-  --bp-ui: 1.16;
+  --bp-ui: 1.28;
   padding: calc(1rem * var(--bp-ui)) calc(1.15rem * var(--bp-ui)) !important;
 }
 
@@ -224,7 +226,7 @@ body {
   max-width: none;
   padding: calc(0.32rem * var(--bp-ui)) calc(0.4rem * var(--bp-ui));
   gap: calc(0.4rem * var(--bp-ui));
-  grid-template-columns: calc(2.35rem * var(--bp-ui)) minmax(0, 1fr);
+  grid-template-columns: calc(3rem * var(--bp-ui)) minmax(0, 1fr);
 }
 
 .beast-path:fullscreen .beast-path__hp,
@@ -239,7 +241,7 @@ body {
 
 .beast-path:fullscreen .beast-path__dock-row,
 .beast-path--fullscreen .beast-path__dock-row {
-  width: min(calc(42rem * var(--bp-ui)), 100%);
+  width: min(calc(46rem * var(--bp-ui)), 100%);
   gap: calc(0.45rem * var(--bp-ui));
 }
 
@@ -249,15 +251,15 @@ body {
   min-width: calc(10rem * var(--bp-ui));
 }
 
-.beast-path:fullscreen .beast-path__actions,
-.beast-path--fullscreen .beast-path__actions {
+.beast-path:fullscreen .beast-path__moves,
+.beast-path--fullscreen .beast-path__moves {
   flex-basis: calc(16rem * var(--bp-ui));
 }
 
-.beast-path:fullscreen .beast-path__capture-slot,
-.beast-path--fullscreen .beast-path__capture-slot {
-  flex-basis: calc(7.5rem * var(--bp-ui));
-  width: calc(7.5rem * var(--bp-ui));
+.beast-path:fullscreen .beast-path__battle-actions,
+.beast-path--fullscreen .beast-path__battle-actions {
+  flex-basis: calc(8.5rem * var(--bp-ui));
+  width: calc(8.5rem * var(--bp-ui));
 }
 
 .beast-path:fullscreen .beast-path__move-slot,
@@ -279,14 +281,43 @@ body {
 
 .beast-path:fullscreen .beast-path__actions-dock,
 .beast-path--fullscreen .beast-path__actions-dock {
-  min-height: calc(8.4rem * var(--bp-ui));
+  height: calc(11.5rem * var(--bp-ui));
+  min-height: calc(11.5rem * var(--bp-ui));
+  max-height: calc(11.5rem * var(--bp-ui));
 }
 
 .beast-path__chrome-bar {
   display: flex;
   flex-shrink: 0;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin: -0.15rem 0 0.35rem;
+  min-height: 2rem;
+}
+
+.beast-path__chrome-bar--end {
+  justify-content: flex-end;
+}
+
+.beast-path__chrome-btn {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--bp-muted);
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 25%, var(--bp-bg-panel));
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.beast-path__chrome-btn:hover {
+  color: var(--bp-gold);
+  border-color: color-mix(in oklab, var(--bp-gold) 45%, var(--bp-line));
+  background: color-mix(in oklab, var(--bp-gold) 10%, var(--bp-bg-panel));
 }
 
 .beast-path__fullscreen-btn {
@@ -317,7 +348,13 @@ body {
   overflow: hidden;
 }
 
+.beast-path__body--menu {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .beast-path__battle {
+  position: relative;
   display: grid;
   gap: 0.85rem;
   height: 100%;
@@ -371,9 +408,8 @@ body {
   flex: 1 1 auto;
   flex-direction: column;
   justify-content: center;
-  gap: 0.4rem;
-  overflow-x: hidden;
-  overflow-y: auto;
+  gap: 0.28rem;
+  overflow: visible;
 }
 
 .beast-path__battle-side {
@@ -392,7 +428,7 @@ body {
 .beast-path__turn-order li {
   border: 1px solid var(--bp-line);
   padding: 0.3rem 0.45rem;
-  font-size: 0.68rem;
+  font-size: calc(0.78rem * var(--bp-font-mult));
   font-weight: 600;
   line-height: 1.25;
 }
@@ -407,18 +443,151 @@ body {
   background: color-mix(in oklab, var(--bp-bg-panel) 88%, black);
 }
 
+.beast-path__party-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+@media (min-width: 720px) {
+  .beast-path__party-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.beast-path__party-card {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 20%, transparent);
+  padding: 0.4rem 0.45rem;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    filter 0.15s ease;
+}
+
+button.beast-path__party-card:hover {
+  border-color: color-mix(in oklab, var(--bp-gold) 55%, var(--bp-line));
+  background: color-mix(in oklab, var(--bp-gold) 10%, transparent);
+  filter: brightness(1.05);
+}
+
+button.beast-path__party-card:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--bp-gold) 70%, transparent);
+  outline-offset: 1px;
+}
+
+.beast-path__party-card-art {
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 30%, var(--bp-bg-panel));
+  color: var(--bp-muted);
+}
+
+.beast-path__party-detail {
+  width: min(26rem, calc(100% - 1.5rem));
+  height: min(34rem, calc(100% - 1.5rem));
+  max-height: calc(100% - 1.5rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.beast-path__party-detail-body {
+  min-height: 0;
+  overflow: auto;
+  margin-top: 0.75rem;
+}
+
+.beast-path__party-detail-layout {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 520px) {
+  .beast-path__party-detail-layout {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.beast-path__party-detail-art {
+  width: 4.5rem;
+  height: 4.5rem;
+  aspect-ratio: 1;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 22%, var(--bp-bg-panel));
+}
+
+.beast-path__party-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.beast-path__party-detail-stats dt {
+  font-size: calc(0.6rem * var(--bp-font-mult));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-muted);
+}
+
+.beast-path__party-detail-stats dd {
+  margin: 0.1rem 0 0;
+  font-size: calc(0.95rem * var(--bp-font-mult));
+  font-weight: 700;
+}
+
+.beast-path__party-detail-moves {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.beast-path__party-detail-move {
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 18%, transparent);
+  padding: 0.45rem 0.55rem;
+}
+
+.beast-path__party-detail-move-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .beast-path__combatant {
   position: relative;
   box-sizing: border-box;
   display: grid;
   width: 100%;
   max-width: none;
-  flex: 0 0 auto;
-  font-size: 12px;
-  grid-template-columns: 2.15rem minmax(0, 1fr);
+  flex: 0 1 auto;
+  font-size: calc(13px * var(--bp-font-mult));
+  grid-template-columns: 2.85rem minmax(0, 1fr);
   align-items: stretch;
-  gap: 0.4rem;
-  padding: 0.35rem 0.4rem;
+  gap: 0.35rem;
+  padding: 0.28rem 0.35rem;
   text-align: left;
   overflow: visible;
   border: 1px solid var(--bp-card-border, var(--bp-line));
@@ -440,9 +609,13 @@ body {
 .beast-path__combatant-thumb {
   display: grid;
   place-items: center;
-  align-self: stretch;
-  min-height: 100%;
+  align-self: center;
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  min-height: 0;
   overflow: hidden;
+  border-radius: 999px;
   border: 1px solid var(--bp-line);
   background:
     repeating-linear-gradient(
@@ -452,6 +625,15 @@ body {
     ),
     color-mix(in oklab, black 28%, var(--bp-bg-panel));
   color: var(--bp-muted);
+}
+
+.beast-path__combatant-thumb > * {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
 }
 
 .beast-path__combatant-body {
@@ -549,7 +731,7 @@ body {
   top: 18%;
   z-index: 5;
   translate: -50% 0;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--bp-font-mult));
   font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 2px color-mix(in oklab, black 70%, transparent);
@@ -567,7 +749,7 @@ body {
 .beast-path__floater--buff,
 .beast-path__floater--guard {
   color: var(--bp-gold);
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--bp-font-mult));
 }
 
 @keyframes beast-path-floater {
@@ -634,7 +816,7 @@ body {
 
 .beast-path__move-slot {
   display: flex;
-  min-height: 2.15rem;
+  min-height: 2.45rem;
   flex-direction: column;
   justify-content: center;
   border: 1px solid var(--bp-line);
@@ -661,7 +843,7 @@ body {
 
 .beast-path__move-impact {
   margin-top: 0.15rem;
-  font-size: 0.62rem;
+  font-size: calc(0.72rem * var(--bp-font-mult));
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--bp-ember);
@@ -681,7 +863,7 @@ body {
   border-style: dashed;
   opacity: 0.4;
   color: var(--bp-muted);
-  font-size: 0.62rem;
+  font-size: calc(0.62rem * var(--bp-font-mult));
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -694,60 +876,84 @@ body {
   flex-shrink: 0;
   align-items: stretch;
   justify-content: center;
-  min-height: 8.4rem;
-  margin-top: 0.45rem;
-}
-
-.beast-path__actions-dock--empty {
-  border: 1px dashed color-mix(in oklab, var(--bp-line) 80%, transparent);
-  background: color-mix(in oklab, var(--bp-bg-panel) 35%, transparent);
-}
-
-.beast-path__actions-dock--empty p {
-  margin: auto;
-  padding: 0.75rem;
-  text-align: center;
-  font-size: 0.7rem;
-  color: var(--bp-muted);
+  height: 11.5rem;
+  min-height: 11.5rem;
+  max-height: 11.5rem;
+  margin-top: 0.35rem;
 }
 
 .beast-path__dock-row {
   display: flex;
-  width: min(42rem, 100%);
+  width: min(46rem, 100%);
+  height: 100%;
   align-items: stretch;
   gap: 0.45rem;
 }
 
 .beast-path__inspect {
-  flex: 0 1 11.5rem;
-  min-width: 9.5rem;
+  display: flex;
+  flex: 0 0 11.5rem;
+  width: 11.5rem;
+  min-width: 11.5rem;
+  max-width: 11.5rem;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--bp-line) 90%, transparent);
   background: color-mix(in oklab, var(--bp-bg-panel) 94%, black);
   box-shadow: 0 8px 20px color-mix(in oklab, black 30%, transparent);
 }
 
-.beast-path__actions {
-  flex: 1 1 16rem;
+.beast-path__moves {
+  display: flex;
+  flex: 1 1 auto;
   min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--bp-gold) 40%, var(--bp-line));
   background: color-mix(in oklab, var(--bp-bg-panel) 94%, black);
   box-shadow: 0 8px 20px color-mix(in oklab, black 35%, transparent);
 }
 
-.beast-path__capture-slot {
+.beast-path__battle-actions {
   display: flex;
-  flex: 0 0 7.5rem;
-  width: 7.5rem;
+  flex: 0 0 8.5rem;
+  width: 8.5rem;
+  min-width: 8.5rem;
+  max-width: 8.5rem;
   flex-direction: column;
-  justify-content: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--bp-line) 90%, transparent);
+  background: color-mix(in oklab, var(--bp-bg-panel) 94%, black);
+  box-shadow: 0 8px 20px color-mix(in oklab, black 30%, transparent);
+}
+
+.beast-path__battle-actions-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-start;
   gap: 0.4rem;
+}
+
+.beast-path__panel-empty {
+  margin: auto 0;
+  font-size: calc(0.7rem * var(--bp-font-mult));
+  line-height: 1.35;
+  color: var(--bp-muted);
+}
+
+.beast-path__moves-grid-placeholder {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375rem;
+  opacity: 0.45;
 }
 
 .beast-path__capture-btn {
   width: 100%;
   border: 1px solid var(--bp-line);
   padding: 0.65rem 0.5rem;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--bp-font-mult));
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -756,12 +962,18 @@ body {
   transition:
     color 0.15s ease,
     border-color 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    opacity 0.15s ease;
 }
 
-.beast-path__capture-btn:hover {
+.beast-path__capture-btn:hover:not(:disabled) {
   border-color: color-mix(in oklab, var(--bp-gold) 50%, var(--bp-line));
   color: var(--bp-gold);
+}
+
+.beast-path__capture-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .beast-path__capture-btn--armed {
@@ -771,7 +983,7 @@ body {
 }
 
 .beast-path__capture-hint {
-  font-size: 0.62rem;
+  font-size: calc(0.62rem * var(--bp-font-mult));
   line-height: 1.3;
   color: var(--bp-muted);
 }
@@ -780,16 +992,16 @@ body {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.35rem;
-  margin-top: 0.55rem;
+  margin-top: 0.45rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--bp-muted);
-  font-size: 0.62rem;
+  font-size: calc(0.62rem * var(--bp-font-mult));
 }
 
 .beast-path__inspect-stats dd {
   margin-top: 0.1rem;
-  font-size: 0.85rem;
+  font-size: calc(0.95rem * var(--bp-font-mult));
   font-weight: 700;
   letter-spacing: normal;
   text-transform: none;
@@ -801,13 +1013,18 @@ body {
     flex-direction: column;
   }
 
-  .beast-path__inspect {
-    flex-basis: auto;
+  .beast-path__actions-dock {
+    height: auto;
+    min-height: 0;
+    max-height: none;
   }
 
-  .beast-path__capture-slot {
+  .beast-path__inspect,
+  .beast-path__battle-actions {
     flex: 0 0 auto;
     width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 
   .beast-path__field {
@@ -843,12 +1060,179 @@ body {
 }
 
 .beast-path__modal {
-  width: min(22rem, 100%);
+  box-sizing: border-box;
+  width: min(22rem, calc(100% - 1.5rem));
+  height: min(28rem, calc(100% - 1.5rem));
+  max-height: calc(100% - 1.5rem);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--bp-gold) 40%, var(--bp-line));
   background: color-mix(in oklab, var(--bp-bg-panel) 96%, black);
   box-shadow: 0 16px 40px color-mix(in oklab, black 50%, transparent);
   padding: 0.85rem;
+}
+
+.beast-path__modal--sm {
+  height: min(12.5rem, calc(100% - 1.5rem));
+}
+
+.beast-path__modal--md {
+  height: min(18rem, calc(100% - 1.5rem));
+}
+
+.beast-path__modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  margin-top: 0.75rem;
+}
+
+.beast-path__modal-body.mt-0 {
+  margin-top: 0.55rem;
+}
+
+.beast-path__modal--bag {
+  width: min(17.5rem, calc(100% - 1.5rem));
+  height: min(26rem, calc(100% - 1.5rem));
+}
+
+.beast-path__modal--bag .beast-path__modal-body {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.55rem;
+  overflow: hidden;
+}
+
+/* Nearest-neighbor scale for pixel art (items, portraits, etc.). */
+.beast-path__pixel {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+}
+
+.beast-path__bag-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 2.4rem);
+  gap: 0.3rem;
+  justify-content: start;
+  flex: 0 0 auto;
+  margin-top: 0.35rem;
+}
+
+.beast-path__bag-slot .beast-path__pixel {
+  object-fit: contain;
+}
+
+.beast-path__bag-slot {
+  box-sizing: border-box;
+  width: 2.4rem;
+  height: 2.4rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 28%, var(--bp-bg-panel));
+  padding: 0.1rem;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.beast-path__bag-slot:disabled {
+  cursor: default;
+}
+
+.beast-path__bag-slot--empty {
+  opacity: 0.35;
+}
+
+.beast-path__bag-slot--active {
+  border-color: color-mix(in oklab, var(--bp-gold) 70%, var(--bp-line));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--bp-gold) 35%, transparent);
+}
+
+.beast-path__bag-slot--armed {
+  border-color: color-mix(in oklab, var(--bp-gold) 85%, white);
+}
+
+.beast-path__bag-detail {
+  box-sizing: border-box;
+  flex: 0 0 5.75rem;
+  height: 5.75rem;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  border-top: 1px solid color-mix(in oklab, var(--bp-line) 80%, transparent);
+  padding-top: 0.45rem;
+}
+
+.beast-path__bag-relics {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0.55rem;
+  overflow: auto;
+}
+
+.beast-path__content-panel {
+  display: flex;
+  width: min(920px, calc(100vw - 2rem));
+  max-width: 920px;
+  max-height: min(90vh, 46rem);
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.beast-path__content-page {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--bp-gold) 40%, var(--bp-line));
+  background: color-mix(in oklab, var(--bp-bg-panel) 96%, black);
+  box-shadow: 0 16px 40px color-mix(in oklab, black 50%, transparent);
+  padding: 0.85rem;
+}
+
+.beast-path__content-chrome {
+  flex: 0 0 auto;
+}
+
+.beast-path__content-split {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+.beast-path__content-list,
+.beast-path__content-detail {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--bp-line);
+}
+
+.beast-path__content-list {
+  padding: 0.25rem;
+}
+
+.beast-path__content-detail {
+  padding: 0.5rem;
+}
+
+.beast-path__art-picker {
+  max-height: 11rem;
+  overflow: auto;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 18%, transparent);
 }
 
 .beast-path__starter {
@@ -857,6 +1241,26 @@ body {
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
+}
+
+.beast-path__menu {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  padding-top: 3.25rem;
+  padding-bottom: 1.5rem;
+}
+
+.beast-path__menu-actions {
+  display: flex;
+  width: min(100%, 16rem);
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .beast-path__starter-grid {
@@ -876,8 +1280,58 @@ body {
 }
 
 .beast-path__starter-card .beast-path__portrait {
+  flex: 0 1 auto;
   margin-bottom: 0.4rem;
-  min-height: 3.5rem;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 1;
+}
+
+.beast-path__inspect-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.4rem;
+  min-width: 0;
+}
+
+.beast-path__inspect-art {
+  flex: 0 0 auto;
+  width: 3.6rem;
+  height: 3.6rem;
+  min-width: 3.6rem;
+  min-height: 3.6rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 22%, var(--bp-bg-panel));
+}
+
+.beast-path__inspect-art > * {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.beast-path__capture-art {
+  width: min(10rem, 70%);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 22%, var(--bp-bg-panel));
+}
+
+.beast-path__shop-recruit-art {
+  width: 3.5rem;
+  height: 3.5rem;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--bp-line);
+  background: color-mix(in oklab, black 22%, var(--bp-bg-panel));
 }
 
 .beast-path__btn {
@@ -905,6 +1359,39 @@ body {
 .beast-path__btn-ghost:hover {
   border-color: color-mix(in oklab, var(--bp-gold) 55%, transparent);
   background: color-mix(in oklab, var(--bp-gold) 10%, transparent);
+}
+
+/* Content editor / form controls — solid dark fill, high-contrast ink */
+.beast-path__field-control {
+  color: var(--bp-ink) !important;
+  border: 1px solid color-mix(in oklab, var(--bp-ink) 22%, transparent);
+  background-color: #12100d !important;
+  background-image: none;
+  color-scheme: dark;
+  accent-color: var(--bp-gold);
+}
+
+.beast-path__field-control:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--bp-gold) 60%, var(--bp-line));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--bp-gold) 30%, transparent);
+}
+
+select.beast-path__field-control {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #12100d !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 1.75L6 6.25L10.5 1.75' stroke='%23d4b56a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 0.55rem center;
+  background-size: 0.7rem 0.45rem;
+  background-repeat: no-repeat;
+  padding-right: 1.75rem;
+  line-height: 1.35;
+}
+
+select.beast-path__field-control option {
+  color: var(--bp-ink);
+  background-color: #12100d;
 }
 
 .beast-path__hp {
@@ -954,7 +1441,7 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--bp-font-mult));
   line-height: 1.35;
 }
 
@@ -965,7 +1452,7 @@ body {
   transform: translate(-50%, calc(-100% - 8px));
   white-space: nowrap;
   padding: 0.35rem 0.55rem;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--bp-font-mult));
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #1a1410;
@@ -990,7 +1477,8 @@ body {
 .beast-path__map-shell {
   position: relative;
   height: 100%;
-  max-height: 320px;
+  min-height: 260px;
+  max-height: none;
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--bp-gold) 35%, var(--bp-line));
   background: color-mix(in oklab, black 28%, var(--bp-bg-panel));
@@ -1001,7 +1489,9 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
   height: 100%;
-  padding-block: 0.65rem;
+  display: flex;
+  align-items: center;
+  padding-block: 0.85rem;
   padding-inline: 2.85rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1168,7 +1658,7 @@ body {
   pointer-events: none;
   white-space: nowrap;
   padding: 0.4rem 0.65rem;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--bp-font-mult));
   font-weight: 700;
   letter-spacing: 0.03em;
 }
@@ -1205,6 +1695,7 @@ body {
 .beast-path__portrait {
   width: 100%;
   aspect-ratio: 1;
+  overflow: hidden;
   border: 1px solid var(--bp-line);
   background:
     repeating-linear-gradient(
@@ -1216,8 +1707,26 @@ body {
   display: grid;
   place-items: center;
   color: var(--bp-muted);
-  font-size: 0.65rem;
+  font-size: calc(0.65rem * var(--bp-font-mult));
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+.beast-path__portrait--full {
+  aspect-ratio: 1;
+}
+
+/* Tailwind/px text inside the game does not inherit .beast-path font-size. */
+.beast-path .text-\[8px\] { font-size: calc(8px * var(--bp-font-mult)) !important; }
+.beast-path .text-\[9px\] { font-size: calc(9px * var(--bp-font-mult)) !important; }
+.beast-path .text-\[10px\] { font-size: calc(10px * var(--bp-font-mult)) !important; }
+.beast-path .text-\[11px\] { font-size: calc(11px * var(--bp-font-mult)) !important; }
+.beast-path .text-\[12px\] { font-size: calc(12px * var(--bp-font-mult)) !important; }
+.beast-path .text-xs { font-size: calc(0.75rem * var(--bp-font-mult)) !important; }
+.beast-path .text-sm { font-size: calc(0.875rem * var(--bp-font-mult)) !important; }
+.beast-path .text-base { font-size: calc(1rem * var(--bp-font-mult)) !important; }
+.beast-path .text-lg { font-size: calc(1.125rem * var(--bp-font-mult)) !important; }
+.beast-path .text-xl { font-size: calc(1.25rem * var(--bp-font-mult)) !important; }
+.beast-path .sm\:text-sm { font-size: calc(0.875rem * var(--bp-font-mult)) !important; }
+.beast-path .sm\:text-base { font-size: calc(1rem * var(--bp-font-mult)) !important; }

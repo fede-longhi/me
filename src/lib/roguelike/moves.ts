@@ -1,104 +1,20 @@
+import { MOVES } from "./content/runtime";
+import { normalizeMoveDef, moveIsOffensive, moveNeedsTargetChoice } from "./content/moves/normalize";
 import type { MoveDef, MoveId } from "./types";
 
-export const MOVES: Record<MoveId, MoveDef> = {
-  scratch: { id: "scratch", kind: "attack", power: 0.9, maxUses: 20 },
-  "ember-lash": {
-    id: "ember-lash",
-    kind: "attack",
-    power: 1.15,
-    element: "ember",
-    maxUses: 12,
-  },
-  "tide-bolt": {
-    id: "tide-bolt",
-    kind: "attack",
-    power: 1.15,
-    element: "tide",
-    maxUses: 12,
-  },
-  "gale-cut": {
-    id: "gale-cut",
-    kind: "attack",
-    power: 1.1,
-    element: "gale",
-    maxUses: 12,
-  },
-  "moss-slam": {
-    id: "moss-slam",
-    kind: "attack",
-    power: 1.2,
-    element: "moss",
-    maxUses: 10,
-  },
-  "spark-jolt": {
-    id: "spark-jolt",
-    kind: "attack",
-    power: 1.2,
-    element: "spark",
-    maxUses: 10,
-  },
-  "shade-bite": {
-    id: "shade-bite",
-    kind: "attack",
-    power: 1.15,
-    element: "shade",
-    maxUses: 12,
-  },
-  "heal-lick": {
-    id: "heal-lick",
-    kind: "passive",
-    effect: { type: "heal", portion: 0.35 },
-    maxUses: 6,
-  },
-  focus: {
-    id: "focus",
-    kind: "passive",
-    effect: { type: "buffStat", stat: "atk", amount: 2 },
-    maxUses: 5,
-  },
-  harden: {
-    id: "harden",
-    kind: "passive",
-    effect: { type: "buffStat", stat: "def", amount: 2 },
-    maxUses: 5,
-  },
-  quicken: {
-    id: "quicken",
-    kind: "passive",
-    effect: { type: "buffStat", stat: "spd", amount: 2 },
-    maxUses: 5,
-  },
-  guard: {
-    id: "guard",
-    kind: "passive",
-    effect: { type: "guard", defBonus: 4 },
-    maxUses: 8,
-  },
-  inferno: {
-    id: "inferno",
-    kind: "attack",
-    power: 1.45,
-    element: "ember",
-    maxUses: 5,
-  },
-  "tidal-crush": {
-    id: "tidal-crush",
-    kind: "attack",
-    power: 1.4,
-    element: "tide",
-    maxUses: 5,
-  },
-  "abyss-fang": {
-    id: "abyss-fang",
-    kind: "attack",
-    power: 1.1,
-    element: "shade",
-    maxUses: 5,
-  },
-};
+export { MOVES } from "./content/runtime";
+export { moveIsOffensive, moveNeedsTargetChoice, normalizeMoveDef };
 
 export function getMove(id: MoveId): MoveDef {
-  return MOVES[id];
+  const raw = MOVES[id];
+  if (!raw) {
+    return {
+      id,
+      effects: [{ type: "damage", power: 1, target: "foe" }],
+      maxUses: 10,
+    };
+  }
+  return normalizeMoveDef(raw);
 }
 
 export function maxUsesFor(id: MoveId) {
