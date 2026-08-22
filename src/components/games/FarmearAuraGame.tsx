@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameChrome } from "@/components/games/GameChrome";
 import { AuraFighter } from "@/components/games/AuraFighter";
 import { useLanguage } from "@/components/LanguageProvider";
+import { AuraTheme, getAudioContext, playSfx } from "@/lib/farmear-aura/audio";
 import { gameCopy, pickRivalName, resultCopy } from "@/lib/farmear-aura/copy";
 import {
-  BEAT_MS,
   GESTURE_IDS,
   PLAYER_GESTURE_KEYS,
   createMenuBattle,
@@ -49,57 +49,6 @@ function popupClass(tags: string[], delta: number) {
   return "aura-pop";
 }
 
-function getAudioContext(ref: { current: AudioContext | null }) {
-  if (ref.current) return ref.current;
-  const Ctor =
-    window.AudioContext ||
-    (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
-  ref.current = new Ctor();
-  return ref.current;
-}
-
-function beep(ctx: AudioContext, kind: "beat" | "hit" | "cringe" | "six") {
-  const now = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  if (kind === "beat") {
-    osc.frequency.value = 92;
-    osc.type = "square";
-    gain.gain.setValueAtTime(0.04, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-    osc.start(now);
-    osc.stop(now + 0.09);
-    return;
-  }
-  if (kind === "cringe") {
-    osc.frequency.value = 70;
-    osc.type = "sawtooth";
-    gain.gain.setValueAtTime(0.05, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-    osc.start(now);
-    osc.stop(now + 0.17);
-    return;
-  }
-  if (kind === "six") {
-    osc.frequency.value = 392;
-    osc.type = "triangle";
-    gain.gain.setValueAtTime(0.05, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
-    osc.start(now);
-    osc.stop(now + 0.23);
-    return;
-  }
-  osc.frequency.value = 220;
-  osc.type = "triangle";
-  gain.gain.setValueAtTime(0.045, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
-  osc.start(now);
-  osc.stop(now + 0.11);
-}
-
 export function FarmearAuraGame() {
   const { locale } = useLanguage();
   const copy = useMemo(() => gameCopy(locale), [locale]);
@@ -109,7 +58,7 @@ export function FarmearAuraGame() {
   const [now, setNow] = useState(0);
   const [muted, setMuted] = useState(false);
   const audioRef = useRef<AudioContext | null>(null);
-  const lastBeatRef = useRef(-1);
+  const themeRef = useRef<AuraTheme | null>(null);
   const lastPopupRef = useRef(0);
   const mutedRef = useRef(muted);
 
@@ -133,13 +82,28 @@ export function FarmearAuraGame() {
   }, []);
 
   useEffect(() => {
-    if (battle.phase !== "fight" || muted) return;
-    const beatIndex = Math.floor((now - battle.beatOrigin) / BEAT_MS);
-    if (beatIndex === lastBeatRef.current || beatIndex < 0) return;
-    lastBeatRef.current = beatIndex;
+    return () => {
+      themeRef.current?.dispose();
+      themeRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const live = battle.phase === "countdown" || battle.phase === "fight";
+    if (!live && !themeRef.current) return;
     const ctx = getAudioContext(audioRef);
-    if (ctx && ctx.state === "running") beep(ctx, "beat");
-  }, [battle.beatOrigin, battle.phase, muted, now]);
+    if (!ctx) return;
+    if (!themeRef.current) themeRef.current = new AuraTheme(ctx);
+    const theme = themeRef.current;
+    theme.setMuted(muted);
+    if (live) {
+      void ctx.resume();
+      const mode = battle.phase === "countdown" ? "intro" : "full";
+      theme.start(mode);
+    } else {
+      theme.stop();
+    }
+  }, [battle.phase, muted]);
 
   useEffect(() => {
     const latest = battle.popups[0];
@@ -149,9 +113,9 @@ export function FarmearAuraGame() {
     const ctx = getAudioContext(audioRef);
     if (!ctx) return;
     void ctx.resume();
-    if (latest.tags.includes("cringe") || latest.delta < 0) beep(ctx, "cringe");
-    else if (latest.tags.includes("sixseven")) beep(ctx, "six");
-    else beep(ctx, "hit");
+    if (latest.tags.includes("cringe") || latest.delta < 0) playSfx(ctx, "cringe");
+    else if (latest.tags.includes("sixseven")) playSfx(ctx, "six");
+    else playSfx(ctx, "hit");
   }, [battle.popups]);
 
   const begin = useCallback(async () => {
