@@ -264,6 +264,13 @@
     ],
     "games": [
       {
+        "name": "Farmear Aura",
+        "category": "Battle",
+        "description": "One-round aura battle. Hit gestures on the beat, don't spam, and catch six seven when it shows up.",
+        "href": "/games/farmear-aura",
+        "featured": true
+      },
+      {
         "name": "Beast Path",
         "category": "Roguelike",
         "description": "Pick a starter monster, choose your path through fights, shops and wild events, and challenge the boss with the pets you capture along the way.",
@@ -551,6 +558,13 @@
       }
     ],
     "games": [
+      {
+        "name": "Farmear Aura",
+        "category": "Batalla",
+        "description": "Un round de farmear aura. Gestos a ritmo, sin spam, y six seven cuando aparece.",
+        "href": "/games/farmear-aura",
+        "featured": true
+      },
       {
         "name": "Camino de Bestias",
         "category": "Roguelike",
