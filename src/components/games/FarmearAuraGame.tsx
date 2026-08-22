@@ -212,7 +212,12 @@ export function FarmearAuraGame() {
         <div className="aura-hud">
           <p className="aura-hud__live">{copy.live}</p>
           <p className="aura-hud__clock">
-            {copy.time} {fighting || battle.phase === "countdown" ? formatTime(timeLeft) : "0:32"}
+            {copy.time}{" "}
+            {fighting || battle.phase === "countdown"
+              ? formatTime(timeLeft)
+              : battle.phase === "result"
+                ? "0:00"
+                : "0:20"}
           </p>
           <button
             type="button"

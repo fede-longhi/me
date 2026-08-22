@@ -34,7 +34,7 @@ export const GESTURES: Record<GestureId, GestureDef> = {
   sixseven: { id: "sixseven", min: 67, max: 670 },
 };
 
-export const ROUND_MS = 32_000;
+export const ROUND_MS = 20_000;
 export const COUNTDOWN_MS = 3_000;
 export const BEAT_MS = 700;
 export const BEAT_WINDOW_MS = 150;
@@ -42,7 +42,7 @@ export const MASH_GAP_MS = 220;
 export const POSE_MS = 720;
 export const SIX_SEVEN_WINDOW_MS = 1_800;
 export const SIX_SEVEN_WINDOW_BONUS = 67;
-export const AI_MIN_GAP_MS = 420;
+export const AI_MIN_GAP_MS = 700;
 export const MAX_POPUPS = 6;
 
 export const PLAYER_GESTURE_KEYS: Record<string, GestureId> = {
@@ -86,6 +86,7 @@ export type Battle = {
   beatOrigin: number;
   sixSevenUntil: number;
   nextSixSevenAt: number;
+  aiBeatTried: number;
   popups: Popup[];
   nextPopupId: number;
   winner: Winner | null;
@@ -147,6 +148,7 @@ export function createMenuBattle(
     beatOrigin: now,
     sixSevenUntil: 0,
     nextSixSevenAt: 0,
+    aiBeatTried: -1,
     popups: [],
     nextPopupId: 1,
     winner: null,
@@ -289,14 +291,21 @@ function pickAiGesture(battle: Battle, rng: Rng): GestureId {
 
 function maybeAiAct(battle: Battle, now: number, rng: Rng): Battle {
   if (battle.phase !== "fight") return battle;
-  if (now - battle.rival.lastAt < AI_MIN_GAP_MS) return battle;
 
-  const dist = beatDistance(now, battle.beatOrigin);
-  const nearBeat = dist <= BEAT_WINDOW_MS + 30;
-  if (!nearBeat && rng() > 0.04) return battle;
-  if (nearBeat && rng() > 0.62) return battle;
+  const beatIndex = Math.floor((now - battle.beatOrigin) / BEAT_MS);
+  if (beatIndex < 0 || beatIndex === battle.aiBeatTried) return battle;
+  if (beatDistance(now, battle.beatOrigin) > BEAT_WINDOW_MS) return battle;
 
-  return performGesture(battle, "rival", pickAiGesture(battle, rng), now, rng);
+  const marked: Battle = { ...battle, aiBeatTried: beatIndex };
+  if (now - marked.rival.lastAt < AI_MIN_GAP_MS) return marked;
+  if (rng() > 0.52) return marked;
+
+  const gesture =
+    marked.rival.lastGesture && rng() < 0.16
+      ? marked.rival.lastGesture
+      : pickAiGesture(marked, rng);
+
+  return performGesture(marked, "rival", gesture, now, rng);
 }
 
 function settlePoses(fighter: Fighter, now: number): Fighter {

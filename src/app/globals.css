@@ -1958,27 +1958,35 @@ select.beast-path__field-control option {
 .aura-fighter__head { transform-origin: 50% 80%; }
 
 .aura-fighter[data-pose="ice"] .aura-fighter__head {
-  transform: rotate(-16deg) translate(-6px, 2px);
+  transform: rotate(-28deg) translate(-12px, 4px);
 }
 
 .aura-fighter[data-pose="ice"] .aura-fighter__arm--l {
-  transform: rotate(18deg) translate(4px, 18px);
+  transform: rotate(28deg) translate(8px, 28px);
 }
 
 .aura-fighter[data-pose="ice"] .aura-fighter__arm--r {
-  transform: rotate(-8deg) translateY(8px);
+  transform: rotate(-22deg) translateY(14px);
+}
+
+.aura-fighter[data-pose="ice"] .aura-fighter__torso {
+  transform: rotate(-6deg);
 }
 
 .aura-fighter[data-pose="flex"] .aura-fighter__arm--l {
-  transform: rotate(-78deg) translate(-4px, -10px);
+  transform: rotate(-100deg) translate(-8px, -16px);
 }
 
 .aura-fighter[data-pose="flex"] .aura-fighter__arm--r {
-  transform: rotate(78deg) translate(4px, -10px);
+  transform: rotate(100deg) translate(8px, -16px);
 }
 
 .aura-fighter[data-pose="flex"] .aura-fighter__torso {
-  transform: translateY(-6px) scale(1.04, 1.06);
+  transform: translateY(-10px) scale(1.08, 1.1);
+}
+
+.aura-fighter[data-pose="flex"] .aura-fighter__head {
+  transform: translateY(-8px) scale(1.06);
 }
 
 .aura-fighter[data-pose="walk"] .aura-fighter__leg--l {
@@ -2248,7 +2256,9 @@ select.beast-path__field-control option {
 }
 
 @keyframes aura-six-flash {
-  50% { filter: invert(1); }
+  0%,
+  100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.06); }
 }
 
 @keyframes aura-hot {
