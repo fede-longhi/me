@@ -2238,34 +2238,38 @@ select.beast-path__field-control option {
 
 .aura-overlay--pick {
   justify-content: flex-start;
+  align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 0.7rem 0.75rem;
   overflow: auto;
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      color-mix(in oklab, var(--aura-void) 78%, transparent) 18%,
-      color-mix(in oklab, var(--aura-void) 86%, transparent) 50%,
-      color-mix(in oklab, var(--aura-void) 78%, transparent) 82%,
-      transparent 100%
-    ),
-    color-mix(in oklab, var(--aura-void) 28%, transparent);
+  background: color-mix(in oklab, var(--aura-void) 35%, transparent);
+}
+
+.aura-overlay--pick > * {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 34rem);
+}
+
+.aura-overlay--pick .aura-picker,
+.aura-overlay--pick .aura-overlay__cta {
+  width: min(100%, 34rem);
 }
 
 .aura-stage:has(.aura-overlay--pick) .aura-fighter {
-  z-index: 6;
-  pointer-events: none;
+  z-index: 0;
+  opacity: 0.92;
 }
 
 .aura-stage:has(.aura-overlay--pick) .aura-stage__vs {
-  z-index: 6;
-  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
 }
 
 .aura-stage:has(.aura-overlay--pick) .aura-stage__pulse,
 .aura-stage:has(.aura-overlay--pick) .aura-stage__floor {
   pointer-events: none;
+  opacity: 0.35;
 }
 
 .aura-overlay__how,
