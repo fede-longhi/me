@@ -1,5 +1,11 @@
 import type { Locale } from "@/lib/types";
 import type { GestureId, ScoreTag, Winner } from "./engine";
+import { FACE_GESTURE_IDS, BODY_GESTURE_IDS, MAX_LOADOUT, MIN_LOADOUT } from "./engine";
+
+export type GestureCopy = {
+  name: string;
+  hint: string;
+};
 
 export type GameCopy = {
   eyebrow: string;
@@ -9,6 +15,11 @@ export type GameCopy = {
   start: string;
   rematch: string;
   how: string;
+  pickTitle: string;
+  pickHint: string;
+  pickCount: string;
+  bodyGroup: string;
+  faceGroup: string;
   vs: string;
   live: string;
   aura: string;
@@ -21,7 +32,7 @@ export type GameCopy = {
   youWin: string;
   rivalWin: string;
   tie: string;
-  gestures: Record<GestureId, { name: string; hint: string; key: string }>;
+  gestures: Record<GestureId, GestureCopy>;
   rivals: string[];
   tagLabel: Record<ScoreTag, string>;
 };
@@ -29,11 +40,16 @@ export type GameCopy = {
 const ES: GameCopy = {
   eyebrow: "Batalla de aura",
   title: "Farmear Aura",
-  lead: "Un round. Gestos a ritmo. El que más aura junta gana. Repetir es cringe. Six seven aparece, suma, y no es lo más aura.",
+  lead: "Elegí hasta seis gestos. El que más aura junta gana. Repetir es cringe. Six seven aparece, suma, y no es lo más aura.",
   youDefault: "Vos",
   start: "Farmeá",
   rematch: "Otra ronda",
   how: "Tocá un gesto cuando el pulso está lleno. Variá. Si spameás, perdés aura.",
+  pickTitle: "Armá tu kit",
+  pickHint: `Elegí de ${MIN_LOADOUT} a ${MAX_LOADOUT} gestos. Cara y cuerpo suman.`,
+  pickCount: "elegidos",
+  bodyGroup: "Cuerpo",
+  faceGroup: "Cara",
   vs: "VS",
   live: "AURA LIVE",
   aura: "aura",
@@ -47,11 +63,18 @@ const ES: GameCopy = {
   rivalWin: "Te farmeó. Perdiste.",
   tie: "Empate de aura. Incómodo.",
   gestures: {
-    ice: { name: "Hielo", hint: "Mirar a otro lado", key: "1" },
-    flex: { name: "Flex", hint: "Pecho inflado", key: "2" },
-    walk: { name: "Caminata", hint: "Paso lento", key: "3" },
-    point: { name: "Señalá", hint: "Al rival", key: "4" },
-    sixseven: { name: "Six Seven", hint: "El gesto", key: "5" },
+    ice: { name: "Hielo", hint: "Mirar a otro lado" },
+    flex: { name: "Flex", hint: "Pecho inflado" },
+    walk: { name: "Caminata", hint: "Paso lento" },
+    point: { name: "Señalá", hint: "Al rival" },
+    shrug: { name: "Shrug", hint: "No me importa" },
+    sixseven: { name: "Six Seven", hint: "El gesto" },
+    smirk: { name: "Smirk", hint: "Media sonrisa" },
+    sideeye: { name: "Side-eye", hint: "Mirada de costado" },
+    deadpan: { name: "Deadpan", hint: "Cara de piedra" },
+    brow: { name: "Cejas", hint: "Una sube" },
+    wink: { name: "Guiño", hint: "Un ojo" },
+    nod: { name: "Cabeza", hint: "Asentir lento" },
   },
   rivals: [
     "El Primo",
@@ -74,11 +97,16 @@ const ES: GameCopy = {
 const EN: GameCopy = {
   eyebrow: "Aura battle",
   title: "Farmear Aura",
-  lead: "One round. Hit gestures on the pulse. Highest aura wins. Repeating is cringe. Six seven shows up, scores, and is never the peak.",
+  lead: "Pick up to six gestures. Highest aura wins. Repeating is cringe. Six seven shows up, scores, and is never the peak.",
   youDefault: "You",
   start: "Farm it",
   rematch: "Again",
   how: "Tap a gesture when the pulse is full. Mix it up. Spam and you lose aura.",
+  pickTitle: "Build your kit",
+  pickHint: `Pick ${MIN_LOADOUT} to ${MAX_LOADOUT} moves. Face and body both farm.`,
+  pickCount: "picked",
+  bodyGroup: "Body",
+  faceGroup: "Face",
   vs: "VS",
   live: "AURA LIVE",
   aura: "aura",
@@ -92,11 +120,18 @@ const EN: GameCopy = {
   rivalWin: "They farmed you.",
   tie: "Aura tie. Awkward.",
   gestures: {
-    ice: { name: "Ice", hint: "Look away", key: "1" },
-    flex: { name: "Flex", hint: "Chest out", key: "2" },
-    walk: { name: "Walk", hint: "Slow step", key: "3" },
-    point: { name: "Point", hint: "At them", key: "4" },
-    sixseven: { name: "Six Seven", hint: "The move", key: "5" },
+    ice: { name: "Ice", hint: "Look away" },
+    flex: { name: "Flex", hint: "Chest out" },
+    walk: { name: "Walk", hint: "Slow step" },
+    point: { name: "Point", hint: "At them" },
+    shrug: { name: "Shrug", hint: "Whatever" },
+    sixseven: { name: "Six Seven", hint: "The move" },
+    smirk: { name: "Smirk", hint: "Half smile" },
+    sideeye: { name: "Side-eye", hint: "Look aside" },
+    deadpan: { name: "Deadpan", hint: "Stone face" },
+    brow: { name: "Brow", hint: "One up" },
+    wink: { name: "Wink", hint: "One eye" },
+    nod: { name: "Nod", hint: "Slow yes" },
   },
   rivals: [
     "Gym NPC",
@@ -128,4 +163,11 @@ export function resultCopy(copy: GameCopy, winner: Winner | null) {
 
 export function pickRivalName(copy: GameCopy, rng: () => number) {
   return copy.rivals[Math.floor(rng() * copy.rivals.length)] ?? copy.rivals[0];
+}
+
+export function gestureGroups() {
+  return {
+    body: BODY_GESTURE_IDS,
+    face: FACE_GESTURE_IDS,
+  };
 }

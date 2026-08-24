@@ -3,10 +3,18 @@ export const GESTURE_IDS = [
   "flex",
   "walk",
   "point",
+  "shrug",
   "sixseven",
+  "smirk",
+  "sideeye",
+  "deadpan",
+  "brow",
+  "wink",
+  "nod",
 ] as const;
 
 export type GestureId = (typeof GESTURE_IDS)[number];
+export type GestureKind = "body" | "face";
 export type PoseId = GestureId | "idle";
 export type Side = "you" | "rival";
 export type Phase = "menu" | "countdown" | "fight" | "result";
@@ -21,18 +29,44 @@ export type ScoreTag =
 
 export type GestureDef = {
   id: GestureId;
+  kind: GestureKind;
   min: number;
   max: number;
 };
 
 /** Ice is the peak. Six seven is a cameo — never the highest roll. */
 export const GESTURES: Record<GestureId, GestureDef> = {
-  ice: { id: "ice", min: 900, max: 1400 },
-  flex: { id: "flex", min: 700, max: 1100 },
-  walk: { id: "walk", min: 500, max: 900 },
-  point: { id: "point", min: 300, max: 700 },
-  sixseven: { id: "sixseven", min: 67, max: 670 },
+  ice: { id: "ice", kind: "body", min: 900, max: 1400 },
+  flex: { id: "flex", kind: "body", min: 700, max: 1100 },
+  walk: { id: "walk", kind: "body", min: 500, max: 900 },
+  point: { id: "point", kind: "body", min: 300, max: 700 },
+  shrug: { id: "shrug", kind: "body", min: 400, max: 750 },
+  sixseven: { id: "sixseven", kind: "body", min: 67, max: 670 },
+  smirk: { id: "smirk", kind: "face", min: 500, max: 850 },
+  sideeye: { id: "sideeye", kind: "face", min: 450, max: 800 },
+  deadpan: { id: "deadpan", kind: "face", min: 650, max: 1000 },
+  brow: { id: "brow", kind: "face", min: 550, max: 900 },
+  wink: { id: "wink", kind: "face", min: 350, max: 700 },
+  nod: { id: "nod", kind: "face", min: 280, max: 650 },
 };
+
+export const BODY_GESTURE_IDS = GESTURE_IDS.filter(
+  (id) => GESTURES[id].kind === "body",
+);
+export const FACE_GESTURE_IDS = GESTURE_IDS.filter(
+  (id) => GESTURES[id].kind === "face",
+);
+
+export const MIN_LOADOUT = 3;
+export const MAX_LOADOUT = 6;
+export const DEFAULT_LOADOUT: GestureId[] = [
+  "ice",
+  "flex",
+  "smirk",
+  "sideeye",
+  "deadpan",
+  "sixseven",
+];
 
 export const ROUND_MS = 20_000;
 export const COUNTDOWN_MS = 3_000;
@@ -45,18 +79,7 @@ export const SIX_SEVEN_WINDOW_BONUS = 67;
 export const AI_MIN_GAP_MS = 700;
 export const MAX_POPUPS = 6;
 
-export const PLAYER_GESTURE_KEYS: Record<string, GestureId> = {
-  "1": "ice",
-  q: "ice",
-  "2": "flex",
-  w: "flex",
-  "3": "walk",
-  e: "walk",
-  "4": "point",
-  a: "point",
-  "5": "sixseven",
-  s: "sixseven",
-};
+export const SLOT_KEYS = ["1", "2", "3", "4", "5", "6"] as const;
 
 export type Popup = {
   id: number;
@@ -74,6 +97,7 @@ export type Fighter = {
   lastGesture: GestureId | null;
   streak: number;
   lastAt: number;
+  moves: GestureId[];
 };
 
 export type Battle = {
@@ -121,7 +145,54 @@ export function sixSevenCeiling() {
   return GESTURES.sixseven.max + SIX_SEVEN_WINDOW_BONUS;
 }
 
-export function createFighter(name: string, now: number): Fighter {
+export function isValidLoadout(moves: GestureId[]) {
+  if (moves.length < MIN_LOADOUT || moves.length > MAX_LOADOUT) return false;
+  const seen = new Set<GestureId>();
+  for (const id of moves) {
+    if (!GESTURES[id] || seen.has(id)) return false;
+    seen.add(id);
+  }
+  return true;
+}
+
+export function toggleLoadout(moves: GestureId[], gesture: GestureId): GestureId[] {
+  if (!GESTURES[gesture]) return moves;
+  if (moves.includes(gesture)) return moves.filter((id) => id !== gesture);
+  if (moves.length >= MAX_LOADOUT) return moves;
+  return [...moves, gesture];
+}
+
+export function pickRivalLoadout(playerMoves: GestureId[], rng: Rng): GestureId[] {
+  const size = Math.min(
+    MAX_LOADOUT,
+    Math.max(MIN_LOADOUT, playerMoves.length || DEFAULT_LOADOUT.length),
+  );
+  const pool = [...GESTURE_IDS];
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picked = pool.slice(0, size);
+  if (!picked.includes("sixseven") && rng() < 0.55 && size > 0) {
+    picked[size - 1] = "sixseven";
+  }
+  return picked;
+}
+
+export function slotKeyMap(moves: GestureId[]): Record<string, GestureId> {
+  const map: Record<string, GestureId> = {};
+  moves.forEach((id, index) => {
+    const key = SLOT_KEYS[index];
+    if (key) map[key] = id;
+  });
+  return map;
+}
+
+export function createFighter(
+  name: string,
+  now: number,
+  moves: GestureId[] = DEFAULT_LOADOUT,
+): Fighter {
   return {
     name,
     aura: 0,
@@ -130,6 +201,7 @@ export function createFighter(name: string, now: number): Fighter {
     lastGesture: null,
     streak: 0,
     lastAt: now - 1_000,
+    moves: [...moves],
   };
 }
 
@@ -137,11 +209,12 @@ export function createMenuBattle(
   youName: string,
   rivalName: string,
   now = 0,
+  youMoves: GestureId[] = DEFAULT_LOADOUT,
 ): Battle {
   return {
     phase: "menu",
-    you: createFighter(youName, now),
-    rival: createFighter(rivalName, now),
+    you: createFighter(youName, now, youMoves),
+    rival: createFighter(rivalName, now, DEFAULT_LOADOUT),
     countdownAt: 0,
     fightAt: 0,
     endsAt: 0,
@@ -161,11 +234,16 @@ export function startCountdown(
   rivalName: string,
   now: number,
   rng: Rng,
+  youMoves: GestureId[] = battle.you.moves,
 ): Battle {
+  const moves = isValidLoadout(youMoves) ? youMoves : DEFAULT_LOADOUT;
+  const rivalMoves = pickRivalLoadout(moves, rng);
   const fightAt = now + COUNTDOWN_MS;
   return {
-    ...createMenuBattle(youName, rivalName, now),
+    ...createMenuBattle(youName, rivalName, now, moves),
     phase: "countdown",
+    you: createFighter(youName, now, moves),
+    rival: createFighter(rivalName, now, rivalMoves),
     countdownAt: now,
     fightAt,
     endsAt: fightAt + ROUND_MS,
@@ -241,6 +319,8 @@ export function performGesture(
   if (battle.phase !== "fight") return battle;
 
   const fighter = battle[side];
+  if (!fighter.moves.includes(gesture)) return battle;
+
   const scored = scoreGesture({
     gesture,
     now,
@@ -275,11 +355,22 @@ export function performGesture(
 }
 
 function pickAiGesture(battle: Battle, rng: Rng): GestureId {
-  if (battle.sixSevenUntil > 0 && rng() < 0.42) return "sixseven";
+  const moves = battle.rival.moves;
+  if (moves.length === 0) return "flex";
 
-  const pool = GESTURE_IDS.filter((id) => id !== battle.rival.lastGesture);
-  const choices = pool.length > 0 && rng() < 0.82 ? pool : [...GESTURE_IDS];
-  const weights = choices.map((id) => (id === "ice" ? 1.15 : id === "sixseven" ? 0.7 : 1));
+  if (
+    battle.sixSevenUntil > 0 &&
+    moves.includes("sixseven") &&
+    rng() < 0.42
+  ) {
+    return "sixseven";
+  }
+
+  const pool = moves.filter((id) => id !== battle.rival.lastGesture);
+  const choices = pool.length > 0 && rng() < 0.82 ? pool : [...moves];
+  const weights = choices.map((id) =>
+    id === "ice" ? 1.15 : id === "sixseven" ? 0.7 : id === "deadpan" ? 1.08 : 1,
+  );
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   let roll = rng() * total;
   for (let i = 0; i < choices.length; i += 1) {
@@ -301,7 +392,9 @@ function maybeAiAct(battle: Battle, now: number, rng: Rng): Battle {
   if (rng() > 0.52) return marked;
 
   const gesture =
-    marked.rival.lastGesture && rng() < 0.16
+    marked.rival.lastGesture &&
+    marked.rival.moves.includes(marked.rival.lastGesture) &&
+    rng() < 0.16
       ? marked.rival.lastGesture
       : pickAiGesture(marked, rng);
 
@@ -350,7 +443,8 @@ export function tickBattle(battle: Battle, now: number, rng: Rng): Battle {
       next = {
         ...next,
         sixSevenUntil: now + SIX_SEVEN_WINDOW_MS,
-        nextSixSevenAt: now + SIX_SEVEN_WINDOW_MS + 5_500 + Math.floor(rng() * 3_200),
+        nextSixSevenAt:
+          now + SIX_SEVEN_WINDOW_MS + 5_500 + Math.floor(rng() * 3_200),
       };
     }
 
@@ -359,11 +453,7 @@ export function tickBattle(battle: Battle, now: number, rng: Rng): Battle {
 
   const you = settlePoses(next.you, now);
   const rival = settlePoses(next.rival, now);
-  if (
-    next === battle &&
-    you === battle.you &&
-    rival === battle.rival
-  ) {
+  if (next === battle && you === battle.you && rival === battle.rival) {
     return battle;
   }
 

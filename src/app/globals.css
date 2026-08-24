@@ -157,6 +157,7 @@ body {
   .farmear-aura .aura-fighter__bloom,
   .farmear-aura .aura-fighter[data-pose="sixseven"] .aura-fighter__arm,
   .farmear-aura .aura-fighter[data-pose="walk"] .aura-fighter__leg,
+  .farmear-aura .aura-fighter[data-pose="nod"] .aura-fighter__head,
   .farmear-aura .aura-pop,
   .farmear-aura .aura-six,
   .farmear-aura .aura-hud__live,
@@ -1920,10 +1921,53 @@ select.beast-path__field-control option {
   fill: color-mix(in oklab, currentColor 22%, #111);
 }
 
-.aura-fighter__visor {
-  fill: #09090d;
-  stroke: var(--aura-gold);
+.aura-fighter__skull {
+  fill: #14121c;
+}
+
+.aura-fighter__face {
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.aura-fighter__eye-white {
+  fill: color-mix(in oklab, var(--aura-ink) 88%, currentColor);
+  stroke: currentColor;
   stroke-width: 1.6;
+}
+
+.aura-fighter__pupil {
+  fill: #09090d;
+  stroke: none;
+  transition: transform 0.16s ease;
+}
+
+.aura-fighter__brow {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.16s cubic-bezier(0.2, 1.2, 0.3, 1);
+}
+
+.aura-fighter__brow path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+}
+
+.aura-fighter__mouth {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  transition: d 0.16s ease, transform 0.16s ease;
+}
+
+.aura-fighter__eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.16s ease;
 }
 
 .aura-fighter__chain {
@@ -1973,6 +2017,10 @@ select.beast-path__field-control option {
   transform: rotate(-6deg);
 }
 
+.aura-fighter[data-pose="ice"] .aura-fighter__pupil {
+  transform: translate(-3px, 0);
+}
+
 .aura-fighter[data-pose="flex"] .aura-fighter__arm--l {
   transform: rotate(-100deg) translate(-8px, -16px);
 }
@@ -2009,6 +2057,18 @@ select.beast-path__field-control option {
   transform: rotate(8deg);
 }
 
+.aura-fighter[data-pose="shrug"] .aura-fighter__arm--l {
+  transform: rotate(-48deg) translate(-4px, -6px);
+}
+
+.aura-fighter[data-pose="shrug"] .aura-fighter__arm--r {
+  transform: rotate(48deg) translate(4px, -6px);
+}
+
+.aura-fighter[data-pose="shrug"] .aura-fighter__mouth {
+  d: path("M90 96 Q100 92 110 96");
+}
+
 .aura-fighter[data-pose="sixseven"] .aura-fighter__arm--l {
   transform-origin: 80% 10%;
   animation: aura-six-l 0.26s ease-in-out infinite alternate;
@@ -2021,6 +2081,76 @@ select.beast-path__field-control option {
 
 .aura-fighter[data-pose="sixseven"] .aura-fighter__head {
   transform: rotate(-4deg) scale(1.05);
+}
+
+.aura-fighter[data-pose="smirk"] .aura-fighter__mouth {
+  d: path("M88 94 Q102 104 114 90");
+}
+
+.aura-fighter[data-pose="smirk"] .aura-fighter__brow--r {
+  transform: translateY(-3px) rotate(8deg);
+}
+
+.aura-fighter[data-pose="smirk"] .aura-fighter__eye--r .aura-fighter__pupil {
+  transform: translate(1px, -1px);
+}
+
+.aura-fighter[data-pose="sideeye"] .aura-fighter__pupil {
+  transform: translate(4px, 0);
+}
+
+.aura-fighter[data-pose="sideeye"] .aura-fighter__head {
+  transform: rotate(10deg);
+}
+
+.aura-fighter[data-pose="sideeye"] .aura-fighter__brow--l,
+.aura-fighter[data-pose="sideeye"] .aura-fighter__brow--r {
+  transform: translateY(-2px);
+}
+
+.aura-fighter[data-pose="deadpan"] .aura-fighter__mouth {
+  d: path("M88 96 H112");
+}
+
+.aura-fighter[data-pose="deadpan"] .aura-fighter__brow--l,
+.aura-fighter[data-pose="deadpan"] .aura-fighter__brow--r {
+  transform: translateY(3px);
+}
+
+.aura-fighter[data-pose="deadpan"] .aura-fighter__eye {
+  transform: scaleY(0.72);
+}
+
+.aura-fighter[data-pose="brow"] .aura-fighter__brow--l {
+  transform: translateY(-7px) rotate(-12deg);
+}
+
+.aura-fighter[data-pose="brow"] .aura-fighter__brow--r {
+  transform: translateY(1px);
+}
+
+.aura-fighter[data-pose="brow"] .aura-fighter__mouth {
+  d: path("M92 95 Q100 97 108 95");
+}
+
+.aura-fighter[data-pose="wink"] .aura-fighter__eye--l {
+  transform: scaleY(0.12);
+}
+
+.aura-fighter[data-pose="wink"] .aura-fighter__mouth {
+  d: path("M90 94 Q100 100 110 94");
+}
+
+.aura-fighter[data-pose="wink"] .aura-fighter__brow--l {
+  transform: translateY(2px);
+}
+
+.aura-fighter[data-pose="nod"] .aura-fighter__head {
+  animation: aura-nod 0.34s ease-in-out infinite alternate;
+}
+
+.aura-fighter[data-pose="nod"] .aura-fighter__mouth {
+  d: path("M92 94 Q100 99 108 94");
 }
 
 .aura-fighter__meta {
@@ -2107,13 +2237,42 @@ select.beast-path__field-control option {
   text-align: center;
 }
 
+.aura-overlay--pick {
+  justify-content: flex-start;
+  gap: 0.55rem;
+  padding: 0.85rem 0.8rem 1rem;
+  overflow: auto;
+  background: color-mix(in oklab, var(--aura-void) 72%, transparent);
+}
+
 .aura-overlay__how,
 .aura-overlay__result,
-.aura-overlay__scoreline {
-  max-width: 28rem;
+.aura-overlay__scoreline,
+.aura-overlay__countline,
+.aura-overlay__need,
+.aura-overlay__pick-title {
+  max-width: 34rem;
   margin: 0;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.aura-overlay__pick-title {
+  font-family: var(--aura-display);
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  font-weight: 700;
+  line-height: 0.9;
+  color: var(--aura-lime);
+}
+
+.aura-overlay__countline {
+  color: var(--aura-gold);
+  font-size: 0.78rem;
+}
+
+.aura-overlay__need {
+  color: #ff6b4a;
+  font-size: 0.72rem;
 }
 
 .aura-overlay__count,
@@ -2138,16 +2297,89 @@ select.beast-path__field-control option {
   box-shadow: 6px 6px 0 var(--aura-magenta);
 }
 
-.aura-overlay__cta:hover {
+.aura-overlay__cta:hover:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: 4px 4px 0 var(--aura-magenta);
+}
+
+.aura-overlay__cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.aura-picker {
+  width: min(100%, 42rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.aura-picker__group {
+  text-align: left;
+}
+
+.aura-picker__label {
+  margin: 0 0 0.3rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--aura-gold);
+}
+
+.aura-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.aura-picker__btn {
+  display: flex;
+  min-height: 3.2rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  padding: 0.4rem 0.45rem;
+  color: var(--aura-ink);
+  text-align: left;
+  background: color-mix(in oklab, black 40%, #16121f);
+  border: 1px solid color-mix(in oklab, var(--aura-ink) 16%, transparent);
+}
+
+.aura-picker__btn--on {
+  border-color: var(--aura-lime);
+  background: color-mix(in oklab, var(--aura-lime) 16%, #16121f);
+}
+
+.aura-picker__btn--six {
+  border-color: color-mix(in oklab, var(--aura-gold) 45%, transparent);
+}
+
+.aura-picker__btn--six.aura-picker__btn--on {
+  border-color: var(--aura-gold);
+  background: color-mix(in oklab, var(--aura-gold) 18%, #16121f);
+}
+
+.aura-picker__name {
+  font-family: var(--aura-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.aura-picker__hint {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--aura-dim);
 }
 
 .aura-pad {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0.4rem;
   padding: 0.6rem 0.7rem 0.8rem;
 }
@@ -2236,6 +2468,11 @@ select.beast-path__field-control option {
   to { transform: translateY(-6px); }
 }
 
+@keyframes aura-nod {
+  from { transform: rotate(-6deg) translateY(0); }
+  to { transform: rotate(8deg) translateY(4px); }
+}
+
 @keyframes aura-six-l {
   from { transform: rotate(-110deg) translate(-8px, -18px); }
   to { transform: rotate(-55deg) translate(-2px, -8px); }
@@ -2276,11 +2513,11 @@ select.beast-path__field-control option {
   }
 
   .aura-pad {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .aura-pad__btn--six {
-    grid-column: 1 / -1;
+  .aura-picker__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .aura-stage__vs {

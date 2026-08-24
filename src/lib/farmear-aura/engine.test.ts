@@ -2,14 +2,21 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   BEAT_MS,
+  DEFAULT_LOADOUT,
   GESTURES,
+  MAX_LOADOUT,
+  MIN_LOADOUT,
   createMenuBattle,
   isOnBeat,
+  isValidLoadout,
   performGesture,
+  pickRivalLoadout,
   scoreGesture,
   sixSevenCeiling,
+  slotKeyMap,
   startCountdown,
   tickBattle,
+  toggleLoadout,
   type Fighter,
 } from "./engine.ts";
 
@@ -24,6 +31,7 @@ function fighter(partial: Partial<Fighter> = {}): Fighter {
     lastGesture: null,
     streak: 0,
     lastAt: 0,
+    moves: [...DEFAULT_LOADOUT],
     ...partial,
   };
 }
@@ -133,6 +141,21 @@ describe("Farmear Aura scoring", () => {
     assert.equal(after, menu);
   });
 
+  it("ignores gestures outside the fighter loadout", () => {
+    let battle = startCountdown(
+      createMenuBattle("Vos", "NPC", 0, ["ice", "flex", "smirk"]),
+      "Vos",
+      "NPC",
+      1_000,
+      frozen,
+      ["ice", "flex", "smirk"],
+    );
+    battle = tickBattle(battle, battle.fightAt, frozen);
+    const blocked = performGesture(battle, "you", "wink", battle.fightAt + 10, frozen);
+    assert.equal(blocked.you.aura, 0);
+    assert.equal(blocked, battle);
+  });
+
   it("ends the round with the higher aura as winner", () => {
     let battle = startCountdown(
       createMenuBattle("Vos", "NPC", 0),
@@ -151,5 +174,36 @@ describe("Farmear Aura scoring", () => {
     battle = tickBattle(battle, battle.endsAt, frozen);
     assert.equal(battle.phase, "result");
     assert.equal(battle.winner, "you");
+  });
+});
+
+describe("Farmear Aura loadout", () => {
+  it("keeps the default kit within the size limits", () => {
+    assert.equal(isValidLoadout(DEFAULT_LOADOUT), true);
+    assert.ok(DEFAULT_LOADOUT.length <= MAX_LOADOUT);
+    assert.ok(DEFAULT_LOADOUT.length >= MIN_LOADOUT);
+  });
+
+  it("toggles moves and caps at six", () => {
+    let moves = toggleLoadout(["ice", "flex", "smirk"], "wink");
+    assert.deepEqual(moves, ["ice", "flex", "smirk", "wink"]);
+    moves = toggleLoadout(moves, "flex");
+    assert.deepEqual(moves, ["ice", "smirk", "wink"]);
+    moves = ["ice", "flex", "walk", "point", "shrug", "sixseven"];
+    assert.deepEqual(toggleLoadout(moves, "smirk"), moves);
+  });
+
+  it("maps slot keys to the selected kit", () => {
+    assert.deepEqual(slotKeyMap(["ice", "smirk", "wink"]), {
+      "1": "ice",
+      "2": "smirk",
+      "3": "wink",
+    });
+  });
+
+  it("builds a rival kit of matching size", () => {
+    const rival = pickRivalLoadout(["ice", "flex", "smirk", "wink"], () => 0.2);
+    assert.equal(rival.length, 4);
+    assert.equal(isValidLoadout(rival), true);
   });
 });
