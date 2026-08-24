@@ -245,6 +245,20 @@
         "description": "Select a rectangle, circle or ellipse on a map, set vertical scale, and download a closed terrain STL for 3D printing.",
         "href": "/tools/map-stl",
         "featured": true
+      },
+      {
+        "name": "Lithophane",
+        "category": "3D / Image",
+        "description": "Upload a photo, tune size and thickness, and download a closed backlit lithophane STL — meshed in your browser.",
+        "href": "/tools/lithophane",
+        "featured": true
+      },
+      {
+        "name": "Org Data Bridge",
+        "category": "Salesforce",
+        "description": "Connect two Salesforce orgs, browse objects, run SOQL on the source, and export JSON or CSV — no Connected App required.",
+        "href": "/tools/org-data-bridge",
+        "featured": true
       }
     ],
     "academy": [
@@ -532,6 +546,20 @@
         "category": "3D / Mapa",
         "description": "Seleccioná un rectángulo, círculo o elipse en el mapa, definí la escala vertical y descargá un STL cerrado del terreno para impresión 3D.",
         "href": "/tools/map-stl",
+        "featured": true
+      },
+      {
+        "name": "Litofanía",
+        "category": "3D / Imagen",
+        "description": "Subí una foto, ajustá tamaño y espesor, y descargá un STL cerrado de litofanía con backlight — mallado en tu navegador.",
+        "href": "/tools/lithophane",
+        "featured": true
+      },
+      {
+        "name": "Org Data Bridge",
+        "category": "Salesforce",
+        "description": "Conectá dos orgs Salesforce, explorá objetos, ejecutá SOQL en el origen y exportá JSON o CSV — sin Connected App.",
+        "href": "/tools/org-data-bridge",
         "featured": true
       }
     ],

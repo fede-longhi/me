@@ -42,7 +42,173 @@ export type HeightGrid = {
   bounds: { south: number; west: number; north: number; east: number };
   /** Original selection — used to snap the mesh silhouette to the true boundary. */
   selection: MapSelection;
+  /** Rasterized inside/outside mask (1 = inside selection). */
+  selectionMask: Uint8Array;
 };
+
+export type TerrainPhase =
+  | "prefetch"
+  | "mask"
+  | "sample"
+  | "smooth"
+  | "mesh";
+
+export type TerrainTimings = {
+  prefetchMs: number;
+  maskMs: number;
+  sampleMs: number;
+  smoothMs: number;
+  meshMs: number;
+  totalMs: number;
+};
+
+/** Stable key for caching elevation samples (not export sizing). */
+export function selectionSampleFingerprint(selection: MapSelection): string {
+  const b = selectionBounds(selection);
+  const bbox = [
+    b.south.toFixed(5),
+    b.west.toFixed(5),
+    b.north.toFixed(5),
+    b.east.toFixed(5),
+  ].join(",");
+  if (selection.kind === "polygon") {
+    let verts = 0;
+    let rings = 0;
+    for (const poly of selection.polygons) {
+      rings += poly.length;
+      for (const ring of poly) verts += ring.length;
+    }
+    return `poly|${selection.name}|${bbox}|${selection.polygons.length}|${rings}|${verts}`;
+  }
+  if (selection.kind === "rectangle") {
+    return `rect|${bbox}`;
+  }
+  if (selection.kind === "circle") {
+    return `circle|${bbox}|${selection.radiusM.toFixed(1)}`;
+  }
+  return `ellipse|${bbox}|${selection.radiusXM.toFixed(1)}|${selection.radiusYM.toFixed(1)}`;
+}
+
+/** Ground size (m) of a geographic bbox. */
+export function boundsSizeMeters(bounds: {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}): { widthM: number; depthM: number } {
+  const midLat = (bounds.south + bounds.north) / 2;
+  return {
+    widthM: Math.abs(bounds.east - bounds.west) * metersPerDegreeLng(midLat),
+    depthM: Math.abs(bounds.north - bounds.south) * metersPerDegreeLat(midLat),
+  };
+}
+
+/** cols × rows ≈ targetCells², adapted to geographic aspect ratio. */
+export function gridDimensionsForBounds(
+  bounds: { south: number; west: number; north: number; east: number },
+  targetCells: number,
+): { cols: number; rows: number } {
+  const { widthM, depthM } = boundsSizeMeters(bounds);
+  const aspect = widthM / Math.max(depthM, 1);
+  const target = Math.max(4, targetCells * targetCells);
+  if (aspect >= 1) {
+    const cols = Math.max(2, Math.round(Math.sqrt(target * aspect)));
+    const rows = Math.max(2, Math.round(target / cols));
+    return { cols, rows };
+  }
+  const rows = Math.max(2, Math.round(Math.sqrt(target / aspect)));
+  const cols = Math.max(2, Math.round(target / rows));
+  return { cols, rows };
+}
+
+/**
+ * Resolve sampling grid size from either a fixed √cell budget (`resolution`)
+ * or a target meters-per-cell density (better for large regions).
+ */
+export function resolveSampleGrid(
+  bounds: { south: number; west: number; north: number; east: number },
+  options: {
+    resolution: number;
+    metersPerCell?: number;
+    maxCells?: number;
+  },
+): { cols: number; rows: number; metersPerCell: number; cellCount: number } {
+  const { widthM, depthM } = boundsSizeMeters(bounds);
+  const maxCells = Math.max(16, options.maxCells ?? 160_000);
+
+  if (options.metersPerCell != null && options.metersPerCell > 0) {
+    let cols = Math.max(2, Math.round(widthM / options.metersPerCell));
+    let rows = Math.max(2, Math.round(depthM / options.metersPerCell));
+    let cellCount = cols * rows;
+    if (cellCount > maxCells) {
+      const scale = Math.sqrt(maxCells / cellCount);
+      cols = Math.max(2, Math.round(cols * scale));
+      rows = Math.max(2, Math.round(rows * scale));
+      cellCount = cols * rows;
+    }
+    const metersPerCell = Math.max(
+      widthM / Math.max(cols - 1, 1),
+      depthM / Math.max(rows - 1, 1),
+    );
+    return { cols, rows, metersPerCell, cellCount };
+  }
+
+  const { cols, rows } = gridDimensionsForBounds(bounds, options.resolution);
+  const cellCount = cols * rows;
+  const metersPerCell = Math.max(
+    widthM / Math.max(cols - 1, 1),
+    depthM / Math.max(rows - 1, 1),
+  );
+  return { cols, rows, metersPerCell, cellCount };
+}
+
+export function rasterizeSelectionMask(
+  selection: MapSelection,
+  bounds: { south: number; west: number; north: number; east: number },
+  cols: number,
+  rows: number,
+): Uint8Array {
+  const mask = new Uint8Array(cols * rows);
+  for (let row = 0; row < rows; row += 1) {
+    const v = rows === 1 ? 0.5 : row / (rows - 1);
+    const lat = bounds.north - v * (bounds.north - bounds.south);
+    for (let col = 0; col < cols; col += 1) {
+      const u = cols === 1 ? 0.5 : col / (cols - 1);
+      const lng = bounds.west + u * (bounds.east - bounds.west);
+      mask[row * cols + col] = pointInSelection(lat, lng, selection) ? 1 : 0;
+    }
+  }
+  return mask;
+}
+
+/** Bilinear lookup on the raster mask (fractional grid coordinates). */
+export function maskInsideFractional(
+  mask: Uint8Array,
+  cols: number,
+  rows: number,
+  col: number,
+  row: number,
+): boolean {
+  if (cols <= 0 || rows <= 0) return false;
+  const c = Math.max(0, Math.min(cols - 1, col));
+  const r = Math.max(0, Math.min(rows - 1, row));
+  const c0 = Math.floor(c);
+  const r0 = Math.floor(r);
+  const c1 = Math.min(cols - 1, c0 + 1);
+  const r1 = Math.min(rows - 1, r0 + 1);
+  const fc = c - c0;
+  const fr = r - r0;
+  const v00 = mask[r0 * cols + c0] ?? 0;
+  const v10 = mask[r0 * cols + c1] ?? 0;
+  const v01 = mask[r1 * cols + c0] ?? 0;
+  const v11 = mask[r1 * cols + c1] ?? 0;
+  const v =
+    v00 * (1 - fc) * (1 - fr) +
+    v10 * fc * (1 - fr) +
+    v01 * (1 - fc) * fr +
+    v11 * fc * fr;
+  return v >= 0.5;
+}
 
 const EARTH_RADIUS_M = 6378137;
 
@@ -463,13 +629,22 @@ async function loadTerrariumTile(
   }
   const blob = await res.blob();
   const bitmap = await createImageBitmap(blob);
-  const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas unavailable");
-  ctx.drawImage(bitmap, 0, 0);
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let data: ImageData;
+  if (typeof OffscreenCanvas !== "undefined") {
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable");
+    ctx.drawImage(bitmap, 0, 0);
+    data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  } else {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable");
+    ctx.drawImage(bitmap, 0, 0);
+    data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
   cache.set(key, data);
   bitmap.close();
   return data;
@@ -605,7 +780,18 @@ function smoothHeightGrid(
 }
 
 export type SampleOptions = {
+  /**
+   * √cell budget for fixed-grid sampling (ignored when `metersPerCell` is set).
+   * Example: 120 → ~120² cells adapted to aspect ratio.
+   */
   resolution: number;
+  /**
+   * Target ground spacing between samples. Prefer this for large regions —
+   * fixed resolution makes wide maps look mushy.
+   */
+  metersPerCell?: number;
+  /** Hard cap on cols×rows when using metersPerCell (default 160_000). */
+  maxCells?: number;
   zoom?: number;
   /** Elevation surface blur passes (independent from verticalScale). */
   terrainSmooth?: number;
@@ -615,6 +801,7 @@ export type SampleOptions = {
   waterBufferKm?: number;
   signal?: AbortSignal;
   onProgress?: (done: number, total: number) => void;
+  onPhase?: (phase: TerrainPhase, ms: number) => void;
 };
 
 export async function sampleElevationGrid(
@@ -641,30 +828,31 @@ export async function sampleElevationGrid(
   const waterBufferKm = options.waterBufferKm ?? 40;
   const signal = options.signal;
   const onProgress = options.onProgress;
+  const onPhase = options.onPhase;
   const seaLevel = 0.5;
+  const tAll = performance.now();
 
   const landBounds = selectionBounds(selection);
   const bounds =
     waterMode === "include"
       ? expandBoundsByKm(landBounds, waterBufferKm)
       : landBounds;
-  const cols = resolution;
-  const rows = resolution;
+  const { cols, rows } = resolveSampleGrid(bounds, {
+    resolution,
+    metersPerCell: options.metersPerCell,
+    maxCells: options.maxCells,
+  });
   const values = new Float32Array(cols * rows);
   const cache: TileCache = new Map();
 
-  const midLat = (bounds.south + bounds.north) / 2;
-  const widthM =
-    Math.abs(bounds.east - bounds.west) * metersPerDegreeLng(midLat);
-  const depthM =
-    Math.abs(bounds.north - bounds.south) * metersPerDegreeLat(midLat);
+  const { widthM, depthM } = boundsSizeMeters(bounds);
 
   const tiles = tilesCoveringBounds(bounds, zoom);
   const cellTotal = cols * rows;
-  // Weight progress: tile fetch is the slow phase; sampling is local CPU.
   const tileWeight = Math.max(tiles.length * 8, 1);
   const progressTotal = tileWeight + cellTotal;
 
+  const tPrefetch = performance.now();
   try {
     await prefetchTerrariumTiles(tiles, cache, signal, (done) => {
       onProgress?.(done * 8, progressTotal);
@@ -679,7 +867,13 @@ export async function sampleElevationGrid(
     }
     throw err;
   }
+  onPhase?.("prefetch", performance.now() - tPrefetch);
 
+  const tMask = performance.now();
+  const selectionMask = rasterizeSelectionMask(selection, bounds, cols, rows);
+  onPhase?.("mask", performance.now() - tMask);
+
+  const tSample = performance.now();
   let done = 0;
   for (let row = 0; row < rows; row += 1) {
     if (signal?.aborted) throw new SampleAbortedError();
@@ -690,7 +884,7 @@ export async function sampleElevationGrid(
       const u = cols === 1 ? 0.5 : col / (cols - 1);
       const lng = bounds.west + u * (bounds.east - bounds.west);
       const index = row * cols + col;
-      const inLand = pointInSelection(lat, lng, selection);
+      const inLand = selectionMask[index] === 1;
 
       if (waterMode === "include") {
         const elev = elevationAtLatLngSync(lat, lng, zoom, cache);
@@ -713,15 +907,17 @@ export async function sampleElevationGrid(
       }
     }
 
-    // Keep the UI responsive on large grids.
     if (row % 8 === 7) await yieldToUi();
   }
+  onPhase?.("sample", performance.now() - tSample);
 
+  const tSmooth = performance.now();
   let processed =
     waterMode === "exclude"
       ? excludeExteriorWater(values, cols, rows, seaLevel)
       : values;
   const smoothed = smoothHeightGrid(processed, cols, rows, terrainSmooth);
+  onPhase?.("smooth", performance.now() - tSmooth);
 
   let min = Number.POSITIVE_INFINITY;
   let max = Number.NEGATIVE_INFINITY;
@@ -747,6 +943,7 @@ export async function sampleElevationGrid(
     depthM,
     bounds,
     selection,
+    selectionMask,
   };
 }
 
@@ -764,6 +961,60 @@ function cross(
 function normalize(x: number, y: number, z: number): [number, number, number] {
   const len = Math.hypot(x, y, z) || 1;
   return [x / len, y / len, z / len];
+}
+
+/** Writes binary STL triangles directly without intermediate objects. */
+class StlWriter {
+  private readonly view: DataView;
+  private readonly buf: ArrayBuffer;
+  private count = 0;
+  private offset = 84;
+  private readonly maxTris: number;
+
+  constructor(maxTris: number) {
+    this.maxTris = maxTris;
+    this.buf = new ArrayBuffer(84 + maxTris * 50);
+    this.view = new DataView(this.buf);
+  }
+
+  pushTri(
+    ax: number,
+    ay: number,
+    az: number,
+    bx: number,
+    by: number,
+    bz: number,
+    cx: number,
+    cy: number,
+    cz: number,
+  ) {
+    if (this.count >= this.maxTris) return;
+    const [nx, ny, nz] = normalize(
+      ...cross(bx - ax, by - ay, bz - az, cx - ax, cy - ay, cz - az),
+    );
+    this.view.setFloat32(this.offset, nx, true);
+    this.view.setFloat32(this.offset + 4, ny, true);
+    this.view.setFloat32(this.offset + 8, nz, true);
+    this.offset += 12;
+    for (const p of [
+      [ax, ay, az],
+      [bx, by, bz],
+      [cx, cy, cz],
+    ] as const) {
+      this.view.setFloat32(this.offset, p[0], true);
+      this.view.setFloat32(this.offset + 4, p[1], true);
+      this.view.setFloat32(this.offset + 8, p[2], true);
+      this.offset += 12;
+    }
+    this.view.setUint16(this.offset, 0, true);
+    this.offset += 2;
+    this.count += 1;
+  }
+
+  finish(): ArrayBuffer {
+    this.view.setUint32(80, this.count, true);
+    return this.buf.slice(0, 84 + this.count * 50);
+  }
 }
 
 export type StlOptions = {
@@ -886,7 +1137,8 @@ export function heightGridToStl(
   grid: HeightGrid,
   options: StlOptions,
 ): ArrayBuffer {
-  const { cols, rows, values, min, widthM, depthM, bounds, selection } = grid;
+  const { cols, rows, values, min, widthM, depthM, bounds, selectionMask } =
+    grid;
   const { verticalScale, modelSizeMm, baseMm } = options;
 
   const maxHoriz = Math.max(widthM, depthM, 1);
@@ -904,19 +1156,10 @@ export function heightGridToStl(
 
   const solidAt = (col: number, row: number) => heightAt(col, row) !== null;
 
+  const maxTris = Math.max(1, (cols - 1) * (rows - 1) * 32);
+  const writer = new StlWriter(maxTris);
+
   type Vert = { x: number; y: number; z: number };
-  type Tri = {
-    ax: number;
-    ay: number;
-    az: number;
-    bx: number;
-    by: number;
-    bz: number;
-    cx: number;
-    cy: number;
-    cz: number;
-  };
-  const tris: Tri[] = [];
 
   const pushTri = (
     ax: number,
@@ -929,21 +1172,12 @@ export function heightGridToStl(
     cy: number,
     cz: number,
   ) => {
-    tris.push({ ax, ay, az, bx, by, bz, cx, cy, cz });
+    writer.pushTri(ax, ay, az, bx, by, bz, cx, cy, cz);
   };
 
   const xOf = (col: number) => (cols === 1 ? 0 : (col / (cols - 1)) * widthMm);
   const yOf = (row: number) =>
     rows === 1 ? 0 : ((rows - 1 - row) / (rows - 1)) * depthMm;
-
-  const latLngOf = (col: number, row: number) => {
-    const u = cols === 1 ? 0.5 : col / (cols - 1);
-    const v = rows === 1 ? 0.5 : row / (rows - 1);
-    return {
-      lat: bounds.north - v * (bounds.north - bounds.south),
-      lng: bounds.west + u * (bounds.east - bounds.west),
-    };
-  };
 
   /** Find where the selection / mask boundary crosses a grid edge. */
   const edgeCrossing = (
@@ -952,16 +1186,12 @@ export function heightGridToStl(
     c1: number,
     r1: number,
   ): Vert => {
-    const p0 = latLngOf(c0, r0);
-    const p1 = latLngOf(c1, r1);
-    const g0 = pointInSelection(p0.lat, p0.lng, selection);
-    const g1 = pointInSelection(p1.lat, p1.lng, selection);
+    const g0 = maskInsideFractional(selectionMask, cols, rows, c0, r0);
+    const g1 = maskInsideFractional(selectionMask, cols, rows, c1, r1);
 
     const s0 = solidAt(c0, r0);
     const s1 = solidAt(c1, r1);
     let t = 0.5;
-    // Snap to the political/land outline only when leaving empty space.
-    // If both corners are solid (land + sea buffer), keep a continuous surface.
     if (g0 !== g1 && s0 !== s1) {
       let lo = 0;
       let hi = 1;
@@ -970,9 +1200,14 @@ export function heightGridToStl(
         const mid = (lo + hi) / 2;
         const col = c0 + (c1 - c0) * mid;
         const row = r0 + (r1 - r0) * mid;
-        const p = latLngOf(col, row);
-        if (pointInSelection(p.lat, p.lng, selection) === inside0) lo = mid;
-        else hi = mid;
+        if (
+          maskInsideFractional(selectionMask, cols, rows, col, row) ===
+          inside0
+        ) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
       }
       t = (lo + hi) / 2;
     }
@@ -1204,44 +1439,7 @@ export function heightGridToStl(
     }
   }
 
-  // Binary STL
-  const header = new ArrayBuffer(80);
-  const buffer = new ArrayBuffer(84 + tris.length * 50);
-  const view = new DataView(buffer);
-  new Uint8Array(buffer, 0, 80).set(new Uint8Array(header));
-  view.setUint32(80, tris.length, true);
-
-  let offset = 84;
-  for (const t of tris) {
-    const [nx, ny, nz] = normalize(
-      ...cross(
-        t.bx - t.ax,
-        t.by - t.ay,
-        t.bz - t.az,
-        t.cx - t.ax,
-        t.cy - t.ay,
-        t.cz - t.az,
-      ),
-    );
-    view.setFloat32(offset, nx, true);
-    view.setFloat32(offset + 4, ny, true);
-    view.setFloat32(offset + 8, nz, true);
-    offset += 12;
-    for (const p of [
-      [t.ax, t.ay, t.az],
-      [t.bx, t.by, t.bz],
-      [t.cx, t.cy, t.cz],
-    ] as const) {
-      view.setFloat32(offset, p[0], true);
-      view.setFloat32(offset + 4, p[1], true);
-      view.setFloat32(offset + 8, p[2], true);
-      offset += 12;
-    }
-    view.setUint16(offset, 0, true);
-    offset += 2;
-  }
-
-  return buffer;
+  return writer.finish();
 }
 
 export function downloadArrayBuffer(buffer: ArrayBuffer, filename: string) {

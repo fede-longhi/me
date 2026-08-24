@@ -16,10 +16,10 @@ import {
   pointInSelection,
   printDimensionsFromGrid,
   SampleAbortedError,
-  sampleElevationGrid,
   selectionAreaKm2,
   selectionBounds,
   selectionDisplayName,
+  selectionSampleFingerprint,
   selectionSpanKm,
   stlFilenameFromLabels,
   stlTriangleCount,
@@ -32,6 +32,25 @@ import {
   paintBrushStrokeToSelection,
   removePolygonAtPoint,
 } from "@/lib/selection-edit";
+import {
+  cancelTerrainJob,
+  generateTerrain,
+  terminateTerrainWorker,
+} from "@/lib/terrain-client";
+import {
+  DEFAULT_TERRAIN_PROFILE_ID,
+  formatMetersPerCell,
+  getTerrainProfile,
+  loadStoredTerrainProfileId,
+  previewSamplePlan,
+  storeTerrainProfileId,
+  TERRAIN_PROFILES,
+  type TerrainProfileId,
+} from "@/lib/terrain-profiles";
+import {
+  TerrainAlgoLab,
+  type CompareRunResult,
+} from "@/components/tools/TerrainAlgoLab";
 import {
   AR_COUNTRY,
   AR_JURISDICTIONS,
@@ -168,6 +187,17 @@ const copy: Record<
     detailSpeedLow: string;
     detailSpeedMedium: string;
     detailSpeedHigh: string;
+    algorithm: string;
+    algorithmHint: string;
+    algoLabTitle: string;
+    algoLabLead: string;
+    algoLabRun: string;
+    algoLabRunning: string;
+    algoLabPick: string;
+    algoLabChoose: string;
+    algoLabActive: string;
+    algoLabPlan: string;
+    algoLabTime: string;
     relief: string;
     modelSize: string;
     base: string;
@@ -270,6 +300,19 @@ const copy: Record<
     detailSpeedLow: "faster",
     detailSpeedMedium: "balanced",
     detailSpeedHigh: "slower",
+    algorithm: "Algorithm",
+    algorithmHint:
+      "How elevation is sampled. Fixed grid struggles on wide maps — try Geo or compare below.",
+    algoLabTitle: "Compare algorithms",
+    algoLabLead:
+      "Run 2+ strategies on the same selection, inspect previews, then pick one to keep.",
+    algoLabRun: "Run comparison",
+    algoLabRunning: "Comparing…",
+    algoLabPick: "Select at least two algorithms and draw a region first.",
+    algoLabChoose: "Use this",
+    algoLabActive: "Active",
+    algoLabPlan: "Plan",
+    algoLabTime: "time",
     relief: "Relief exaggeration",
     modelSize: "Model size (mm)",
     base: "Base (mm)",
@@ -373,6 +416,19 @@ const copy: Record<
     detailSpeedLow: "más rápido",
     detailSpeedMedium: "equilibrado",
     detailSpeedHigh: "más lento",
+    algorithm: "Algoritmo",
+    algorithmHint:
+      "Cómo se muestrean las elevaciones. La grilla fija falla en mapas amplios — probá Geo o compará abajo.",
+    algoLabTitle: "Comparar algoritmos",
+    algoLabLead:
+      "Corré 2+ estrategias sobre la misma selección, mirá los previews y elegí con cuál quedarte.",
+    algoLabRun: "Correr comparación",
+    algoLabRunning: "Comparando…",
+    algoLabPick: "Elegí al menos dos algoritmos y dibujá una región primero.",
+    algoLabChoose: "Usar este",
+    algoLabActive: "Activo",
+    algoLabPlan: "Plan",
+    algoLabTime: "tiempo",
     relief: "Exageración del relieve",
     modelSize: "Tamaño del modelo (mm)",
     base: "Base (mm)",
@@ -457,6 +513,7 @@ export function MapStlTool() {
   const freehandPts = useRef<L.LatLng[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const cancelFlagRef = useRef(false);
+  const terrainJobIdRef = useRef<number | null>(null);
   const historyRef = useRef<HistoryEntry[]>([{ pieces: [] }]);
   const historyIndexRef = useRef(0);
   const strokeWorking = useRef<MapSelection | null>(null);
@@ -472,6 +529,18 @@ export function MapStlTool() {
   const [canRedo, setCanRedo] = useState(false);
   const [clipBusy, setClipBusy] = useState(false);
   const [detail, setDetail] = useState<DetailLevel>("medium");
+  const [profileId, setProfileId] = useState<TerrainProfileId>(
+    DEFAULT_TERRAIN_PROFILE_ID,
+  );
+  const [compareIds, setCompareIds] = useState<TerrainProfileId[]>([
+    "fixed-grid",
+    "geo-balanced",
+    "geo-fine",
+    "tiles-hd",
+  ]);
+  const [compareResults, setCompareResults] = useState<CompareRunResult[]>([]);
+  const [comparing, setComparing] = useState(false);
+  const [compareProgress, setCompareProgress] = useState<string | null>(null);
   const [verticalScale, setVerticalScale] = useState(2);
   const [modelSizeMm, setModelSizeMm] = useState(120);
   const [baseMm, setBaseMm] = useState(2);
@@ -668,12 +737,23 @@ export function MapStlTool() {
   const cancelActiveJob = () => {
     cancelFlagRef.current = true;
     abortRef.current?.abort();
+    if (terrainJobIdRef.current != null) {
+      cancelTerrainJob(terrainJobIdRef.current);
+      terrainJobIdRef.current = null;
+    }
   };
 
   undoRef.current = undo;
   redoRef.current = redo;
   fitSelectionRef.current = fitSelection;
   nudgeBrushRef.current = nudgeBrushRadius;
+
+  useEffect(() => {
+    return () => {
+      cancelActiveJob();
+      terminateTerrainWorker();
+    };
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current || mapObj.current) return;
@@ -1675,39 +1755,64 @@ export function MapStlTool() {
       setError(t.toolHintDraw);
       return;
     }
-    abortRef.current?.abort();
+    cancelActiveJob();
     cancelFlagRef.current = false;
-    const controller = new AbortController();
-    abortRef.current = controller;
     const preset = DETAIL_PRESETS[detail];
-    const key = `${detail}|keep`;
+    const mapZoom = mapObj.current?.getZoom() ?? 13;
+    const sample = getTerrainProfile(profileId).buildSample({
+      detailResolution: preset.resolution,
+      detailSmooth: preset.terrainSmooth,
+      mapZoom,
+    });
+    const key = `${profileId}|${detail}|keep|${selectionSampleFingerprint(selection)}`;
+    const stlOpts = { verticalScale, modelSizeMm, baseMm };
     setError(null);
     setGenerating(true);
     setProgress(t.sampling);
     setJobProgress({ label: t.sampling, done: 0, total: 1, indeterminate: true });
+    const { id, promise } = generateTerrain(
+      {
+        selection,
+        sample,
+        stl: stlOpts,
+      },
+      (done, total, phase) => {
+        if (phase) {
+          setProgress(phase);
+          setJobProgress({
+            label: phase,
+            done: 0,
+            total: 1,
+            indeterminate: true,
+          });
+          return;
+        }
+        setProgress(`${t.sampling} ${Math.round((done / total) * 100)}%`);
+        setJobProgress({ label: t.sampling, done, total });
+      },
+    );
+    terrainJobIdRef.current = id;
     try {
-      const zoom = Math.min(14, Math.max(11, mapObj.current?.getZoom() ?? 13));
-      const grid = await sampleElevationGrid(selection, {
-        resolution: preset.resolution,
-        zoom,
-        terrainSmooth: preset.terrainSmooth,
-        waterMode: "keep",
-        signal: controller.signal,
-        onProgress: (done, total) => {
-          setProgress(`${t.sampling} ${Math.round((done / total) * 100)}%`);
-          setJobProgress({ label: t.sampling, done, total });
-        },
-      });
-      if (controller.signal.aborted) throw new SampleAbortedError();
-      setHeightGrid(grid);
+      const result = await promise;
+      if (cancelFlagRef.current) throw new SampleAbortedError();
+      setHeightGrid(result.grid);
       setSampledKey(key);
+      setStlBuffer(result.buffer);
       setStlStale(false);
+      hasPreviewRef.current = true;
+      const dims = printDimensionsFromGrid(result.grid, stlOpts);
+      setPreviewMeta({
+        widthMm: dims.widthMm,
+        depthMm: dims.depthMm,
+        heightMm: dims.heightMm,
+        triangles: stlTriangleCount(result.buffer),
+      });
       setProgress(t.ready);
     } catch (err) {
       if (
         err instanceof SampleAbortedError ||
         (err instanceof DOMException && err.name === "AbortError") ||
-        controller.signal.aborted
+        cancelFlagRef.current
       ) {
         setProgress(t.cancelled);
       } else {
@@ -1717,9 +1822,149 @@ export function MapStlTool() {
     } finally {
       setGenerating(false);
       setJobProgress(null);
-      if (abortRef.current === controller) abortRef.current = null;
+      if (terrainJobIdRef.current === id) terrainJobIdRef.current = null;
     }
   }
+
+  const chooseProfile = (id: TerrainProfileId, applyCompare = false) => {
+    setProfileId(id);
+    storeTerrainProfileId(id);
+    if (applyCompare) {
+      const hit = compareResults.find((r) => r.profileId === id && r.grid);
+      if (hit?.grid) {
+        const key = `${id}|${detail}|keep|${selection ? selectionSampleFingerprint(selection) : ""}`;
+        setHeightGrid(hit.grid);
+        setSampledKey(key);
+        setStlBuffer(hit.buffer);
+        setStlStale(false);
+        hasPreviewRef.current = true;
+        const dims = printDimensionsFromGrid(hit.grid, {
+          verticalScale,
+          modelSizeMm,
+          baseMm,
+        });
+        setPreviewMeta({
+          widthMm: dims.widthMm,
+          depthMm: dims.depthMm,
+          heightMm: dims.heightMm,
+          triangles: hit.triangles,
+        });
+        setProgress(t.ready);
+        return;
+      }
+    }
+    if (hasPreviewRef.current) setStlStale(true);
+  };
+
+  const toggleCompareProfile = (id: TerrainProfileId) => {
+    setCompareIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  async function runAlgorithmCompare() {
+    if (!selection || compareIds.length < 2) return;
+    cancelActiveJob();
+    cancelFlagRef.current = false;
+    setComparing(true);
+    setCompareResults([]);
+    setError(null);
+    const preset = DETAIL_PRESETS[detail];
+    const mapZoom = mapObj.current?.getZoom() ?? 13;
+    const stlOpts = { verticalScale, modelSizeMm, baseMm };
+    const localeKey = locale === "es" ? "es" : "en";
+    const out: CompareRunResult[] = [];
+
+    try {
+      for (let i = 0; i < compareIds.length; i += 1) {
+        if (cancelFlagRef.current) throw new SampleAbortedError();
+        const pid = compareIds[i]!;
+        const profile = getTerrainProfile(pid);
+        setCompareProgress(
+          `${t.algoLabRunning} ${i + 1}/${compareIds.length} · ${profile.label[localeKey]}`,
+        );
+        const sample = profile.buildSample({
+          detailResolution: preset.resolution,
+          detailSmooth: preset.terrainSmooth,
+          mapZoom,
+        });
+        const plan = previewSamplePlan(selection, sample);
+        const { id, promise } = generateTerrain(
+          { selection, sample, stl: stlOpts },
+          (done, total, phase) => {
+            const pct =
+              total > 0 ? ` ${Math.round((done / total) * 100)}%` : "";
+            setCompareProgress(
+              `${t.algoLabRunning} ${i + 1}/${compareIds.length} · ${profile.label[localeKey]}${phase ? ` · ${phase}` : pct}`,
+            );
+          },
+        );
+        terrainJobIdRef.current = id;
+        try {
+          const result = await promise;
+          if (cancelFlagRef.current) throw new SampleAbortedError();
+          out.push({
+            profileId: pid,
+            buffer: result.buffer,
+            grid: result.grid,
+            timings: result.timings,
+            triangles: stlTriangleCount(result.buffer),
+            cols: result.grid.cols,
+            rows: result.grid.rows,
+            metersPerCell: plan.metersPerCell,
+          });
+          setCompareResults([...out]);
+        } catch (err) {
+          if (
+            err instanceof SampleAbortedError ||
+            (err instanceof DOMException && err.name === "AbortError") ||
+            cancelFlagRef.current
+          ) {
+            throw err;
+          }
+          out.push({
+            profileId: pid,
+            buffer: new ArrayBuffer(0),
+            grid: null,
+            timings: {
+              prefetchMs: 0,
+              maskMs: 0,
+              sampleMs: 0,
+              smoothMs: 0,
+              meshMs: 0,
+              totalMs: 0,
+            },
+            triangles: 0,
+            cols: plan.cols,
+            rows: plan.rows,
+            metersPerCell: plan.metersPerCell,
+            error: String(err),
+          });
+          setCompareResults([...out]);
+        } finally {
+          if (terrainJobIdRef.current === id) terrainJobIdRef.current = null;
+        }
+      }
+    } catch (err) {
+      if (
+        err instanceof SampleAbortedError ||
+        (err instanceof DOMException && err.name === "AbortError") ||
+        cancelFlagRef.current
+      ) {
+        setCompareProgress(t.cancelled);
+      } else {
+        setError(t.error);
+        setCompareProgress(null);
+      }
+    } finally {
+      setComparing(false);
+      if (!cancelFlagRef.current) setCompareProgress(null);
+    }
+  }
+
+  useEffect(() => {
+    setProfileId(loadStoredTerrainProfileId());
+  }, []);
 
   useEffect(() => {
     if (!heightGrid || stlStale) return;
@@ -1743,7 +1988,19 @@ export function MapStlTool() {
     });
   }, [heightGrid, verticalScale, modelSizeMm, baseMm, stlStale]);
 
-  const sampleKey = `${detail}|keep`;
+  const sampleKey = selection
+    ? `${profileId}|${detail}|keep|${selectionSampleFingerprint(selection)}`
+    : null;
+  const activeSamplePlan = useMemo(() => {
+    if (!selection) return null;
+    const preset = DETAIL_PRESETS[detail];
+    const sample = getTerrainProfile(profileId).buildSample({
+      detailResolution: preset.resolution,
+      detailSmooth: preset.terrainSmooth,
+      mapZoom: mapZoom,
+    });
+    return previewSamplePlan(selection, sample);
+  }, [selection, detail, profileId, mapZoom]);
   const gridMatchesSettings = Boolean(heightGrid && sampledKey === sampleKey);
   const sizeEstimate = useMemo(() => {
     if (!selection) return null;
@@ -2655,6 +2912,32 @@ export function MapStlTool() {
               {exportOpen ? (
                 <div className="mt-3 space-y-3">
                   <div>
+                    <p className={sectionLabelClass}>{t.algorithm}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {TERRAIN_PROFILES.map((profile) => (
+                        <button
+                          key={profile.id}
+                          type="button"
+                          onClick={() => chooseProfile(profile.id)}
+                          className={`cursor-pointer px-2.5 py-1.5 text-xs font-bold tracking-wide transition ${
+                            profileId === profile.id
+                              ? "bg-green text-white"
+                              : "border border-line text-ink-muted hover:text-ink"
+                          }`}
+                          title={profile.blurb[locale === "es" ? "es" : "en"]}
+                        >
+                          {profile.label[locale === "es" ? "es" : "en"]}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      {t.algorithmHint}
+                      {activeSamplePlan
+                        ? ` · ${activeSamplePlan.cols}×${activeSamplePlan.rows} · ${formatMetersPerCell(activeSamplePlan.metersPerCell, locale === "es" ? "es" : "en")}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div>
                     <p className={sectionLabelClass}>
                       {t.detail}
                     </p>
@@ -2685,6 +2968,37 @@ export function MapStlTool() {
                     </div>
                     <p className="mt-1 text-xs text-ink-muted">{t.detailHint}</p>
                   </div>
+                  <TerrainAlgoLab
+                    locale={locale === "es" ? "es" : "en"}
+                    selection={selection}
+                    detailResolution={DETAIL_PRESETS[detail].resolution}
+                    detailSmooth={DETAIL_PRESETS[detail].terrainSmooth}
+                    mapZoom={mapZoom}
+                    activeProfileId={profileId}
+                    selectedForCompare={compareIds}
+                    results={compareResults}
+                    running={comparing}
+                    progressLabel={compareProgress}
+                    onToggleCompareProfile={toggleCompareProfile}
+                    onRunCompare={() => void runAlgorithmCompare()}
+                    onCancel={cancelActiveJob}
+                    onChoose={(id) => chooseProfile(id, true)}
+                    labels={{
+                      title: t.algoLabTitle,
+                      lead: t.algoLabLead,
+                      run: t.algoLabRun,
+                      running: t.algoLabRunning,
+                      cancel: t.cancel,
+                      choose: t.algoLabChoose,
+                      active: t.algoLabActive,
+                      pickAtLeast: t.algoLabPick,
+                      emptyPreview: t.previewEmpty,
+                      controlsHint: t.previewControls,
+                      plan: t.algoLabPlan,
+                      triangles: t.triangles,
+                      time: t.algoLabTime,
+                    }}
+                  />
                   <label className="block">
                     <span className={sectionLabelClass}>
                       {t.relief}:{" "}
@@ -2753,7 +3067,7 @@ export function MapStlTool() {
               <button
                 type="button"
                 onClick={buildStl}
-                disabled={generating || !selection}
+                disabled={generating || comparing || !selection}
                 className="inline-flex cursor-pointer items-center justify-center gap-2 bg-blue-deep px-5 py-3 text-sm font-bold tracking-wide text-white transition hover:bg-blue disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <IconGenerate />

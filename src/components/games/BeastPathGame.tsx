@@ -2,6 +2,7 @@
 
 import { Oxanium } from "next/font/google";
 import {
+  Backpack,
   Bed,
   ChevronLeft,
   ChevronRight,
@@ -14,7 +15,6 @@ import {
   Menu,
   Minimize2,
   Mountain,
-  Package,
   Palmtree,
   Shield,
   ShoppingBag,
@@ -22,6 +22,7 @@ import {
   Swords,
   Tent,
   Trees,
+  Users,
   Waves,
   Wind,
   Wrench,
@@ -713,7 +714,7 @@ function PartyStrip({
   return (
     <>
       <div className="beast-path__party-panel beast-path__panel shrink-0 p-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--bp-moss)]">
               {labels.ui.party}
@@ -727,30 +728,29 @@ function PartyStrip({
               {labels.ui.pathRegion.replace("{name}", regionName)}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {onOpenBag ? (
-              <button
-                type="button"
-                className="beast-path__btn-ghost px-2.5 py-1 text-[11px]"
-                onClick={onOpenBag}
-              >
-                <span className="inline-flex items-center gap-1">
-                  <Package size={12} strokeWidth={2} />
-                  {labels.ui.bag}
-                  {itemCount + relicCount > 0
-                    ? ` (${itemCount}${relicCount ? `+${relicCount}` : ""})`
-                    : ""}
-                </span>
-              </button>
-            ) : null}
+          <div className="beast-path__party-tools">
             {onOpenReserve ? (
               <button
                 type="button"
-                className="beast-path__btn-ghost px-2.5 py-1 text-[11px]"
+                className="beast-path__btn-ghost beast-path__party-tool-btn"
                 onClick={onOpenReserve}
               >
+                <Users size={16} strokeWidth={2} />
                 {labels.ui.reserveOpen}
                 {reserveCount > 0 ? ` (${reserveCount})` : ""}
+              </button>
+            ) : null}
+            {onOpenBag ? (
+              <button
+                type="button"
+                className="beast-path__btn-ghost beast-path__party-tool-btn"
+                onClick={onOpenBag}
+              >
+                <Backpack size={16} strokeWidth={2} />
+                {labels.ui.bag}
+                {itemCount + relicCount > 0
+                  ? ` (${itemCount}${relicCount ? `+${relicCount}` : ""})`
+                  : ""}
               </button>
             ) : null}
             <p className="beast-path__title text-sm font-bold text-[var(--bp-gold)] sm:text-base">
@@ -2075,9 +2075,10 @@ function BattleView({
                   <button
                     type="button"
                     disabled={!planning}
-                    className="beast-path__capture-btn"
+                    className="beast-path__capture-btn beast-path__bag-btn"
                     onClick={() => onOpenBag()}
                   >
+                    <Backpack size={22} strokeWidth={2} />
                     {labels.ui.battleBag}
                   </button>
                   <button
@@ -2532,31 +2533,33 @@ export function BeastPathGame() {
             onClick={() => setGameMenuOpen(false)}
           >
             <div
-              className="beast-path__modal beast-path__modal--sm"
+              className="beast-path__modal beast-path__modal--game-menu"
               role="dialog"
               aria-modal="true"
               aria-label={labels.ui.gameMenu}
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="shrink-0 text-sm font-semibold">{labels.ui.gameMenu}</p>
-              <div className="beast-path__modal-body mt-0 flex flex-col gap-2">
+              <p className="beast-path__title shrink-0 text-2xl font-bold">
+                {labels.ui.gameMenu}
+              </p>
+              <div className="beast-path__modal-body mt-0 flex flex-col gap-2.5">
                 <button
                   type="button"
-                  className="beast-path__btn px-3 py-2 text-xs"
+                  className="beast-path__btn px-4 py-3 text-base"
                   onClick={returnToMainMenu}
                 >
                   {labels.ui.menuReturnSave}
                 </button>
                 <button
                   type="button"
-                  className="beast-path__btn-ghost px-3 py-2 text-xs"
+                  className="beast-path__btn-ghost px-4 py-3 text-base"
                   onClick={abandonRun}
                 >
                   {labels.ui.abandonRun}
                 </button>
                 <button
                   type="button"
-                  className="beast-path__btn-ghost px-3 py-2 text-xs"
+                  className="beast-path__btn-ghost px-4 py-3 text-base"
                   onClick={() => setGameMenuOpen(false)}
                 >
                   {labels.ui.abandonCancel}
@@ -2761,23 +2764,23 @@ export function BeastPathGame() {
 
         {state.screen.kind === "menu" && !contentDevOpen ? (
           <div className="beast-path__menu">
-            <h2 className="beast-path__title text-2xl font-bold sm:text-3xl">
+            <h2 className="beast-path__title text-4xl font-bold sm:text-5xl">
               {labels.ui.menuTitle}
             </h2>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--bp-muted)]">
+            <p className="mt-3 max-w-lg text-lg leading-relaxed text-[var(--bp-muted)]">
               {labels.ui.menuLead}
             </p>
             <div className="beast-path__menu-actions mt-12">
               <button
                 type="button"
-                className="beast-path__btn px-5 py-3 text-sm"
+                className="beast-path__btn px-6 py-3.5 text-lg"
                 onClick={requestNewRun}
               >
                 {labels.ui.menuNewRun}
               </button>
               <button
                 type="button"
-                className="beast-path__btn-ghost px-5 py-3 text-sm disabled:cursor-default disabled:opacity-40"
+                className="beast-path__btn-ghost px-6 py-3.5 text-lg disabled:cursor-default disabled:opacity-40"
                 disabled={!hasSave}
                 onClick={continueRun}
               >
