@@ -67,20 +67,24 @@ export function AuraFighter({ side, pose, name, aura, live }: AuraFighterProps) 
             <path className="aura-fighter__cap" d="M68 66 Q100 38 132 66 L128 74 Q100 58 72 74 Z" />
             <g className="aura-fighter__face">
               <g className="aura-fighter__brow aura-fighter__brow--l">
-                <path d="M78 68 H92" />
+                <path d="M76 66 H94" />
               </g>
               <g className="aura-fighter__brow aura-fighter__brow--r">
-                <path d="M108 68 H122" />
+                <path d="M106 66 H124" />
               </g>
               <g className="aura-fighter__eye aura-fighter__eye--l">
-                <ellipse className="aura-fighter__eye-white" cx="85" cy="78" rx="7.5" ry="6" />
-                <circle className="aura-fighter__pupil" cx="85" cy="78" r="3.2" />
+                <ellipse className="aura-fighter__eye-white" cx="85" cy="78" rx="9" ry="7.5" />
+                <circle className="aura-fighter__pupil" cx="85" cy="78" r="3.8" />
               </g>
               <g className="aura-fighter__eye aura-fighter__eye--r">
-                <ellipse className="aura-fighter__eye-white" cx="115" cy="78" rx="7.5" ry="6" />
-                <circle className="aura-fighter__pupil" cx="115" cy="78" r="3.2" />
+                <ellipse className="aura-fighter__eye-white" cx="115" cy="78" rx="9" ry="7.5" />
+                <circle className="aura-fighter__pupil" cx="115" cy="78" r="3.8" />
               </g>
-              <path className="aura-fighter__mouth" d="M90 94 Q100 98 110 94" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--neutral" d="M88 96 Q100 101 112 96" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--smirk" d="M86 94 Q102 106 116 88" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--flat" d="M86 97 H114" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--soft" d="M90 95 Q100 100 110 95" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--shrug" d="M88 98 Q100 92 112 98" />
             </g>
           </g>
         </g>

@@ -151,6 +151,7 @@ export function FarmearAuraGame() {
   }, []);
 
   const preview = useCallback((gesture: GestureId) => {
+    const until = performance.now() + 1100;
     setBattle((current) => {
       if (current.phase !== "menu" && current.phase !== "result") return current;
       return {
@@ -158,7 +159,7 @@ export function FarmearAuraGame() {
         you: {
           ...current.you,
           pose: gesture,
-          poseUntil: performance.now() + 900,
+          poseUntil: until,
         },
       };
     });
@@ -166,11 +167,8 @@ export function FarmearAuraGame() {
 
   const onToggle = useCallback(
     (gesture: GestureId) => {
-      setLoadout((current) => {
-        const next = toggleLoadout(current, gesture);
-        preview(gesture);
-        return next;
-      });
+      setLoadout((current) => toggleLoadout(current, gesture));
+      preview(gesture);
     },
     [preview],
   );

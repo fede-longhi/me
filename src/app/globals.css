@@ -1922,7 +1922,7 @@ select.beast-path__field-control option {
 }
 
 .aura-fighter__skull {
-  fill: #14121c;
+  fill: #1a1624;
 }
 
 .aura-fighter__face {
@@ -1933,9 +1933,9 @@ select.beast-path__field-control option {
 }
 
 .aura-fighter__eye-white {
-  fill: color-mix(in oklab, var(--aura-ink) 88%, currentColor);
+  fill: #f4efdf;
   stroke: currentColor;
-  stroke-width: 1.6;
+  stroke-width: 1.8;
 }
 
 .aura-fighter__pupil {
@@ -1953,15 +1953,38 @@ select.beast-path__field-control option {
 .aura-fighter__brow path {
   fill: none;
   stroke: currentColor;
-  stroke-width: 3;
+  stroke-width: 3.4;
 }
 
 .aura-fighter__mouth {
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.6;
+  stroke-width: 3;
   stroke-linecap: round;
-  transition: d 0.16s ease, transform 0.16s ease;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.aura-fighter__mouth--neutral {
+  opacity: 1;
+}
+
+.aura-fighter[data-pose="smirk"] .aura-fighter__mouth--neutral,
+.aura-fighter[data-pose="deadpan"] .aura-fighter__mouth--neutral,
+.aura-fighter[data-pose="shrug"] .aura-fighter__mouth--neutral,
+.aura-fighter[data-pose="brow"] .aura-fighter__mouth--neutral,
+.aura-fighter[data-pose="wink"] .aura-fighter__mouth--neutral,
+.aura-fighter[data-pose="nod"] .aura-fighter__mouth--neutral {
+  opacity: 0;
+}
+
+.aura-fighter[data-pose="smirk"] .aura-fighter__mouth--smirk,
+.aura-fighter[data-pose="deadpan"] .aura-fighter__mouth--flat,
+.aura-fighter[data-pose="shrug"] .aura-fighter__mouth--shrug,
+.aura-fighter[data-pose="brow"] .aura-fighter__mouth--soft,
+.aura-fighter[data-pose="wink"] .aura-fighter__mouth--soft,
+.aura-fighter[data-pose="nod"] .aura-fighter__mouth--soft {
+  opacity: 1;
 }
 
 .aura-fighter__eye {
@@ -2065,10 +2088,6 @@ select.beast-path__field-control option {
   transform: rotate(48deg) translate(4px, -6px);
 }
 
-.aura-fighter[data-pose="shrug"] .aura-fighter__mouth {
-  d: path("M90 96 Q100 92 110 96");
-}
-
 .aura-fighter[data-pose="sixseven"] .aura-fighter__arm--l {
   transform-origin: 80% 10%;
   animation: aura-six-l 0.26s ease-in-out infinite alternate;
@@ -2081,10 +2100,6 @@ select.beast-path__field-control option {
 
 .aura-fighter[data-pose="sixseven"] .aura-fighter__head {
   transform: rotate(-4deg) scale(1.05);
-}
-
-.aura-fighter[data-pose="smirk"] .aura-fighter__mouth {
-  d: path("M88 94 Q102 104 114 90");
 }
 
 .aura-fighter[data-pose="smirk"] .aura-fighter__brow--r {
@@ -2108,10 +2123,6 @@ select.beast-path__field-control option {
   transform: translateY(-2px);
 }
 
-.aura-fighter[data-pose="deadpan"] .aura-fighter__mouth {
-  d: path("M88 96 H112");
-}
-
 .aura-fighter[data-pose="deadpan"] .aura-fighter__brow--l,
 .aura-fighter[data-pose="deadpan"] .aura-fighter__brow--r {
   transform: translateY(3px);
@@ -2129,16 +2140,8 @@ select.beast-path__field-control option {
   transform: translateY(1px);
 }
 
-.aura-fighter[data-pose="brow"] .aura-fighter__mouth {
-  d: path("M92 95 Q100 97 108 95");
-}
-
 .aura-fighter[data-pose="wink"] .aura-fighter__eye--l {
   transform: scaleY(0.12);
-}
-
-.aura-fighter[data-pose="wink"] .aura-fighter__mouth {
-  d: path("M90 94 Q100 100 110 94");
 }
 
 .aura-fighter[data-pose="wink"] .aura-fighter__brow--l {
@@ -2147,10 +2150,6 @@ select.beast-path__field-control option {
 
 .aura-fighter[data-pose="nod"] .aura-fighter__head {
   animation: aura-nod 0.34s ease-in-out infinite alternate;
-}
-
-.aura-fighter[data-pose="nod"] .aura-fighter__mouth {
-  d: path("M92 94 Q100 99 108 94");
 }
 
 .aura-fighter__meta {
@@ -2242,7 +2241,25 @@ select.beast-path__field-control option {
   gap: 0.55rem;
   padding: 0.85rem 0.8rem 1rem;
   overflow: auto;
-  background: color-mix(in oklab, var(--aura-void) 72%, transparent);
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, var(--aura-void) 78%, transparent) 18%,
+      color-mix(in oklab, var(--aura-void) 86%, transparent) 50%,
+      color-mix(in oklab, var(--aura-void) 78%, transparent) 82%,
+      transparent 100%
+    ),
+    color-mix(in oklab, var(--aura-void) 28%, transparent);
+}
+
+.aura-stage:has(.aura-overlay--pick) .aura-fighter {
+  z-index: 6;
+  pointer-events: none;
+}
+
+.aura-stage:has(.aura-overlay--pick) .aura-stage__vs {
+  z-index: 6;
 }
 
 .aura-overlay__how,
