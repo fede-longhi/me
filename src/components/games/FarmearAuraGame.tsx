@@ -371,29 +371,31 @@ export function FarmearAuraGame() {
           ) : null}
         </div>
 
-        <div className="aura-pad" role="group" aria-label={copy.title}>
-          {padMoves.map((id, index) => {
-            const gesture = copy.gestures[id];
-            return (
-              <button
-                key={`${id}-${index}`}
-                type="button"
-                className={`aura-pad__btn ${id === "sixseven" ? "aura-pad__btn--six" : ""} ${
-                  sixLive && id === "sixseven" ? "aura-pad__btn--hot" : ""
-                }`}
-                disabled={!fighting}
-                aria-pressed={battle.you.pose === id}
-                onClick={() => cast(id)}
-              >
-                <span className="aura-pad__key">{index + 1}</span>
-                <span className="aura-pad__name">{gesture.name}</span>
-                <span className="aura-pad__hint">
-                  {id === "sixseven" && sixLive ? copy.sixBanner : gesture.hint}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {picking ? null : (
+          <div className="aura-pad" role="group" aria-label={copy.title}>
+            {padMoves.map((id, index) => {
+              const gesture = copy.gestures[id];
+              return (
+                <button
+                  key={`${id}-${index}`}
+                  type="button"
+                  className={`aura-pad__btn ${id === "sixseven" ? "aura-pad__btn--six" : ""} ${
+                    sixLive && id === "sixseven" ? "aura-pad__btn--hot" : ""
+                  }`}
+                  disabled={!fighting}
+                  aria-pressed={battle.you.pose === id}
+                  onClick={() => cast(id)}
+                >
+                  <span className="aura-pad__key">{index + 1}</span>
+                  <span className="aura-pad__name">{gesture.name}</span>
+                  <span className="aura-pad__hint">
+                    {id === "sixseven" && sixLive ? copy.sixBanner : gesture.hint}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </GameChrome>
   );
