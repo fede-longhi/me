@@ -2260,6 +2260,12 @@ select.beast-path__field-control option {
 
 .aura-stage:has(.aura-overlay--pick) .aura-stage__vs {
   z-index: 6;
+  pointer-events: none;
+}
+
+.aura-stage:has(.aura-overlay--pick) .aura-stage__pulse,
+.aura-stage:has(.aura-overlay--pick) .aura-stage__floor {
+  pointer-events: none;
 }
 
 .aura-overlay__how,
