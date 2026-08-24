@@ -47,7 +47,10 @@ export function AuraFighter({ side, pose, name, aura, live }: AuraFighterProps) 
           </g>
           <g className="aura-fighter__torso">
             <path d="M78 112 C76 168 74 208 86 216 H114 C126 208 124 168 122 112 C118 102 82 102 78 112 Z" />
-            <path className="aura-fighter__jacket" d="M80 118 C90 132 110 132 120 118 L118 168 C108 176 92 176 82 168 Z" />
+            <path
+              className="aura-fighter__jacket"
+              d="M80 118 C90 132 110 132 120 118 L118 168 C108 176 92 176 82 168 Z"
+            />
             <circle className="aura-fighter__chain" cx="100" cy="156" r="9" />
             <circle className="aura-fighter__chain-hole" cx="100" cy="156" r="4.5" />
           </g>
@@ -60,9 +63,29 @@ export function AuraFighter({ side, pose, name, aura, live }: AuraFighterProps) 
             <circle className="aura-fighter__hand" cx="140" cy="204" r="11" />
           </g>
           <g className="aura-fighter__head">
-            <circle cx="100" cy="78" r="32" />
-            <path className="aura-fighter__cap" d="M70 70 Q100 42 130 70 L128 78 Q100 62 72 78 Z" />
-            <rect className="aura-fighter__visor" x="68" y="76" width="64" height="12" rx="6" />
+            <circle className="aura-fighter__skull" cx="100" cy="78" r="32" />
+            <path className="aura-fighter__cap" d="M68 66 Q100 38 132 66 L128 74 Q100 58 72 74 Z" />
+            <g className="aura-fighter__face">
+              <g className="aura-fighter__brow aura-fighter__brow--l">
+                <path d="M76 66 H94" />
+              </g>
+              <g className="aura-fighter__brow aura-fighter__brow--r">
+                <path d="M106 66 H124" />
+              </g>
+              <g className="aura-fighter__eye aura-fighter__eye--l">
+                <ellipse className="aura-fighter__eye-white" cx="85" cy="78" rx="9" ry="7.5" />
+                <circle className="aura-fighter__pupil" cx="85" cy="78" r="3.8" />
+              </g>
+              <g className="aura-fighter__eye aura-fighter__eye--r">
+                <ellipse className="aura-fighter__eye-white" cx="115" cy="78" rx="9" ry="7.5" />
+                <circle className="aura-fighter__pupil" cx="115" cy="78" r="3.8" />
+              </g>
+              <path className="aura-fighter__mouth aura-fighter__mouth--neutral" d="M88 96 Q100 101 112 96" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--smirk" d="M86 94 Q102 106 116 88" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--flat" d="M86 97 H114" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--soft" d="M90 95 Q100 100 110 95" />
+              <path className="aura-fighter__mouth aura-fighter__mouth--shrug" d="M88 98 Q100 92 112 98" />
+            </g>
           </g>
         </g>
       </svg>

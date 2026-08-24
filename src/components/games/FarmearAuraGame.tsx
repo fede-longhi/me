@@ -6,17 +6,21 @@ import { GameChrome } from "@/components/games/GameChrome";
 import { AuraFighter } from "@/components/games/AuraFighter";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AuraTheme, getAudioContext, playSfx } from "@/lib/farmear-aura/audio";
-import { gameCopy, pickRivalName, resultCopy } from "@/lib/farmear-aura/copy";
+import { gameCopy, gestureGroups, pickRivalName, resultCopy } from "@/lib/farmear-aura/copy";
 import {
-  GESTURE_IDS,
-  PLAYER_GESTURE_KEYS,
+  DEFAULT_LOADOUT,
+  MAX_LOADOUT,
+  MIN_LOADOUT,
   createMenuBattle,
   countdownDigit,
   isSixSevenLive,
+  isValidLoadout,
   performGesture,
   remainingMs,
+  slotKeyMap,
   startCountdown,
   tickBattle,
+  toggleLoadout,
   type Battle,
   type GestureId,
 } from "@/lib/farmear-aura/engine";
@@ -52,8 +56,10 @@ function popupClass(tags: string[], delta: number) {
 export function FarmearAuraGame() {
   const { locale } = useLanguage();
   const copy = useMemo(() => gameCopy(locale), [locale]);
+  const groups = useMemo(() => gestureGroups(), []);
+  const [loadout, setLoadout] = useState<GestureId[]>(() => [...DEFAULT_LOADOUT]);
   const [battle, setBattle] = useState<Battle>(() =>
-    createMenuBattle(copy.youDefault, copy.rivals[0], 0),
+    createMenuBattle(copy.youDefault, copy.rivals[0], 0, DEFAULT_LOADOUT),
   );
   const [now, setNow] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -61,6 +67,7 @@ export function FarmearAuraGame() {
   const themeRef = useRef<AuraTheme | null>(null);
   const lastPopupRef = useRef(0);
   const mutedRef = useRef(muted);
+  const keys = useMemo(() => slotKeyMap(loadout), [loadout]);
 
   useEffect(() => {
     mutedRef.current = muted;
@@ -119,6 +126,7 @@ export function FarmearAuraGame() {
   }, [battle.popups]);
 
   const begin = useCallback(async () => {
+    if (!isValidLoadout(loadout)) return;
     const ctx = getAudioContext(audioRef);
     if (ctx) void ctx.resume();
     const t = performance.now();
@@ -129,9 +137,10 @@ export function FarmearAuraGame() {
         pickRivalName(copy, Math.random),
         t,
         Math.random,
+        loadout,
       ),
     );
-  }, [copy]);
+  }, [copy, loadout]);
 
   const cast = useCallback((gesture: GestureId) => {
     const ctx = getAudioContext(audioRef);
@@ -140,6 +149,35 @@ export function FarmearAuraGame() {
       performGesture(current, "you", gesture, performance.now(), Math.random),
     );
   }, []);
+
+  const preview = useCallback((gesture: GestureId) => {
+    const until = performance.now() + 1100;
+    setBattle((current) => {
+      if (current.phase !== "menu" && current.phase !== "result") return current;
+      return {
+        ...current,
+        you: {
+          ...current.you,
+          pose: gesture,
+          poseUntil: until,
+        },
+      };
+    });
+  }, []);
+
+  const onToggle = useCallback(
+    (gesture: GestureId) => {
+      setLoadout((current) => toggleLoadout(current, gesture));
+      preview(gesture);
+    },
+    [preview],
+  );
+
+  const backToKit = useCallback(() => {
+    setBattle((current) =>
+      createMenuBattle(copy.youDefault, current.rival.name, performance.now(), loadout),
+    );
+  }, [copy.youDefault, loadout]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -150,25 +188,31 @@ export function FarmearAuraGame() {
       if (event.key === " " || event.code === "Space") {
         if (battle.phase === "menu" || battle.phase === "result") {
           event.preventDefault();
-          void begin();
+          if (battle.phase === "result") backToKit();
+          else void begin();
         }
         return;
       }
 
-      const gesture = PLAYER_GESTURE_KEYS[event.key.toLowerCase()];
+      if (battle.phase !== "fight") return;
+      const gesture = keys[event.key];
       if (!gesture) return;
       event.preventDefault();
       cast(gesture);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [battle.phase, begin, cast]);
+  }, [backToKit, battle.phase, begin, cast, keys]);
 
   const sixLive = isSixSevenLive(battle, now);
   const digit = countdownDigit(battle, now);
   const timeLeft = remainingMs(battle, now);
   const fighting = battle.phase === "fight";
-  const showOverlay = battle.phase === "menu" || battle.phase === "result" || battle.phase === "countdown";
+  const picking = battle.phase === "menu";
+  const showOverlay =
+    battle.phase === "menu" || battle.phase === "result" || battle.phase === "countdown";
+  const padMoves = fighting || battle.phase === "countdown" ? battle.you.moves : loadout;
+  const canStart = isValidLoadout(loadout);
 
   return (
     <GameChrome eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} wide compact>
@@ -238,25 +282,87 @@ export function FarmearAuraGame() {
           ) : null}
 
           {showOverlay ? (
-            <div className="aura-overlay">
+            <div className={`aura-overlay ${picking ? "aura-overlay--pick" : ""}`}>
               {battle.phase === "countdown" ? (
                 <p className="aura-overlay__count">{digit === "go" ? copy.go : digit}</p>
               ) : null}
-              {battle.phase === "menu" ? (
+              {picking ? (
                 <>
+                  <p className="aura-overlay__pick-title">{copy.pickTitle}</p>
+                  <p className="aura-overlay__how">{copy.pickHint}</p>
+                  <p className="aura-overlay__countline">
+                    {loadout.length}/{MAX_LOADOUT} {copy.pickCount}
+                  </p>
+                  <div className="aura-picker">
+                    <div className="aura-picker__group">
+                      <p className="aura-picker__label">{copy.bodyGroup}</p>
+                      <div className="aura-picker__grid">
+                        {groups.body.map((id) => {
+                          const selected = loadout.includes(id);
+                          const gesture = copy.gestures[id];
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              className={`aura-picker__btn ${selected ? "aura-picker__btn--on" : ""} ${
+                                id === "sixseven" ? "aura-picker__btn--six" : ""
+                              }`}
+                              aria-pressed={selected}
+                              onClick={() => onToggle(id)}
+                            >
+                              <span className="aura-picker__name">{gesture.name}</span>
+                              <span className="aura-picker__hint">{gesture.hint}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="aura-picker__group">
+                      <p className="aura-picker__label">{copy.faceGroup}</p>
+                      <div className="aura-picker__grid">
+                        {groups.face.map((id) => {
+                          const selected = loadout.includes(id);
+                          const gesture = copy.gestures[id];
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              className={`aura-picker__btn ${selected ? "aura-picker__btn--on" : ""}`}
+                              aria-pressed={selected}
+                              onClick={() => onToggle(id)}
+                            >
+                              <span className="aura-picker__name">{gesture.name}</span>
+                              <span className="aura-picker__hint">{gesture.hint}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
                   <p className="aura-overlay__how">{copy.how}</p>
-                  <button type="button" className="aura-overlay__cta" onClick={() => void begin()}>
+                  <button
+                    type="button"
+                    className="aura-overlay__cta"
+                    disabled={!canStart}
+                    onClick={() => void begin()}
+                  >
                     {copy.start}
                   </button>
+                  {!canStart ? (
+                    <p className="aura-overlay__need">
+                      {MIN_LOADOUT}+ {copy.pickCount}
+                    </p>
+                  ) : null}
                 </>
               ) : null}
               {battle.phase === "result" ? (
                 <>
                   <p className="aura-overlay__result">{resultCopy(copy, battle.winner)}</p>
                   <p className="aura-overlay__scoreline">
-                    {battle.you.aura.toLocaleString()} {copy.vs} {battle.rival.aura.toLocaleString()}
+                    {battle.you.aura.toLocaleString()} {copy.vs}{" "}
+                    {battle.rival.aura.toLocaleString()}
                   </p>
-                  <button type="button" className="aura-overlay__cta" onClick={() => void begin()}>
+                  <button type="button" className="aura-overlay__cta" onClick={backToKit}>
                     {copy.rematch}
                   </button>
                 </>
@@ -265,29 +371,31 @@ export function FarmearAuraGame() {
           ) : null}
         </div>
 
-        <div className="aura-pad" role="group" aria-label={copy.title}>
-          {GESTURE_IDS.map((id) => {
-            const gesture = copy.gestures[id];
-            return (
-              <button
-                key={id}
-                type="button"
-                className={`aura-pad__btn ${id === "sixseven" ? "aura-pad__btn--six" : ""} ${
-                  sixLive && id === "sixseven" ? "aura-pad__btn--hot" : ""
-                }`}
-                disabled={!fighting}
-                aria-pressed={battle.you.pose === id}
-                onClick={() => cast(id)}
-              >
-                <span className="aura-pad__key">{gesture.key}</span>
-                <span className="aura-pad__name">{gesture.name}</span>
-                <span className="aura-pad__hint">
-                  {id === "sixseven" && sixLive ? copy.sixBanner : gesture.hint}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {picking ? null : (
+          <div className="aura-pad" role="group" aria-label={copy.title}>
+            {padMoves.map((id, index) => {
+              const gesture = copy.gestures[id];
+              return (
+                <button
+                  key={`${id}-${index}`}
+                  type="button"
+                  className={`aura-pad__btn ${id === "sixseven" ? "aura-pad__btn--six" : ""} ${
+                    sixLive && id === "sixseven" ? "aura-pad__btn--hot" : ""
+                  }`}
+                  disabled={!fighting}
+                  aria-pressed={battle.you.pose === id}
+                  onClick={() => cast(id)}
+                >
+                  <span className="aura-pad__key">{index + 1}</span>
+                  <span className="aura-pad__name">{gesture.name}</span>
+                  <span className="aura-pad__hint">
+                    {id === "sixseven" && sixLive ? copy.sixBanner : gesture.hint}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </GameChrome>
   );
