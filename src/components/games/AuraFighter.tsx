@@ -55,12 +55,24 @@ export function AuraFighter({ side, pose, name, aura, live }: AuraFighterProps) 
             <circle className="aura-fighter__chain-hole" cx="100" cy="156" r="4.5" />
           </g>
           <g className="aura-fighter__arm aura-fighter__arm--l">
-            <path d="M80 122 C62 138 52 168 56 196 L70 198 C70 172 76 146 86 132 Z" />
-            <circle className="aura-fighter__hand" cx="60" cy="204" r="11" />
+            <g className="aura-fighter__arm-idle">
+              <path d="M80 122 C62 138 52 168 56 196 L70 198 C70 172 76 146 86 132 Z" />
+              <circle className="aura-fighter__hand" cx="60" cy="204" r="11" />
+            </g>
+            <g className="aura-fighter__arm-six">
+              <path d="M80 122 C58 110 42 78 48 48 L62 52 C58 78 70 104 86 118 Z" />
+              <circle className="aura-fighter__hand" cx="52" cy="42" r="12" />
+            </g>
           </g>
           <g className="aura-fighter__arm aura-fighter__arm--r">
-            <path d="M120 122 C138 138 148 168 144 196 L130 198 C130 172 124 146 114 132 Z" />
-            <circle className="aura-fighter__hand" cx="140" cy="204" r="11" />
+            <g className="aura-fighter__arm-idle">
+              <path d="M120 122 C138 138 148 168 144 196 L130 198 C130 172 124 146 114 132 Z" />
+              <circle className="aura-fighter__hand" cx="140" cy="204" r="11" />
+            </g>
+            <g className="aura-fighter__arm-six">
+              <path d="M120 122 C142 110 158 78 152 48 L138 52 C142 78 130 104 114 118 Z" />
+              <circle className="aura-fighter__hand" cx="148" cy="42" r="12" />
+            </g>
           </g>
           <g className="aura-fighter__head">
             <circle className="aura-fighter__skull" cx="100" cy="78" r="32" />
