@@ -2150,7 +2150,6 @@ select.beast-path__field-control option {
 }
 
 .aura-fighter[data-pose="sixseven"] .aura-fighter__head {
-  transform: rotate(-3deg) scale(1.04);
   animation: aura-six-head 0.28s ease-in-out infinite alternate;
 }
 
