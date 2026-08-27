@@ -60,8 +60,8 @@ export function AuraFighter({ side, pose, name, aura, live }: AuraFighterProps) 
               <circle className="aura-fighter__hand" cx="60" cy="204" r="11" />
             </g>
             <g className="aura-fighter__arm-six">
-              <path d="M80 122 C58 110 42 78 48 48 L62 52 C58 78 70 104 86 118 Z" />
-              <circle className="aura-fighter__hand" cx="52" cy="42" r="12" />
+              <path d="M82 120 C60 102 44 68 38 30 L52 28 C56 62 68 92 88 112 Z" />
+              <circle className="aura-fighter__hand" cx="42" cy="24" r="13" />
             </g>
           </g>
           <g className="aura-fighter__arm aura-fighter__arm--r">
@@ -70,8 +70,8 @@ export function AuraFighter({ side, pose, name, aura, live }: AuraFighterProps) 
               <circle className="aura-fighter__hand" cx="140" cy="204" r="11" />
             </g>
             <g className="aura-fighter__arm-six">
-              <path d="M120 122 C142 110 158 78 152 48 L138 52 C142 78 130 104 114 118 Z" />
-              <circle className="aura-fighter__hand" cx="148" cy="42" r="12" />
+              <path d="M118 120 C140 102 156 68 162 30 L148 28 C144 62 132 92 112 112 Z" />
+              <circle className="aura-fighter__hand" cx="158" cy="24" r="13" />
             </g>
           </g>
           <g className="aura-fighter__head">

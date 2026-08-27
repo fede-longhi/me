@@ -2578,13 +2578,13 @@ select.beast-path__field-control option {
 }
 
 @keyframes aura-six-l {
-  from { transform: rotate(-8deg) translate(0, 4px); }
-  to { transform: rotate(10deg) translate(-4px, -10px); }
+  from { transform: rotate(-6deg) translate(2px, 2px); }
+  to { transform: rotate(12deg) translate(-6px, -12px); }
 }
 
 @keyframes aura-six-r {
-  from { transform: rotate(-10deg) translate(4px, -10px); }
-  to { transform: rotate(8deg) translate(0, 4px); }
+  from { transform: rotate(-12deg) translate(6px, -12px); }
+  to { transform: rotate(6deg) translate(-2px, 2px); }
 }
 
 @keyframes aura-six-head {
