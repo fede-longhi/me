@@ -14,12 +14,12 @@
         "experience": {
           "eyebrow": "Experience",
           "title": "Experience",
-          "lead": "Salesforce delivery across product and consulting teams — architecture, automation, and mentoring."
+          "lead": "Salesforce delivery across product and consulting teams — architecture, automation, AI-assisted engineering, and mentoring."
         },
         "skills": {
           "eyebrow": "Skills",
           "title": "What I work with",
-          "lead": "Platform depth first, with a broad engineering toolkit around it."
+          "lead": "Platform depth first, with AI tooling and a broad engineering toolkit around it."
         },
         "projects": {
           "eyebrow": "Projects",
@@ -63,6 +63,9 @@
       "openTool": "Open tool",
       "viewAllTools": "View all tools",
       "toolsEmpty": "No tools published yet. Check back soon.",
+      "toolsSearchPlaceholder": "Search tools…",
+      "toolsFilterAll": "All",
+      "toolsNoMatch": "No tools match that search or filter.",
       "backToTools": "Back to tools",
       "openGame": "Play",
       "viewAllGames": "View all games",
@@ -77,8 +80,8 @@
     },
     "home": {
       "name": "Fede Longhi",
-      "headline": "Senior Salesforce engineer.",
-      "tagline": "5+ years designing and shipping Salesforce solutions across industries. Strong in Apex/LWC, integrations, and architecture — plus mentoring and hiring. Side projects in hardware/IoT (Mimir) and product (Pelambres 3D).",
+      "headline": "Senior software engineer.",
+      "tagline": "10 years designing and shipping software solutions across industries. Strong in Apex/LWC, integrations, and architecture — plus mentoring and hiring. Side projects in hardware/IoT (Mimir) and product (Pelambres 3D).",
       "ctaPrimary": { "label": "See experience", "href": "#experience" },
       "ctaSecondary": { "label": "Projects", "href": "#projects" },
       "cvHref": "/cv/fede-longhi.pdf"
@@ -92,6 +95,7 @@
         "bullets": [
           "Design and ship Salesforce platform features with a focus on clean architecture and maintainable Apex/Lightning code.",
           "Partner with product and delivery teams to turn business requirements into scalable technical solutions.",
+          "Apply AI-assisted workflows (prompting, agents, and coding copilots) to speed up design, implementation, and review.",
           "Mentor teammates on Salesforce best practices and support high-quality engineering standards."
         ]
       },
@@ -150,6 +154,17 @@
         "items": ["React", "HTML", "CSS", "Node.js"]
       },
       {
+        "group": "AI",
+        "items": [
+          "Prompt engineering",
+          "AI-assisted development (Cursor)",
+          "LLM APIs (OpenAI / Anthropic)",
+          "AI agents & workflows",
+          "Vercel AI SDK",
+          "RAG & context design"
+        ]
+      },
+      {
         "group": "Tooling",
         "items": ["Git", "GitHub", "Bitbucket", "Docker", "PostgreSQL"]
       }
@@ -162,35 +177,30 @@
       {
         "school": "University of Buenos Aires (UBA)",
         "degree": "Software Engineering / Ingeniería Informática",
-        "period": "2010 — Present",
+        "period": "2022",
         "note": "Includes professional practice work such as Mimir (hydroponic automation)."
       }
     ],
     "certifications": [
       {
         "name": "Salesforce Certified Sharing and Visibility Architect",
-        "issuer": "Salesforce",
-        "date": "2021"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Platform App Builder",
-        "issuer": "Salesforce",
-        "date": "2021"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Platform Developer II",
-        "issuer": "Salesforce",
-        "date": "2020"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Administrator",
-        "issuer": "Salesforce",
-        "date": "2020"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Platform Developer I",
-        "issuer": "Salesforce",
-        "date": "2019"
+        "issuer": "Salesforce"
       }
     ],
     "projects": [
@@ -235,6 +245,7 @@
       {
         "name": "Image Grid",
         "category": "Image",
+        "tags": ["Image"],
         "description": "Upload a photo, define rows × columns, and export a fine-grid overlay plus a thick blank grid — same size as the original.",
         "href": "/tools/image-grid",
         "featured": true
@@ -242,6 +253,7 @@
       {
         "name": "Map to STL",
         "category": "3D / Map",
+        "tags": ["3D", "Map"],
         "description": "Select a rectangle, circle or ellipse on a map, set vertical scale, and download a closed terrain STL for 3D printing.",
         "href": "/tools/map-stl",
         "featured": true
@@ -249,6 +261,7 @@
       {
         "name": "Lithophane",
         "category": "3D / Image",
+        "tags": ["3D", "Image"],
         "description": "Upload a photo, tune size and thickness, and download a closed backlit lithophane STL — meshed in your browser.",
         "href": "/tools/lithophane",
         "featured": true
@@ -256,8 +269,25 @@
       {
         "name": "Org Data Bridge",
         "category": "Salesforce",
+        "tags": ["Salesforce"],
         "description": "Connect two Salesforce orgs, browse objects, run SOQL on the source, and export JSON or CSV — no Connected App required.",
         "href": "/tools/org-data-bridge",
+        "featured": true
+      },
+      {
+        "name": "GPX to STL",
+        "category": "3D / Map",
+        "tags": ["3D", "Map"],
+        "description": "Upload a GPS track, set a corridor around the path, and download a closed terrain STL for 3D printing.",
+        "href": "/tools/gpx-stl",
+        "featured": true
+      },
+      {
+        "name": "Voronoi Shade",
+        "category": "3D / Pattern",
+        "tags": ["3D"],
+        "description": "Design a Voronoi lampshade — cylinder or cone — tune cell density and strut width, then export a print-ready STL.",
+        "href": "/tools/voronoi-shade",
         "featured": true
       }
     ],
@@ -323,12 +353,12 @@
         "experience": {
           "eyebrow": "Experiencia",
           "title": "Experiencia",
-          "lead": "Entrega Salesforce en equipos de producto y consulting — arquitectura, automatización y mentoring."
+          "lead": "Entrega Salesforce en equipos de producto y consulting — arquitectura, automatización, ingeniería asistida por IA y mentoring."
         },
         "skills": {
           "eyebrow": "Skills",
           "title": "Con qué trabajo",
-          "lead": "Profundidad en la plataforma, con un toolkit de ingeniería amplio alrededor."
+          "lead": "Profundidad en la plataforma, con tooling de IA y un toolkit de ingeniería amplio alrededor."
         },
         "projects": {
           "eyebrow": "Proyectos",
@@ -372,6 +402,9 @@
       "openTool": "Abrir herramienta",
       "viewAllTools": "Ver todas las herramientas",
       "toolsEmpty": "Todavía no hay herramientas publicadas. Volvé pronto.",
+      "toolsSearchPlaceholder": "Buscar herramientas…",
+      "toolsFilterAll": "Todas",
+      "toolsNoMatch": "Ninguna herramienta coincide con esa búsqueda o filtro.",
       "backToTools": "Volver a herramientas",
       "openGame": "Jugar",
       "viewAllGames": "Ver todos los juegos",
@@ -401,6 +434,7 @@
         "bullets": [
           "Diseño y entrega de features en la plataforma Salesforce con foco en arquitectura limpia y código Apex/Lightning mantenible.",
           "Trabajo junto a producto y delivery para convertir requerimientos de negocio en soluciones técnicas escalables.",
+          "Aplico flujos asistidos por IA (prompting, agentes y coding copilots) para acelerar diseño, implementación y review.",
           "Mentoring al equipo en best practices de Salesforce y estándares de calidad de ingeniería."
         ]
       },
@@ -459,6 +493,17 @@
         "items": ["React", "HTML", "CSS", "Node.js"]
       },
       {
+        "group": "IA",
+        "items": [
+          "Prompt engineering",
+          "Desarrollo asistido por IA (Cursor)",
+          "APIs de LLM (OpenAI / Anthropic)",
+          "Agentes y workflows de IA",
+          "Vercel AI SDK",
+          "RAG y diseño de contexto"
+        ]
+      },
+      {
         "group": "Tooling",
         "items": ["Git", "GitHub", "Bitbucket", "Docker", "PostgreSQL"]
       }
@@ -471,35 +516,30 @@
       {
         "school": "Universidad de Buenos Aires (UBA)",
         "degree": "Ingeniería Informática",
-        "period": "2010 — Actualidad",
+        "period": "2022",
         "note": "Incluye trabajo profesional como Mimir (automatización hidropónica)."
       }
     ],
     "certifications": [
       {
         "name": "Salesforce Certified Sharing and Visibility Architect",
-        "issuer": "Salesforce",
-        "date": "2021"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Platform App Builder",
-        "issuer": "Salesforce",
-        "date": "2021"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Platform Developer II",
-        "issuer": "Salesforce",
-        "date": "2020"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Administrator",
-        "issuer": "Salesforce",
-        "date": "2020"
+        "issuer": "Salesforce"
       },
       {
         "name": "Salesforce Certified Platform Developer I",
-        "issuer": "Salesforce",
-        "date": "2019"
+        "issuer": "Salesforce"
       }
     ],
     "projects": [
@@ -544,6 +584,7 @@
       {
         "name": "Grilla de imagen",
         "category": "Imagen",
+        "tags": ["Image"],
         "description": "Subí una foto, definí filas × columnas y exportá una grilla fina sobre la original más una grilla gruesa en blanco — mismo tamaño que la original.",
         "href": "/tools/image-grid",
         "featured": true
@@ -551,6 +592,7 @@
       {
         "name": "Mapa a STL",
         "category": "3D / Mapa",
+        "tags": ["3D", "Map"],
         "description": "Seleccioná un rectángulo, círculo o elipse en el mapa, definí la escala vertical y descargá un STL cerrado del terreno para impresión 3D.",
         "href": "/tools/map-stl",
         "featured": true
@@ -558,6 +600,7 @@
       {
         "name": "Litofanía",
         "category": "3D / Imagen",
+        "tags": ["3D", "Image"],
         "description": "Subí una foto, ajustá tamaño y espesor, y descargá un STL cerrado de litofanía con backlight — mallado en tu navegador.",
         "href": "/tools/lithophane",
         "featured": true
@@ -565,8 +608,25 @@
       {
         "name": "Org Data Bridge",
         "category": "Salesforce",
+        "tags": ["Salesforce"],
         "description": "Conectá dos orgs Salesforce, explorá objetos, ejecutá SOQL en el origen y exportá JSON o CSV — sin Connected App.",
         "href": "/tools/org-data-bridge",
+        "featured": true
+      },
+      {
+        "name": "GPX a STL",
+        "category": "3D / Mapa",
+        "tags": ["3D", "Map"],
+        "description": "Subí un track GPS, definí un corredor alrededor del camino y descargá un STL cerrado del terreno para impresión 3D.",
+        "href": "/tools/gpx-stl",
+        "featured": true
+      },
+      {
+        "name": "Pantalla Voronoi",
+        "category": "3D / Patrón",
+        "tags": ["3D"],
+        "description": "Diseñá una pantalla Voronoi — cilindro o cono — ajustá densidad y grosor de nervios, y exportá un STL listo para imprimir.",
+        "href": "/tools/voronoi-shade",
         "featured": true
       }
     ],

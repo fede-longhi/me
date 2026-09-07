@@ -229,6 +229,27 @@ export function eraseBrushFromSelection(
   return eraseBrushStrokeFromSelection(selection, [center], radiusM);
 }
 
+/**
+ * Buffer a track/route into a corridor polygon for terrain STL export.
+ * `halfWidthM` is the distance from path centerline to each side.
+ */
+export function corridorSelectionFromPath(
+  points: LatLng[],
+  halfWidthM: number,
+  name: string,
+): MapSelection | null {
+  if (points.length < 2 || halfWidthM <= 0) return null;
+  const stamp = unionStampCenters(points, halfWidthM);
+  if (!stamp?.geometry) return null;
+  const polygons = turfToPolygons(stamp.geometry);
+  if (polygons.length === 0) return null;
+  return {
+    kind: "polygon",
+    name: name || "GPX corridor",
+    polygons,
+  };
+}
+
 /** Remove the closed polygon that contains this point (last-added first). */
 export function removePolygonAtPoint(
   selection: MapSelection,

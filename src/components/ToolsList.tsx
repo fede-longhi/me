@@ -39,6 +39,18 @@ export function ToolsList({ items, openLabel, emptyLabel }: ToolsListProps) {
                   {tool.category}
                 </span>
               </div>
+              {tool.tags && tool.tags.length > 0 ? (
+                <ul className="mt-3 flex flex-wrap gap-1.5">
+                  {tool.tags.map((tag) => (
+                    <li
+                      key={tag}
+                      className="border border-line/80 bg-white/50 px-2 py-0.5 text-[11px] font-medium tracking-wide text-ink-muted"
+                    >
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-muted">
                 {tool.description}
               </p>

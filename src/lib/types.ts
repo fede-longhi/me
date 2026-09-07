@@ -44,6 +44,8 @@ export type ToolItem = {
   description: string;
   href: string;
   category: string;
+  /** Filter chips on /tools — same labels across locales when possible. */
+  tags?: string[];
   /** When true, shown in the home Tools section. All tools appear on /tools. */
   featured?: boolean;
 };
@@ -73,7 +75,6 @@ export type GameItem = {
 export type CertificationItem = {
   name: string;
   issuer: string;
-  date: string;
 };
 
 export type EducationItem = {
@@ -110,6 +111,9 @@ export type SiteUi = {
   openTool: string;
   viewAllTools: string;
   toolsEmpty: string;
+  toolsSearchPlaceholder: string;
+  toolsFilterAll: string;
+  toolsNoMatch: string;
   backToTools: string;
   openGame: string;
   viewAllGames: string;

@@ -53,13 +53,10 @@ export function Credentials({
           {certifications.map((cert) => (
             <li
               key={cert.name}
-              className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line/70 pb-3 last:border-b-0 last:pb-0"
+              className="border-b border-line/70 pb-3 last:border-b-0 last:pb-0"
             >
-              <div>
-                <p className="text-sm font-semibold text-ink">{cert.name}</p>
-                <p className="text-xs text-ink-muted">{cert.issuer}</p>
-              </div>
-              <time className="text-xs font-medium text-green">{cert.date}</time>
+              <p className="text-sm font-semibold text-ink">{cert.name}</p>
+              <p className="text-xs text-ink-muted">{cert.issuer}</p>
             </li>
           ))}
         </ul>

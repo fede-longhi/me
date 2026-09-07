@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Encuesta de satisfacción — Asacito. Contanos cómo estuvo tu asado." />
+  <title>Encuesta · Asacito</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ember: #e85d2a;
+      --ember-dark: #c44a1c;
+      --coal: #1a1410;
+      --smoke: #2e2620;
+      --ash: #6b5f56;
+      --cream: #faf6f0;
+      --sand: #f0e8dc;
+      --gold: #d4a853;
+      --ok: #2d8a5e;
+      --radius: 14px;
+      --shadow: 0 12px 40px rgba(26, 20, 16, 0.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--coal);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(232, 93, 42, 0.18), transparent 60%),
+        linear-gradient(180deg, var(--cream) 0%, var(--sand) 100%);
+    }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 1.5rem 0 1.75rem;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--coal);
+    }
+
+    .logo span { color: var(--ember); }
+
+    .tagline {
+      margin: 0.5rem 0 0;
+      color: var(--ash);
+      font-size: 0.95rem;
+    }
+
+    .intro {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.25rem;
+      border: 1px solid rgba(26, 20, 16, 0.06);
+    }
+
+    .intro p { margin: 0; color: var(--smoke); }
+
+    form { display: grid; gap: 1rem; }
+
+    fieldset {
+      margin: 0;
+      padding: 1.25rem 1.35rem;
+      border: 1px solid rgba(26, 20, 16, 0.08);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    legend {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      padding: 0 0.25rem;
+      color: var(--coal);
+    }
+
+    .field { margin-top: 1rem; }
+    .field:first-of-type { margin-top: 0.75rem; }
+
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 0.45rem;
+      color: var(--smoke);
+    }
+
+    .hint {
+      display: block;
+      font-weight: 400;
+      font-size: 0.82rem;
+      color: var(--ash);
+      margin-top: 0.2rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.72rem 0.85rem;
+      font: inherit;
+      color: var(--coal);
+      background: var(--cream);
+      border: 1.5px solid rgba(26, 20, 16, 0.12);
+      border-radius: 10px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--ember);
+      box-shadow: 0 0 0 3px rgba(232, 93, 42, 0.15);
+    }
+
+    textarea { min-height: 96px; resize: vertical; }
+
+    /* Rating scale 1–5 */
+    .scale {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .scale label.scale-option {
+      flex: 1;
+      min-width: 2.6rem;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .scale label.scale-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .scale label.scale-option span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.6rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      background: var(--cream);
+      border: 1.5px solid rgba(26, 20, 16, 0.1);
+      transition: all 0.15s;
+    }
+
+    .scale label.scale-option input:checked + span {
+      background: var(--ember);
+      border-color: var(--ember);
+      color: #fff;
+    }
+
+    .scale-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--ash);
+      margin-top: 0.35rem;
+    }
+
+    /* NPS 0–10 */
+    .nps {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap: 0.25rem;
+    }
+
+    @media (max-width: 400px) {
+      .nps { grid-template-columns: repeat(6, 1fr); }
+    }
+
+    .nps label.scale-option span {
+      height: 2.35rem;
+      font-size: 0.85rem;
+      min-width: 0;
+    }
+
+    /* Radio / checkbox chips */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .chips label.chip {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .chips label.chip input { position: absolute; opacity: 0; }
+
+    .chips label.chip span {
+      display: inline-block;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      background: var(--cream);
+      border: 1.5px solid rgba(26, 20, 16, 0.1);
+      transition: all 0.15s;
+    }
+
+    .chips label.chip input:checked + span {
+      background: rgba(232, 93, 42, 0.12);
+      border-color: var(--ember);
+      color: var(--ember-dark);
+    }
+
+    .submit-wrap { margin-top: 0.5rem; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      font: inherit;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+      background: linear-gradient(135deg, var(--ember) 0%, var(--ember-dark) 100%);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(232, 93, 42, 0.35);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px rgba(232, 93, 42, 0.4);
+    }
+
+    button[type="submit"]:active { transform: translateY(0); }
+
+    footer {
+      text-align: center;
+      margin-top: 1.75rem;
+      font-size: 0.82rem;
+      color: var(--ash);
+    }
+
+    footer a { color: var(--ember-dark); text-decoration: none; font-weight: 600; }
+
+    /* Success state */
+    .success {
+      display: none;
+      text-align: center;
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 2.5rem 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .success.visible { display: block; }
+    .success .icon { font-size: 3rem; line-height: 1; margin-bottom: 0.75rem; }
+    .success h2 {
+      font-family: "Playfair Display", Georgia, serif;
+      margin: 0 0 0.5rem;
+    }
+    .success p { margin: 0; color: var(--ash); }
+
+    form.hidden { display: none; }
+
+    .required::after { content: " *"; color: var(--ember); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Asa<span>cito</span> 🔥</div>
+      <p class="tagline">Encuesta de satisfacción</p>
+    </header>
+
+    <div class="intro">
+      <p>
+        ¡Gracias por elegirnos! Tu opinión nos ayuda a seguir mejorando cada asado.
+        La encuesta tarda menos de 3 minutos.
+      </p>
+    </div>
+
+    <!--
+      CONFIGURACIÓN:
+      Respuestas a federico.rlonghi@gmail.com (FormSubmit pide confirmar la primera vez).
+      Para mover a otra cuenta: cambiá el action y reconfirmá — ver GUIA-GOOGLE-FORMS.md
+    -->
+    <form
+      id="survey"
+      action="https://formsubmit.co/federico.rlonghi@gmail.com"
+      method="POST"
+    >
+      <input type="hidden" name="_subject" value="Nueva encuesta Asacito" />
+      <input type="hidden" name="_template" value="table" />
+      <input type="hidden" name="_captcha" value="false" />
+      <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
+      <input type="hidden" name="_next" value="" id="redirect-url" />
+
+      <fieldset>
+        <legend>Datos (opcional)</legend>
+
+        <div class="field">
+          <label for="nombre">Nombre</label>
+          <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" autocomplete="name" />
+        </div>
+
+        <div class="field">
+          <label for="contacto">WhatsApp o email</label>
+          <input type="text" id="contacto" name="contacto" placeholder="Por si queremos responderte" />
+          <span class="hint">Opcional. No lo compartimos con nadie.</span>
+        </div>
+
+        <div class="field">
+          <label for="fecha_evento">Fecha del asado</label>
+          <input type="date" id="fecha_evento" name="fecha_evento" />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Experiencia general</legend>
+
+        <div class="field">
+          <label class="required">¿Qué tan satisfecho/a quedaste con Asacito?</label>
+          <div class="scale" role="group" aria-label="Satisfacción del 1 al 5">
+            <label class="scale-option"><input type="radio" name="satisfaccion" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="satisfaccion" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="satisfaccion" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="satisfaccion" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="satisfaccion" value="5" /><span>5</span></label>
+          </div>
+          <div class="scale-labels"><span>Muy mal</span><span>Excelente</span></div>
+        </div>
+
+        <div class="field">
+          <label class="required">Del 0 al 10, ¿qué tan probable es que recomiendes Asacito?</label>
+          <div class="nps" role="group" aria-label="NPS del 0 al 10">
+            <label class="scale-option"><input type="radio" name="nps" value="0" required /><span>0</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="1" /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="5" /><span>5</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="6" /><span>6</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="7" /><span>7</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="8" /><span>8</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="9" /><span>9</span></label>
+            <label class="scale-option"><input type="radio" name="nps" value="10" /><span>10</span></label>
+          </div>
+          <div class="scale-labels"><span>Nada probable</span><span>Muy probable</span></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>La comida</legend>
+
+        <div class="field">
+          <label class="required">Calidad de las carnes y productos</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="calidad_carnes" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="calidad_carnes" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="calidad_carnes" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="calidad_carnes" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="calidad_carnes" value="5" /><span>5</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">Punto de cocción</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="punto_coccion" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="punto_coccion" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="punto_coccion" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="punto_coccion" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="punto_coccion" value="5" /><span>5</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">Sabor general</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="sabor" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="sabor" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="sabor" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="sabor" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="sabor" value="5" /><span>5</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">Cantidad / porciones</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="cantidad" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="cantidad" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="cantidad" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="cantidad" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="cantidad" value="5" /><span>5</span></label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>El asador y el servicio</legend>
+
+        <div class="field">
+          <label class="required">Puntualidad</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="puntualidad" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="puntualidad" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="puntualidad" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="puntualidad" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="puntualidad" value="5" /><span>5</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">Trato y cordialidad</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="trato" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="trato" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="trato" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="trato" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="trato" value="5" /><span>5</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">Profesionalismo (organización, limpieza, presentación)</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="profesionalismo" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="profesionalismo" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="profesionalismo" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="profesionalismo" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="profesionalismo" value="5" /><span>5</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">Comunicación antes del evento</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="comunicacion" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="comunicacion" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="comunicacion" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="comunicacion" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="comunicacion" value="5" /><span>5</span></label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Valor y recomendación</legend>
+
+        <div class="field">
+          <label class="required">Relación precio / calidad</label>
+          <div class="scale" role="group">
+            <label class="scale-option"><input type="radio" name="precio_calidad" value="1" required /><span>1</span></label>
+            <label class="scale-option"><input type="radio" name="precio_calidad" value="2" /><span>2</span></label>
+            <label class="scale-option"><input type="radio" name="precio_calidad" value="3" /><span>3</span></label>
+            <label class="scale-option"><input type="radio" name="precio_calidad" value="4" /><span>4</span></label>
+            <label class="scale-option"><input type="radio" name="precio_calidad" value="5" /><span>5</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">¿Volverías a contratar a Asacito?</label>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="volveria" value="Sí, seguro" required /><span>Sí, seguro</span></label>
+            <label class="chip"><input type="radio" name="volveria" value="Probablemente" /><span>Probablemente</span></label>
+            <label class="chip"><input type="radio" name="volveria" value="No estoy seguro/a" /><span>No estoy seguro/a</span></label>
+            <label class="chip"><input type="radio" name="volveria" value="No" /><span>No</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="required">¿Qué tipo de evento fue?</label>
+          <select id="tipo_evento" name="tipo_evento" required>
+            <option value="" disabled selected>Elegí una opción</option>
+            <option value="Reunión familiar">Reunión familiar</option>
+            <option value="Cumpleaños">Cumpleaños</option>
+            <option value="Evento con amigos">Evento con amigos</option>
+            <option value="Empresa / corporativo">Empresa / corporativo</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>¿Cómo nos conociste?</legend>
+
+        <div class="field">
+          <div class="chips">
+            <label class="chip"><input type="radio" name="como_nos_conociste" value="Instagram" required /><span>Instagram</span></label>
+            <label class="chip"><input type="radio" name="como_nos_conociste" value="Recomendación" /><span>Recomendación</span></label>
+            <label class="chip"><input type="radio" name="como_nos_conociste" value="WhatsApp" /><span>WhatsApp</span></label>
+            <label class="chip"><input type="radio" name="como_nos_conociste" value="Ya los conocía" /><span>Ya los conocía</span></label>
+            <label class="chip"><input type="radio" name="como_nos_conociste" value="Otro" /><span>Otro</span></label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Tu opinión</legend>
+
+        <div class="field">
+          <label for="me_gusto">¿Qué fue lo que más te gustó?</label>
+          <textarea id="me_gusto" name="me_gusto" placeholder="Contanos qué destacarías…"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="mejorar">¿Qué podríamos mejorar?</label>
+          <textarea id="mejorar" name="mejorar" placeholder="Tu feedback nos ayuda un montón…"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="comentarios">Algo más que quieras contarnos</label>
+          <textarea id="comentarios" name="comentarios" placeholder="Opcional"></textarea>
+        </div>
+      </fieldset>
+
+      <div class="submit-wrap">
+        <button type="submit">Enviar encuesta</button>
+      </div>
+    </form>
+
+    <div class="success" id="success" role="status">
+      <div class="icon">🔥</div>
+      <h2>¡Gracias!</h2>
+      <p>Tu respuesta ya fue enviada. Nos ayuda muchísimo para seguir mejorando.</p>
+    </div>
+
+    <footer>
+      <p>Seguinos en <a href="https://instagram.com/asacito" target="_blank" rel="noopener">@asacito</a></p>
+    </footer>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("enviado") === "1") {
+      document.getElementById("survey").classList.add("hidden");
+      document.getElementById("success").classList.add("visible");
+      document.querySelector(".intro").style.display = "none";
+    }
+
+    const redirect = document.getElementById("redirect-url");
+    if (redirect) {
+      const url = new URL(window.location.href);
+      url.search = "?enviado=1";
+      redirect.value = url.toString();
+    }
+  </script>
+</body>
+</html>

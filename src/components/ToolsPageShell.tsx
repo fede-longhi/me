@@ -3,7 +3,7 @@
 import { useLanguage } from "@/components/LanguageProvider";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteNav } from "@/components/SiteNav";
-import { ToolsList } from "@/components/ToolsList";
+import { ToolsCatalog } from "@/components/ToolsCatalog";
 
 export function ToolsPageShell() {
   const { data } = useLanguage();
@@ -25,10 +25,13 @@ export function ToolsPageShell() {
               {ui.sections.toolsPage.lead}
             </p>
             <div className="mt-10">
-              <ToolsList
+              <ToolsCatalog
                 items={data.tools}
                 openLabel={ui.openTool}
                 emptyLabel={ui.toolsEmpty}
+                searchPlaceholder={ui.toolsSearchPlaceholder}
+                filterAllLabel={ui.toolsFilterAll}
+                noMatchLabel={ui.toolsNoMatch}
               />
             </div>
           </div>
