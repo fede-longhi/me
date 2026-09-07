@@ -36,16 +36,6 @@
           "title": "Tools",
           "lead": "All the utilities I keep in one place — open any of them from here."
         },
-        "academy": {
-          "eyebrow": "Academy",
-          "title": "Notes worth keeping",
-          "lead": "Short write-ups and learning trails from real projects."
-        },
-        "art": {
-          "eyebrow": "Art",
-          "title": "Pixels and atmospheres",
-          "lead": "Visual experiments outside the IDE."
-        },
         "games": {
           "eyebrow": "Games",
           "title": "Games",
@@ -58,7 +48,6 @@
         }
       },
       "heroVisual": "salesforce · systems · build",
-      "playLink": "Play / repo",
       "downloadCv": "Download CV",
       "openTool": "Open tool",
       "viewAllTools": "View all tools",
@@ -291,21 +280,6 @@
         "featured": true
       }
     ],
-    "academy": [
-      {
-        "title": "Getting started with Salesforce development",
-        "date": "2025",
-        "summary": "Notes and patterns from shipping real Salesforce work — org structure, Apex habits, and integration gotchas."
-      }
-    ],
-    "art": [
-      {
-        "title": "Cyberpunk City",
-        "type": "Pixel Art",
-        "description": "Neon skyline study in limited color — dense buildings, wet streets, late-night glow.",
-        "image_url": null
-      }
-    ],
     "games": [
       {
         "name": "Farmear Aura",
@@ -375,16 +349,6 @@
           "title": "Herramientas",
           "lead": "Todas las utilidades en un solo lugar — abrilas desde acá cuando las necesites."
         },
-        "academy": {
-          "eyebrow": "Academia",
-          "title": "Notas que vale la pena guardar",
-          "lead": "Apuntes cortos y caminos de aprendizaje desde proyectos reales."
-        },
-        "art": {
-          "eyebrow": "Arte",
-          "title": "Píxeles y atmósferas",
-          "lead": "Experimentos visuales fuera del IDE."
-        },
         "games": {
           "eyebrow": "Juegos",
           "title": "Juegos",
@@ -397,7 +361,6 @@
         }
       },
       "heroVisual": "salesforce · sistemas · build",
-      "playLink": "Jugar / repo",
       "downloadCv": "Descargar CV",
       "openTool": "Abrir herramienta",
       "viewAllTools": "Ver todas las herramientas",
@@ -628,21 +591,6 @@
         "description": "Diseñá una pantalla Voronoi — cilindro o cono — ajustá densidad y grosor de nervios, y exportá un STL listo para imprimir.",
         "href": "/tools/voronoi-shade",
         "featured": true
-      }
-    ],
-    "academy": [
-      {
-        "title": "Primeros pasos en desarrollo Salesforce",
-        "date": "2025",
-        "summary": "Notas y patrones de trabajo real en Salesforce — estructura de orgs, hábitos en Apex y trampas de integración."
-      }
-    ],
-    "art": [
-      {
-        "title": "Cyberpunk City",
-        "type": "Pixel Art",
-        "description": "Estudio de skyline neón con paleta limitada — edificios densos, calles mojadas, brillo de madrugada.",
-        "image_url": null
       }
     ],
     "games": [

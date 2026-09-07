@@ -50,19 +50,6 @@ export type ToolItem = {
   featured?: boolean;
 };
 
-export type AcademyItem = {
-  title: string;
-  date: string;
-  summary: string;
-};
-
-export type ArtItem = {
-  title: string;
-  type: string;
-  description: string;
-  image_url?: string | null;
-};
-
 export type GameItem = {
   name: string;
   description: string;
@@ -100,13 +87,10 @@ export type SiteUi = {
     projects: SectionCopy;
     tools: SectionCopy;
     toolsPage: SectionCopy;
-    academy: SectionCopy;
-    art: SectionCopy;
     games: SectionCopy;
     gamesPage: SectionCopy;
   };
   heroVisual: string;
-  playLink: string;
   downloadCv: string;
   openTool: string;
   viewAllTools: string;
@@ -144,8 +128,6 @@ export type SiteData = {
   certifications: CertificationItem[];
   projects: ProjectItem[];
   tools: ToolItem[];
-  academy: AcademyItem[];
-  art: ArtItem[];
   games: GameItem[];
   contact: {
     note: string;
