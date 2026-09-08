@@ -18,7 +18,7 @@ const figtree = Figtree({
 export const metadata: Metadata = {
   title: "Fede Longhi — Senior Salesforce Engineer",
   description:
-    "Senior Salesforce engineer with 5+ years designing and shipping platform solutions. Apex, LWC, integrations, architecture, mentoring. Based in Martínez, Buenos Aires.",
+    "Senior Salesforce engineer with 9+ years designing and shipping platform solutions. Apex, LWC, integrations, architecture, mentoring. Based in Martínez, Buenos Aires.",
 };
 
 export default function RootLayout({

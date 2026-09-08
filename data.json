@@ -69,8 +69,8 @@
     },
     "home": {
       "name": "Fede Longhi",
-      "headline": "Senior software engineer.",
-      "tagline": "10 years designing and shipping software solutions across industries. Strong in Apex/LWC, integrations, and architecture — plus mentoring and hiring. Side projects in hardware/IoT (Mimir) and product (Pelambres 3D).",
+      "headline": "Senior Salesforce engineer.",
+      "tagline": "9+ years designing and shipping Salesforce solutions across product and consulting teams. Strong in Apex/LWC, integrations, and architecture — plus mentoring and hiring. Side projects in hardware/IoT (Mimir) and product (Pelambres 3D).",
       "ctaPrimary": { "label": "See experience", "href": "#experience" },
       "ctaSecondary": { "label": "Projects", "href": "#projects" },
       "cvHref": "/cv/fede-longhi.pdf"
@@ -79,7 +79,7 @@
       {
         "role": "Senior Software Engineer",
         "company": "Santex",
-        "period": "Present",
+        "period": "2023 — Present",
         "description": "Senior engineering on Salesforce-driven delivery for global clients.",
         "bullets": [
           "Design and ship Salesforce platform features with a focus on clean architecture and maintainable Apex/Lightning code.",
@@ -91,7 +91,7 @@
       {
         "role": "Senior Salesforce Developer",
         "company": "Launchpad Technologies",
-        "period": "2021 — 2024",
+        "period": "2021 — 2023",
         "description": "Full-stack Salesforce development for a US-based software company.",
         "bullets": [
           "Built features to automate fulfillment processes end-to-end on Salesforce.",
@@ -166,7 +166,7 @@
       {
         "school": "University of Buenos Aires (UBA)",
         "degree": "Software Engineering / Ingeniería Informática",
-        "period": "2022",
+        "period": "Graduated 2022",
         "note": "Includes professional practice work such as Mimir (hydroponic automation)."
       }
     ],
@@ -383,7 +383,7 @@
     "home": {
       "name": "Fede Longhi",
       "headline": "Ingeniero Salesforce senior.",
-      "tagline": "Más de 5 años diseñando y entregando soluciones Salesforce en distintas industrias. Fuerte en Apex/LWC, integraciones y arquitectura — además de mentoring y hiring. Proyectos propios en hardware/IoT (Mimir) y producto (Pelambres 3D).",
+      "tagline": "Más de 9 años diseñando y entregando soluciones Salesforce en equipos de producto y consulting. Fuerte en Apex/LWC, integraciones y arquitectura — además de mentoring y hiring. Proyectos propios en hardware/IoT (Mimir) y producto (Pelambres 3D).",
       "ctaPrimary": { "label": "Ver experiencia", "href": "#experience" },
       "ctaSecondary": { "label": "Proyectos", "href": "#projects" },
       "cvHref": "/cv/fede-longhi.pdf"
@@ -392,7 +392,7 @@
       {
         "role": "Senior Software Engineer",
         "company": "Santex",
-        "period": "Actualidad",
+        "period": "2023 — Actualidad",
         "description": "Ingeniería senior en delivery sobre Salesforce para clientes globales.",
         "bullets": [
           "Diseño y entrega de features en la plataforma Salesforce con foco en arquitectura limpia y código Apex/Lightning mantenible.",
@@ -404,7 +404,7 @@
       {
         "role": "Senior Salesforce Developer",
         "company": "Launchpad Technologies",
-        "period": "2021 — 2024",
+        "period": "2021 — 2023",
         "description": "Desarrollo Salesforce full-stack para una software company con base en EE.UU.",
         "bullets": [
           "Construí features para automatizar procesos de fulfillment de punta a punta en Salesforce.",
@@ -479,7 +479,7 @@
       {
         "school": "Universidad de Buenos Aires (UBA)",
         "degree": "Ingeniería Informática",
-        "period": "2022",
+        "period": "Graduación 2022",
         "note": "Incluye trabajo profesional como Mimir (automatización hidropónica)."
       }
     ],
