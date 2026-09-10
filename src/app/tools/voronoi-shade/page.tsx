@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteChrome } from "@/components/SiteChrome";
 import VoronoiShadePageClient from "./VoronoiShadePageClient";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function VoronoiShadePage() {
-  return <VoronoiShadePageClient />;
+  return (
+    <SiteChrome>
+      <VoronoiShadePageClient />
+    </SiteChrome>
+  );
 }

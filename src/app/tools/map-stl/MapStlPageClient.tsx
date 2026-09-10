@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { SiteProviders } from "@/components/SiteProviders";
 
 const MapStlTool = dynamic(
   () =>
@@ -17,9 +16,5 @@ const MapStlTool = dynamic(
 );
 
 export default function MapStlPageClient() {
-  return (
-    <SiteProviders>
-      <MapStlTool />
-    </SiteProviders>
-  );
+  return <MapStlTool />;
 }

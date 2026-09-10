@@ -20,9 +20,9 @@ export function ProjectList({
     <div className="space-y-6">
       {featured.map((project) => (
         <article
-          key={project.name}
+          key={project.id}
           id={project.slug ?? project.name.toLowerCase()}
-          className="scroll-mt-24 border border-line bg-surface/50 p-6 sm:p-8"
+          className="scroll-mt-24 border border-ink/20 bg-white/85 p-6 sm:p-8"
         >
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
             <div>
@@ -159,11 +159,11 @@ export function ProjectList({
             );
 
             const className =
-              "group block border border-line bg-surface/50 p-6 transition hover:border-blue/40 hover:bg-surface";
+              "group block border border-ink/20 bg-white/85 p-6 transition hover:border-blue/40 hover:bg-white";
 
             if (project.link) {
               return (
-                <li key={project.name}>
+                <li key={project.id}>
                   <a
                     href={project.link}
                     target="_blank"
@@ -177,7 +177,7 @@ export function ProjectList({
             }
 
             return (
-              <li key={project.name} className={className}>
+              <li key={project.id} className={className}>
                 {inner}
               </li>
             );

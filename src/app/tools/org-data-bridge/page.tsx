@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteProviders } from "@/components/SiteProviders";
+import { SiteChrome } from "@/components/SiteChrome";
 import { OrgDataBridgeTool } from "@/components/tools/OrgDataBridgeTool";
 
 export const metadata: Metadata = {
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function OrgDataBridgePage() {
   return (
-    <SiteProviders>
+    <SiteChrome>
       <OrgDataBridgeTool />
-    </SiteProviders>
+    </SiteChrome>
   );
 }

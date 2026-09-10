@@ -1,10 +1,10 @@
-import { SiteProviders } from "@/components/SiteProviders";
+import { SiteChrome } from "@/components/SiteChrome";
 import { SiteShell } from "@/components/SiteShell";
 
-export default function Home() {
+export default async function Home() {
   return (
-    <SiteProviders>
+    <SiteChrome>
       <SiteShell />
-    </SiteProviders>
+    </SiteChrome>
   );
 }

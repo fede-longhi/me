@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { SiteProviders } from "@/components/SiteProviders";
 
 const LithophaneTool = dynamic(
   () =>
@@ -17,9 +16,5 @@ const LithophaneTool = dynamic(
 );
 
 export default function LithophanePageClient() {
-  return (
-    <SiteProviders>
-      <LithophaneTool />
-    </SiteProviders>
-  );
+  return <LithophaneTool />;
 }

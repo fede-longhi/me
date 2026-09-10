@@ -4,11 +4,26 @@
       "navAria": "Primary",
       "langAria": "Language",
       "nav": [
-        { "href": "/#experience", "label": "Experience" },
-        { "href": "/#skills", "label": "Skills" },
-        { "href": "/#projects", "label": "Projects" },
-        { "href": "/tools", "label": "Tools" },
-        { "href": "/games", "label": "Games" }
+        {
+          "href": "/#experience",
+          "label": "Experience"
+        },
+        {
+          "href": "/#skills",
+          "label": "Skills"
+        },
+        {
+          "href": "/#projects",
+          "label": "Projects"
+        },
+        {
+          "href": "/tools",
+          "label": "Tools"
+        },
+        {
+          "href": "/games",
+          "label": "Games"
+        }
       ],
       "sections": {
         "experience": {
@@ -71,8 +86,14 @@
       "name": "Fede Longhi",
       "headline": "Senior Salesforce engineer.",
       "tagline": "9+ years designing and shipping Salesforce solutions across product and consulting teams. Strong in Apex/LWC, integrations, and architecture — plus mentoring and hiring. Side projects in hardware/IoT (Mimir) and product (Pelambres 3D).",
-      "ctaPrimary": { "label": "See experience", "href": "#experience" },
-      "ctaSecondary": { "label": "Projects", "href": "#projects" },
+      "ctaPrimary": {
+        "label": "See experience",
+        "href": "#experience"
+      },
+      "ctaSecondary": {
+        "label": "Projects",
+        "href": "#projects"
+      },
       "cvHref": "/cv/fede-longhi.pdf"
     },
     "experience": [
@@ -86,7 +107,8 @@
           "Partner with product and delivery teams to turn business requirements into scalable technical solutions.",
           "Apply AI-assisted workflows (prompting, agents, and coding copilots) to speed up design, implementation, and review.",
           "Mentor teammates on Salesforce best practices and support high-quality engineering standards."
-        ]
+        ],
+        "id": "santex"
       },
       {
         "role": "Senior Salesforce Developer",
@@ -97,7 +119,8 @@
           "Built features to automate fulfillment processes end-to-end on Salesforce.",
           "Delivered technical improvements across Sales Cloud to raise reliability and developer velocity.",
           "Ran technical interviews and helped grow the engineering hiring pipeline."
-        ]
+        ],
+        "id": "launchpad"
       },
       {
         "role": "Technical Lead & Salesforce Developer",
@@ -110,7 +133,8 @@
           "Implemented Einstein Bot with Knowledge Base, CRM Analytics event monitoring (incl. Azure integration), and custom LWC insights feeds.",
           "Built and improved integrations using REST, SOAP, and Bulk API; delivered frontend with LWC, Aura, and Visualforce.",
           "Developed processes for a custom CPQ application within Salesforce for a health insurance client; worked with Vlocity on multi-cloud rollouts."
-        ]
+        ],
+        "id": "cloudgaia"
       }
     ],
     "skills": [
@@ -128,19 +152,44 @@
           "CRM Analytics",
           "Knowledge",
           "Heroku"
-        ]
+        ],
+        "id": "salesforce"
       },
       {
         "group": "Integrations",
-        "items": ["REST", "SOAP", "Bulk API", "Azure", "Integration architecture"]
+        "items": [
+          "REST",
+          "SOAP",
+          "Bulk API",
+          "Azure",
+          "Integration architecture"
+        ],
+        "id": "integrations"
       },
       {
         "group": "Languages",
-        "items": ["Apex", "JavaScript", "TypeScript", "Go", "Python", "Java", "C++", "C#", "Rust"]
+        "items": [
+          "Apex",
+          "JavaScript",
+          "TypeScript",
+          "Go",
+          "Python",
+          "Java",
+          "C++",
+          "C#",
+          "Rust"
+        ],
+        "id": "languages"
       },
       {
         "group": "Frontend & apps",
-        "items": ["React", "HTML", "CSS", "Node.js"]
+        "items": [
+          "React",
+          "HTML",
+          "CSS",
+          "Node.js"
+        ],
+        "id": "frontend"
       },
       {
         "group": "AI",
@@ -151,45 +200,67 @@
           "AI agents & workflows",
           "Vercel AI SDK",
           "RAG & context design"
-        ]
+        ],
+        "id": "ai"
       },
       {
         "group": "Tooling",
-        "items": ["Git", "GitHub", "Bitbucket", "Docker", "PostgreSQL"]
+        "items": [
+          "Git",
+          "GitHub",
+          "Bitbucket",
+          "Docker",
+          "PostgreSQL"
+        ],
+        "id": "tooling"
       }
     ],
     "languages": [
-      { "name": "Spanish", "level": "Native" },
-      { "name": "English", "level": "Advanced" }
+      {
+        "name": "Spanish",
+        "level": "Native",
+        "id": "spanish"
+      },
+      {
+        "name": "English",
+        "level": "Advanced",
+        "id": "english"
+      }
     ],
     "education": [
       {
         "school": "University of Buenos Aires (UBA)",
         "degree": "Software Engineering / Ingeniería Informática",
         "period": "Graduated 2022",
-        "note": "Includes professional practice work such as Mimir (hydroponic automation)."
+        "note": "Includes professional practice work such as Mimir (hydroponic automation).",
+        "id": "uba"
       }
     ],
     "certifications": [
       {
         "name": "Salesforce Certified Sharing and Visibility Architect",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "sharing-visibility"
       },
       {
         "name": "Salesforce Certified Platform App Builder",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "app-builder"
       },
       {
         "name": "Salesforce Certified Platform Developer II",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "pd2"
       },
       {
         "name": "Salesforce Certified Administrator",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "admin"
       },
       {
         "name": "Salesforce Certified Platform Developer I",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "pd1"
       }
     ],
     "projects": [
@@ -207,9 +278,18 @@
           "React frontend for the platform UI",
           "ESP32 + C++ for sensor control and hardware testing"
         ],
-        "tech_stack": ["Go", "React", "C++", "ESP32", "Sensors", "IoT"],
+        "tech_stack": [
+          "Go",
+          "React",
+          "C++",
+          "ESP32",
+          "Sensors",
+          "IoT"
+        ],
         "link": "https://github.com/MimirFIUBA/Mimir",
-        "link_label": "View repo"
+        "link_label": "View repo",
+        "id": "mimir",
+        "published": true
       },
       {
         "name": "Pelambres 3D",
@@ -224,60 +304,94 @@
           "Client tools: cost calculator and quote generator",
           "Order follow-up, courses, print guide, and FAQ"
         ],
-        "tech_stack": ["Next.js", "React", "Tailwind CSS", "Vercel"],
+        "tech_stack": [
+          "Next.js",
+          "React",
+          "Tailwind CSS",
+          "Vercel"
+        ],
         "link": "https://www.pelambres.com.ar/",
         "preview_image": "/projects/pelambres-preview.png",
-        "preview_alt": "Preview of the Pelambres 3D homepage"
+        "preview_alt": "Preview of the Pelambres 3D homepage",
+        "id": "pelambres",
+        "published": true
       }
     ],
     "tools": [
       {
         "name": "Image Grid",
         "category": "Image",
-        "tags": ["Image"],
+        "tags": [
+          "Image"
+        ],
         "description": "Upload a photo, define rows × columns, and export a fine-grid overlay plus a thick blank grid — same size as the original.",
         "href": "/tools/image-grid",
-        "featured": true
+        "featured": true,
+        "id": "image-grid",
+        "published": true
       },
       {
         "name": "Map to STL",
         "category": "3D / Map",
-        "tags": ["3D", "Map"],
+        "tags": [
+          "3D",
+          "Map"
+        ],
         "description": "Select a rectangle, circle or ellipse on a map, set vertical scale, and download a closed terrain STL for 3D printing.",
         "href": "/tools/map-stl",
-        "featured": true
+        "featured": true,
+        "id": "map-stl",
+        "published": true
       },
       {
         "name": "Lithophane",
         "category": "3D / Image",
-        "tags": ["3D", "Image"],
+        "tags": [
+          "3D",
+          "Image"
+        ],
         "description": "Upload a photo, tune size and thickness, and download a closed backlit lithophane STL — meshed in your browser.",
         "href": "/tools/lithophane",
-        "featured": true
+        "featured": true,
+        "id": "lithophane",
+        "published": true
       },
       {
         "name": "Org Data Bridge",
         "category": "Salesforce",
-        "tags": ["Salesforce"],
+        "tags": [
+          "Salesforce"
+        ],
         "description": "Connect two Salesforce orgs, browse objects, run SOQL on the source, and export JSON or CSV — no Connected App required.",
         "href": "/tools/org-data-bridge",
-        "featured": true
+        "featured": true,
+        "id": "org-data-bridge",
+        "published": true
       },
       {
         "name": "GPX to STL",
         "category": "3D / Map",
-        "tags": ["3D", "Map"],
+        "tags": [
+          "3D",
+          "Map"
+        ],
         "description": "Upload a GPS track, set a corridor around the path, and download a closed terrain STL for 3D printing.",
         "href": "/tools/gpx-stl",
-        "featured": true
+        "featured": true,
+        "id": "gpx-stl",
+        "published": true
       },
       {
         "name": "Voronoi Shade",
         "category": "3D / Pattern",
-        "tags": ["3D"],
+        "tags": [
+          "3D"
+        ],
         "description": "Design a Voronoi lampshade — cylinder or cone — tune cell density and strut width, then export a print-ready STL.",
         "href": "/tools/voronoi-shade",
-        "featured": true
+        "featured": true,
+        "id": "voronoi-shade",
+        "published": true
       }
     ],
     "games": [
@@ -286,14 +400,18 @@
         "category": "Battle",
         "description": "One-round aura battle. Hit gestures on the beat, don't spam, and catch six seven when it shows up.",
         "href": "/games/farmear-aura",
-        "featured": true
+        "featured": true,
+        "id": "farmear-aura",
+        "published": true
       },
       {
         "name": "Beast Path",
         "category": "Roguelike",
         "description": "Pick a starter monster, choose your path through fights, shops and wild events, and challenge the boss with the pets you capture along the way.",
         "href": "/games/beast-path",
-        "featured": true
+        "featured": true,
+        "id": "beast-path",
+        "published": true
       }
     ],
     "contact": {
@@ -303,13 +421,19 @@
       "links": [
         {
           "label": "LinkedIn",
-          "href": "https://www.linkedin.com/in/federico-longhi-66805a187"
+          "href": "https://www.linkedin.com/in/federico-longhi-66805a187",
+          "id": "linkedin"
         },
         {
           "label": "GitHub",
-          "href": "https://github.com/MimirFIUBA/Mimir"
+          "href": "https://github.com/MimirFIUBA/Mimir",
+          "id": "github"
         }
       ]
+    },
+    "flags": {
+      "tools": true,
+      "games": true
     }
   },
   "es": {
@@ -317,11 +441,26 @@
       "navAria": "Principal",
       "langAria": "Idioma",
       "nav": [
-        { "href": "/#experience", "label": "Experiencia" },
-        { "href": "/#skills", "label": "Skills" },
-        { "href": "/#projects", "label": "Proyectos" },
-        { "href": "/tools", "label": "Herramientas" },
-        { "href": "/games", "label": "Juegos" }
+        {
+          "href": "/#experience",
+          "label": "Experiencia"
+        },
+        {
+          "href": "/#skills",
+          "label": "Skills"
+        },
+        {
+          "href": "/#projects",
+          "label": "Proyectos"
+        },
+        {
+          "href": "/tools",
+          "label": "Herramientas"
+        },
+        {
+          "href": "/games",
+          "label": "Juegos"
+        }
       ],
       "sections": {
         "experience": {
@@ -384,8 +523,14 @@
       "name": "Fede Longhi",
       "headline": "Ingeniero Salesforce senior.",
       "tagline": "Más de 9 años diseñando y entregando soluciones Salesforce en equipos de producto y consulting. Fuerte en Apex/LWC, integraciones y arquitectura — además de mentoring y hiring. Proyectos propios en hardware/IoT (Mimir) y producto (Pelambres 3D).",
-      "ctaPrimary": { "label": "Ver experiencia", "href": "#experience" },
-      "ctaSecondary": { "label": "Proyectos", "href": "#projects" },
+      "ctaPrimary": {
+        "label": "Ver experiencia",
+        "href": "#experience"
+      },
+      "ctaSecondary": {
+        "label": "Proyectos",
+        "href": "#projects"
+      },
       "cvHref": "/cv/fede-longhi.pdf"
     },
     "experience": [
@@ -399,7 +544,8 @@
           "Trabajo junto a producto y delivery para convertir requerimientos de negocio en soluciones técnicas escalables.",
           "Aplico flujos asistidos por IA (prompting, agentes y coding copilots) para acelerar diseño, implementación y review.",
           "Mentoring al equipo en best practices de Salesforce y estándares de calidad de ingeniería."
-        ]
+        ],
+        "id": "santex"
       },
       {
         "role": "Senior Salesforce Developer",
@@ -410,7 +556,8 @@
           "Construí features para automatizar procesos de fulfillment de punta a punta en Salesforce.",
           "Entregué mejoras técnicas en Sales Cloud para subir confiabilidad y velocidad del equipo.",
           "Conduje entrevistas técnicas y apoyé el pipeline de hiring de ingeniería."
-        ]
+        ],
+        "id": "launchpad"
       },
       {
         "role": "Technical Lead & Salesforce Developer",
@@ -423,7 +570,8 @@
           "Implementé Einstein Bot con Knowledge Base, event monitoring con CRM Analytics (incl. integración Azure) y feeds de insights custom en LWC.",
           "Construí y mejoré integraciones con REST, SOAP y Bulk API; frontend con LWC, Aura y Visualforce.",
           "Desarrollé procesos para una aplicación CPQ custom en Salesforce para una aseguradora de salud; trabajé con Vlocity en rollouts multi-cloud."
-        ]
+        ],
+        "id": "cloudgaia"
       }
     ],
     "skills": [
@@ -441,19 +589,44 @@
           "CRM Analytics",
           "Knowledge",
           "Heroku"
-        ]
+        ],
+        "id": "salesforce"
       },
       {
         "group": "Integraciones",
-        "items": ["REST", "SOAP", "Bulk API", "Azure", "Arquitectura de integración"]
+        "items": [
+          "REST",
+          "SOAP",
+          "Bulk API",
+          "Azure",
+          "Arquitectura de integración"
+        ],
+        "id": "integrations"
       },
       {
         "group": "Lenguajes",
-        "items": ["Apex", "JavaScript", "TypeScript", "Go", "Python", "Java", "C++", "C#", "Rust"]
+        "items": [
+          "Apex",
+          "JavaScript",
+          "TypeScript",
+          "Go",
+          "Python",
+          "Java",
+          "C++",
+          "C#",
+          "Rust"
+        ],
+        "id": "languages"
       },
       {
         "group": "Frontend y apps",
-        "items": ["React", "HTML", "CSS", "Node.js"]
+        "items": [
+          "React",
+          "HTML",
+          "CSS",
+          "Node.js"
+        ],
+        "id": "frontend"
       },
       {
         "group": "IA",
@@ -464,45 +637,67 @@
           "Agentes y workflows de IA",
           "Vercel AI SDK",
           "RAG y diseño de contexto"
-        ]
+        ],
+        "id": "ai"
       },
       {
         "group": "Tooling",
-        "items": ["Git", "GitHub", "Bitbucket", "Docker", "PostgreSQL"]
+        "items": [
+          "Git",
+          "GitHub",
+          "Bitbucket",
+          "Docker",
+          "PostgreSQL"
+        ],
+        "id": "tooling"
       }
     ],
     "languages": [
-      { "name": "Español", "level": "Nativo" },
-      { "name": "Inglés", "level": "Avanzado" }
+      {
+        "name": "Español",
+        "level": "Nativo",
+        "id": "spanish"
+      },
+      {
+        "name": "Inglés",
+        "level": "Avanzado",
+        "id": "english"
+      }
     ],
     "education": [
       {
         "school": "Universidad de Buenos Aires (UBA)",
         "degree": "Ingeniería Informática",
         "period": "Graduación 2022",
-        "note": "Incluye trabajo profesional como Mimir (automatización hidropónica)."
+        "note": "Incluye trabajo profesional como Mimir (automatización hidropónica).",
+        "id": "uba"
       }
     ],
     "certifications": [
       {
         "name": "Salesforce Certified Sharing and Visibility Architect",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "sharing-visibility"
       },
       {
         "name": "Salesforce Certified Platform App Builder",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "app-builder"
       },
       {
         "name": "Salesforce Certified Platform Developer II",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "pd2"
       },
       {
         "name": "Salesforce Certified Administrator",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "admin"
       },
       {
         "name": "Salesforce Certified Platform Developer I",
-        "issuer": "Salesforce"
+        "issuer": "Salesforce",
+        "id": "pd1"
       }
     ],
     "projects": [
@@ -520,9 +715,18 @@
           "Frontend de la plataforma en React",
           "ESP32 + C++ para sensores y pruebas de hardware"
         ],
-        "tech_stack": ["Go", "React", "C++", "ESP32", "Sensores", "IoT"],
+        "tech_stack": [
+          "Go",
+          "React",
+          "C++",
+          "ESP32",
+          "Sensores",
+          "IoT"
+        ],
         "link": "https://github.com/MimirFIUBA/Mimir",
-        "link_label": "Ver repo"
+        "link_label": "Ver repo",
+        "id": "mimir",
+        "published": true
       },
       {
         "name": "Pelambres 3D",
@@ -537,60 +741,94 @@
           "Herramientas: calculadora de costos y generador de presupuestos",
           "Seguimiento de pedidos, cursos, guía de impresión y FAQ"
         ],
-        "tech_stack": ["Next.js", "React", "Tailwind CSS", "Vercel"],
+        "tech_stack": [
+          "Next.js",
+          "React",
+          "Tailwind CSS",
+          "Vercel"
+        ],
         "link": "https://www.pelambres.com.ar/",
         "preview_image": "/projects/pelambres-preview.png",
-        "preview_alt": "Vista previa del sitio de Pelambres 3D"
+        "preview_alt": "Vista previa del sitio de Pelambres 3D",
+        "id": "pelambres",
+        "published": true
       }
     ],
     "tools": [
       {
         "name": "Grilla de imagen",
         "category": "Imagen",
-        "tags": ["Image"],
+        "tags": [
+          "Image"
+        ],
         "description": "Subí una foto, definí filas × columnas y exportá una grilla fina sobre la original más una grilla gruesa en blanco — mismo tamaño que la original.",
         "href": "/tools/image-grid",
-        "featured": true
+        "featured": true,
+        "id": "image-grid",
+        "published": true
       },
       {
         "name": "Mapa a STL",
         "category": "3D / Mapa",
-        "tags": ["3D", "Map"],
+        "tags": [
+          "3D",
+          "Map"
+        ],
         "description": "Seleccioná un rectángulo, círculo o elipse en el mapa, definí la escala vertical y descargá un STL cerrado del terreno para impresión 3D.",
         "href": "/tools/map-stl",
-        "featured": true
+        "featured": true,
+        "id": "map-stl",
+        "published": true
       },
       {
         "name": "Litofanía",
         "category": "3D / Imagen",
-        "tags": ["3D", "Image"],
+        "tags": [
+          "3D",
+          "Image"
+        ],
         "description": "Subí una foto, ajustá tamaño y espesor, y descargá un STL cerrado de litofanía con backlight — mallado en tu navegador.",
         "href": "/tools/lithophane",
-        "featured": true
+        "featured": true,
+        "id": "lithophane",
+        "published": true
       },
       {
         "name": "Org Data Bridge",
         "category": "Salesforce",
-        "tags": ["Salesforce"],
+        "tags": [
+          "Salesforce"
+        ],
         "description": "Conectá dos orgs Salesforce, explorá objetos, ejecutá SOQL en el origen y exportá JSON o CSV — sin Connected App.",
         "href": "/tools/org-data-bridge",
-        "featured": true
+        "featured": true,
+        "id": "org-data-bridge",
+        "published": true
       },
       {
         "name": "GPX a STL",
         "category": "3D / Mapa",
-        "tags": ["3D", "Map"],
+        "tags": [
+          "3D",
+          "Map"
+        ],
         "description": "Subí un track GPS, definí un corredor alrededor del camino y descargá un STL cerrado del terreno para impresión 3D.",
         "href": "/tools/gpx-stl",
-        "featured": true
+        "featured": true,
+        "id": "gpx-stl",
+        "published": true
       },
       {
         "name": "Pantalla Voronoi",
         "category": "3D / Patrón",
-        "tags": ["3D"],
+        "tags": [
+          "3D"
+        ],
         "description": "Diseñá una pantalla Voronoi — cilindro o cono — ajustá densidad y grosor de nervios, y exportá un STL listo para imprimir.",
         "href": "/tools/voronoi-shade",
-        "featured": true
+        "featured": true,
+        "id": "voronoi-shade",
+        "published": true
       }
     ],
     "games": [
@@ -599,14 +837,18 @@
         "category": "Batalla",
         "description": "Un round de farmear aura. Gestos a ritmo, sin spam, y six seven cuando aparece.",
         "href": "/games/farmear-aura",
-        "featured": true
+        "featured": true,
+        "id": "farmear-aura",
+        "published": true
       },
       {
         "name": "Camino de Bestias",
         "category": "Roguelike",
         "description": "Elegí un monstruo inicial, avanzá por pelea, tienda y eventos, y enfrentá al boss con las mascotas que captures en el camino.",
         "href": "/games/beast-path",
-        "featured": true
+        "featured": true,
+        "id": "beast-path",
+        "published": true
       }
     ],
     "contact": {
@@ -616,13 +858,19 @@
       "links": [
         {
           "label": "LinkedIn",
-          "href": "https://www.linkedin.com/in/federico-longhi-66805a187"
+          "href": "https://www.linkedin.com/in/federico-longhi-66805a187",
+          "id": "linkedin"
         },
         {
           "label": "GitHub",
-          "href": "https://github.com/MimirFIUBA/Mimir"
+          "href": "https://github.com/MimirFIUBA/Mimir",
+          "id": "github"
         }
       ]
+    },
+    "flags": {
+      "tools": true,
+      "games": true
     }
   }
 }

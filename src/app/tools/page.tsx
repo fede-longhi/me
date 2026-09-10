@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { SiteProviders } from "@/components/SiteProviders";
+import { notFound } from "next/navigation";
+import { SiteChrome } from "@/components/SiteChrome";
 import { ToolsPageShell } from "@/components/ToolsPageShell";
+import { getSiteCatalog } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Tools — Fede Longhi",
@@ -8,10 +10,15 @@ export const metadata: Metadata = {
     "Utilities and helper tools by Fede Longhi. / Herramientas y utilidades de Fede Longhi.",
 };
 
-export default function ToolsPage() {
+export default async function ToolsPage() {
+  const catalog = await getSiteCatalog();
+  if (!catalog.en.flags.tools) {
+    notFound();
+  }
+
   return (
-    <SiteProviders>
+    <SiteChrome>
       <ToolsPageShell />
-    </SiteProviders>
+    </SiteChrome>
   );
 }

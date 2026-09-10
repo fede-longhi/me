@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteChrome } from "@/components/SiteChrome";
 import LithophanePageClient from "./LithophanePageClient";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function LithophanePage() {
-  return <LithophanePageClient />;
+  return (
+    <SiteChrome>
+      <LithophanePageClient />
+    </SiteChrome>
+  );
 }

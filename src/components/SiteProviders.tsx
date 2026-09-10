@@ -1,10 +1,16 @@
 "use client";
 
 import { LanguageProvider } from "@/components/LanguageProvider";
-import { siteCatalog } from "@/lib/catalog";
+import type { LocalizedData } from "@/lib/types";
 
-export function SiteProviders({ children }: { children: React.ReactNode }) {
+export function SiteProviders({
+  catalog,
+  children,
+}: {
+  catalog: LocalizedData;
+  children: React.ReactNode;
+}) {
   return (
-    <LanguageProvider catalog={siteCatalog}>{children}</LanguageProvider>
+    <LanguageProvider catalog={catalog}>{children}</LanguageProvider>
   );
 }

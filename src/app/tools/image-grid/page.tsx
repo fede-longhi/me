@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteProviders } from "@/components/SiteProviders";
+import { SiteChrome } from "@/components/SiteChrome";
 import { ImageGridTool } from "@/components/tools/ImageGridTool";
 
 export const metadata: Metadata = {
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function ImageGridPage() {
   return (
-    <SiteProviders>
+    <SiteChrome>
       <ImageGridTool />
-    </SiteProviders>
+    </SiteChrome>
   );
 }

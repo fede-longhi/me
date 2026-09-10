@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteChrome } from "@/components/SiteChrome";
 import MapStlPageClient from "./MapStlPageClient";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function MapStlPage() {
-  return <MapStlPageClient />;
+  return (
+    <SiteChrome>
+      <MapStlPageClient />
+    </SiteChrome>
+  );
 }

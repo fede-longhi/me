@@ -15,6 +15,8 @@ const figtree = Figtree({
   display: "swap",
 });
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Fede Longhi — Senior Salesforce Engineer",
   description:

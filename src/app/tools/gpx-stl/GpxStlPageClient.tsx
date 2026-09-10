@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { SiteProviders } from "@/components/SiteProviders";
 
 const GpxTerrainTool = dynamic(
   () =>
@@ -17,9 +16,5 @@ const GpxTerrainTool = dynamic(
 );
 
 export default function GpxStlPageClient() {
-  return (
-    <SiteProviders>
-      <GpxTerrainTool />
-    </SiteProviders>
-  );
+  return <GpxTerrainTool />;
 }

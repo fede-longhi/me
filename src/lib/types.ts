@@ -1,11 +1,18 @@
 export type Locale = "en" | "es";
 
 export type SiteLink = {
+  id?: string;
   label: string;
   href: string;
 };
 
+export type SiteFlags = {
+  tools: boolean;
+  games: boolean;
+};
+
 export type ExperienceItem = {
+  id: string;
   role: string;
   company: string;
   period: string;
@@ -14,16 +21,19 @@ export type ExperienceItem = {
 };
 
 export type SkillGroup = {
+  id: string;
   group: string;
   items: string[];
 };
 
 export type LanguageItem = {
+  id: string;
   name: string;
   level: string;
 };
 
 export type ProjectItem = {
+  id: string;
   name: string;
   category: string;
   description: string;
@@ -31,6 +41,7 @@ export type ProjectItem = {
   link?: string | null;
   slug?: string;
   featured?: boolean;
+  published?: boolean;
   status?: string;
   highlights?: string[];
   details?: string;
@@ -40,31 +51,37 @@ export type ProjectItem = {
 };
 
 export type ToolItem = {
+  id: string;
   name: string;
   description: string;
   href: string;
   category: string;
   /** Filter chips on /tools — same labels across locales when possible. */
   tags?: string[];
-  /** When true, shown in the home Tools section. All tools appear on /tools. */
+  /** When true, shown in the home Tools section. All published tools appear on /tools. */
   featured?: boolean;
+  published?: boolean;
 };
 
 export type GameItem = {
+  id: string;
   name: string;
   description: string;
   href: string;
   category: string;
-  /** When true, shown in the home Games section. All games appear on /games. */
+  /** When true, shown in the home Games section. All published games appear on /games. */
   featured?: boolean;
+  published?: boolean;
 };
 
 export type CertificationItem = {
+  id: string;
   name: string;
   issuer: string;
 };
 
 export type EducationItem = {
+  id: string;
   school: string;
   period: string;
   degree?: string;
@@ -111,16 +128,26 @@ export type SiteUi = {
   builtWithLabel: string;
 };
 
+export type SiteHome = {
+  name: string;
+  headline: string;
+  tagline: string;
+  ctaPrimary: SiteLink;
+  ctaSecondary: SiteLink;
+  cvHref: string;
+};
+
+export type SiteContact = {
+  note: string;
+  email?: string | null;
+  location?: string | null;
+  links: SiteLink[];
+};
+
 export type SiteData = {
+  flags: SiteFlags;
   ui: SiteUi;
-  home: {
-    name: string;
-    headline: string;
-    tagline: string;
-    ctaPrimary: SiteLink;
-    ctaSecondary: SiteLink;
-    cvHref: string;
-  };
+  home: SiteHome;
   experience: ExperienceItem[];
   skills: SkillGroup[];
   languages: LanguageItem[];
@@ -129,12 +156,7 @@ export type SiteData = {
   projects: ProjectItem[];
   tools: ToolItem[];
   games: GameItem[];
-  contact: {
-    note: string;
-    email?: string | null;
-    location?: string | null;
-    links: SiteLink[];
-  };
+  contact: SiteContact;
 };
 
 export type LocalizedData = Record<Locale, SiteData>;
@@ -149,3 +171,16 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   es: "Español",
 };
 export const LOCALE_STORAGE_KEY = "fede-locale";
+
+export const DEFAULT_SITE_FLAGS: SiteFlags = {
+  tools: true,
+  games: true,
+};
+
+export function isPublished(item: { published?: boolean }): boolean {
+  return item.published !== false;
+}
+
+export function isFeatured(item: { featured?: boolean }): boolean {
+  return item.featured === true;
+}

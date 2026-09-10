@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { SiteProviders } from "@/components/SiteProviders";
 
 const VoronoiShadeTool = dynamic(
   () =>
@@ -19,9 +18,5 @@ const VoronoiShadeTool = dynamic(
 );
 
 export default function VoronoiShadePageClient() {
-  return (
-    <SiteProviders>
-      <VoronoiShadeTool />
-    </SiteProviders>
-  );
+  return <VoronoiShadeTool />;
 }

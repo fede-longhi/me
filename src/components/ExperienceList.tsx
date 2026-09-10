@@ -9,7 +9,7 @@ export function ExperienceList({ items }: ExperienceListProps) {
     <ul className="space-y-0">
       {items.map((item) => (
         <li
-          key={`${item.role}-${item.company}`}
+          key={item.id}
           className="grid gap-4 border-t border-line py-8 first:border-t-0 first:pt-0 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] sm:gap-10"
         >
           <div>

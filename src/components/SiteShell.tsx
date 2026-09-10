@@ -14,7 +14,7 @@ import { ToolsList } from "@/components/ToolsList";
 
 export function SiteShell() {
   const { data } = useLanguage();
-  const { ui } = data;
+  const { ui, flags } = data;
   const featuredTools = data.tools.filter((tool) => tool.featured);
   const featuredGames = data.games.filter((game) => game.featured);
 
@@ -66,53 +66,57 @@ export function SiteShell() {
           />
         </Section>
 
-        <Section
-          id="tools"
-          eyebrow={ui.sections.tools.eyebrow}
-          title={ui.sections.tools.title}
-          lead={ui.sections.tools.lead}
-        >
-          <ToolsList
-            items={featuredTools}
-            openLabel={ui.openTool}
-            emptyLabel={ui.toolsEmpty}
-          />
-          <div className="mt-8">
-            <a
-              href="/tools"
-              className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold tracking-wide text-blue-deep transition hover:text-blue"
-            >
-              {ui.viewAllTools}
-              <span aria-hidden className="text-xs">
-                ↗
-              </span>
-            </a>
-          </div>
-        </Section>
+        {flags.tools ? (
+          <Section
+            id="tools"
+            eyebrow={ui.sections.tools.eyebrow}
+            title={ui.sections.tools.title}
+            lead={ui.sections.tools.lead}
+          >
+            <ToolsList
+              items={featuredTools}
+              openLabel={ui.openTool}
+              emptyLabel={ui.toolsEmpty}
+            />
+            <div className="mt-8">
+              <a
+                href="/tools"
+                className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold tracking-wide text-blue-deep transition hover:text-blue"
+              >
+                {ui.viewAllTools}
+                <span aria-hidden className="text-xs">
+                  ↗
+                </span>
+              </a>
+            </div>
+          </Section>
+        ) : null}
 
-        <Section
-          id="games"
-          eyebrow={ui.sections.games.eyebrow}
-          title={ui.sections.games.title}
-          lead={ui.sections.games.lead}
-        >
-          <GamesList
-            items={featuredGames}
-            openLabel={ui.openGame}
-            emptyLabel={ui.gamesEmpty}
-          />
-          <div className="mt-8">
-            <a
-              href="/games"
-              className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold tracking-wide text-blue-deep transition hover:text-blue"
-            >
-              {ui.viewAllGames}
-              <span aria-hidden className="text-xs">
-                ↗
-              </span>
-            </a>
-          </div>
-        </Section>
+        {flags.games ? (
+          <Section
+            id="games"
+            eyebrow={ui.sections.games.eyebrow}
+            title={ui.sections.games.title}
+            lead={ui.sections.games.lead}
+          >
+            <GamesList
+              items={featuredGames}
+              openLabel={ui.openGame}
+              emptyLabel={ui.gamesEmpty}
+            />
+            <div className="mt-8">
+              <a
+                href="/games"
+                className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold tracking-wide text-blue-deep transition hover:text-blue"
+              >
+                {ui.viewAllGames}
+                <span aria-hidden className="text-xs">
+                  ↗
+                </span>
+              </a>
+            </div>
+          </Section>
+        ) : null}
       </main>
       <SiteFooter
         contact={data.contact}

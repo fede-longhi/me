@@ -24,12 +24,12 @@ export function GamesList({ items, openLabel, emptyLabel }: GamesListProps) {
       {items.map((game) => {
         const external = isExternal(game.href);
         return (
-          <li key={`${game.name}-${game.href}`}>
+          <li key={game.id}>
             <a
               href={game.href}
               target={external ? "_blank" : undefined}
               rel={external ? "noopener noreferrer" : undefined}
-              className="group flex h-full flex-col border border-line bg-surface/50 p-6 transition hover:border-green/50 hover:bg-surface"
+              className="group flex h-full flex-col border border-ink/20 bg-white/85 p-6 transition hover:border-green/50 hover:bg-white"
             >
               <div className="flex items-baseline justify-between gap-3">
                 <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-ink group-hover:text-blue-deep">
